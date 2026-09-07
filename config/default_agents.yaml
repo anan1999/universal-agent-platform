@@ -1,0 +1,22 @@
+# Installed global agent roster.
+#
+# Models are chosen per task by capability (see config/models.yaml), while
+# provider-native profiles are optional conventions (see provider bindings).
+#
+# `profile` records which Work Profile contributed the role. Team composition
+# reads config/profiles/*.yaml; this file is the installed roster the dashboard
+# shows and the capability resolver searches before creating anything new.
+agents:
+  orchestrator: {type: permanent, profile: general, description: Goal ownership and orchestration, reasoning: medium, cost_class: medium, capabilities: [orchestration, task_planning, planning]}
+  explorer: {type: permanent, profile: software-engineering, description: Repository exploration, reasoning: low, cost_class: low, skills: [repository_search, git], capabilities: [repository_search, file_discovery, log_analysis, dependency_discovery]}
+  developer: {type: permanent, profile: software-engineering, description: Implementation, reasoning: medium, cost_class: medium, skills: [python, git], capabilities: [implementation, coding, refactor, bug_fix, debugging, android]}
+  tester: {type: permanent, profile: software-engineering, description: Validation against the project's own commands, reasoning: low, cost_class: low, skills: [pytest], capabilities: [build, test, testing, adb, android, log_analysis, smoke_test]}
+  reviewer: {type: permanent, profile: software-engineering, description: Independent review, reasoning: medium, cost_class: medium, skills: [git], capabilities: [code_review, regression_review, architecture_review]}
+  researcher: {type: permanent, profile: research, description: Evidence gathering and synthesis, reasoning: medium, cost_class: medium, capabilities: [research, source_validation, source_discovery, evidence_analysis, synthesis]}
+  analyst: {type: permanent, profile: general, description: Generic goal analysis for work no profile covers, reasoning: medium, cost_class: medium, capabilities: [goal_analysis, analysis]}
+  team_manager: {type: permanent, profile: general, description: Skill and specialist lifecycle, reasoning: medium, cost_class: medium, capabilities: [skill_creation, specialist_creation, agent_merge, agent_promotion]}
+  qnn_expert: {type: specialist, profile: ai-engineering, status: enabled, reasoning: high, cost_class: high, skills: [qnn, quantization], capabilities: [qnn, inference, tensor_contract]}
+  android_expert: {type: specialist, profile: software-engineering, status: disabled, capabilities: [android, gradle]}
+  devops_expert: {type: specialist, profile: devops, status: disabled, capabilities: [docker, ci_cd, containers]}
+  aws_expert: {type: specialist, profile: devops, status: disabled, capabilities: [aws, cloud_deployment]}
+  linux_expert: {type: specialist, profile: devops, status: disabled, capabilities: [linux, system_debugging]}

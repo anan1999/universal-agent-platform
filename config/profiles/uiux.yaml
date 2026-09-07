@@ -1,0 +1,44 @@
+profile:
+  id: uiux
+  name: UI / UX
+  description: >
+    Interaction and experience work. Produces flows, wireframes, and reviews.
+    Does not assume a test runner or a code diff.
+  capabilities:
+    [user_flow, information_architecture, wireframing, usability, accessibility,
+     design_system, interaction_design, content_design]
+  roles:
+    - id: ux_researcher
+      name: UX Researcher
+      responsibility: Establish who the user is and what the current experience fails at.
+      capabilities: [usability, research, user_flow]
+      stage: 10
+      read_only: true
+    - id: information_architect
+      name: Information Architect
+      responsibility: Structure the navigation, hierarchy, and content model.
+      capabilities: [information_architecture, user_flow, content_design]
+      stage: 30
+    - id: ui_designer
+      name: UI Designer
+      responsibility: Specify the layout, states, and components.
+      capabilities: [wireframing, design_system, interaction_design]
+      stage: 50
+    - id: accessibility_reviewer
+      name: Accessibility Reviewer
+      responsibility: Check the design against accessibility requirements.
+      capabilities: [accessibility, usability, evaluation]
+      stage: 90
+      optional: true
+      evaluative: true
+      read_only: true
+  skills: [design_system, wcag, user_flow]
+  tools: []
+  evaluation: [heuristic_review, accessibility_review, requirement_coverage]
+  artifact_types: [design_spec, image, markdown, report, plan]
+  approval_gates: [publishing]
+  detection:
+    files: [figma.json, design-tokens.json, storybook.config.js, .storybook]
+    keywords:
+      [redesign, ux, ui, wireframe, user flow, usability, accessibility, wcag,
+       navigation, layout, screen, page, onboarding, design system, prototype]

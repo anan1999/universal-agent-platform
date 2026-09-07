@@ -1,0 +1,91 @@
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Iterable
+
+from adaptive_agent.core.models import Receipt, Task
+
+
+@dataclass(slots=True)
+class ExecutionPacket:
+    role: str
+    task: str
+    project_name: str
+    project_type: str
+    working_directory: Path
+    dependency_receipts: list[str] = field(default_factory=list)
+    allowed_files: list[str] = field(default_factory=list)
+    required_skills: list[str] = field(default_factory=list)
+    constraints: list[str] = field(default_factory=list)
+    max_output_words: int = 500
+    read_only: bool = False
+    #: What the task is expected to produce. Domain-agnostic; see core.artifacts.
+    artifact_type: str = "unknown"
+    #: The reasoning responsibility this role carries, from the work profile.
+    responsibility: str = ""
+
+    def render(self) -> str:
+        def section(name: str, values: list[str], fallback: str = "None") -> str:
+            body = "\n".join(f"- {value}" for value in values) if values else fallback
+            return f"{name}:\n{body}"
+
+        constraints = list(self.constraints)
+        constraints.extend([
+            "You are a bounded child executor, not the top-level orchestrator.",
+            "Do not invoke agentctl or any other agent-orchestration framework.",
+            "Use only this packet and the workspace content the task actually needs.",
+            "Do not inspect unrelated directories or include full logs in the response.",
+            f"Keep the final structured response within {self.max_output_words} words.",
+        ])
+        if self.read_only:
+            constraints.append("Do not modify anything in the workspace.")
+        sections = [
+            f"ROLE:\n{self.role}",
+            f"RESPONSIBILITY:\n{self.responsibility}" if self.responsibility else "",
+            f"TASK:\n{self.task}",
+            f"PROJECT:\n{self.project_name} ({self.project_type})",
+            f"EXPECTED ARTIFACT:\n{self.artifact_type}" if self.artifact_type != "unknown" else "",
+            section("DEPENDENCY RECEIPTS", self.dependency_receipts),
+            section("ALLOWED SCOPE", self.allowed_files, "Minimize the workspace scope required by the task."),
+            section("REQUIRED SKILLS", self.required_skills),
+            section("CONSTRAINTS", constraints),
+            "EXPECTED OUTPUT:\nReturn one JSON object matching the supplied schema. Confidence is a workflow signal: high, medium, low, or unknown.",
+        ]
+        return "\n\n".join(item for item in sections if item)
+
+
+class ExecutionPacketBuilder:
+    def __init__(self, receipt_word_limit: int = 160, max_receipts: int = 4):
+        self.receipt_word_limit = receipt_word_limit
+        self.max_receipts = max_receipts
+
+    def build(self, task: Task, working_directory: Path, project_name: str, project_type: str,
+              receipts: Iterable[Receipt] = (), allowed_files: list[str] | None = None,
+              required_skills: list[str] | None = None, constraints: list[str] | None = None,
+              read_only: bool | None = None) -> ExecutionPacket:
+        summarized = [self._summarize(receipt) for receipt in list(receipts)[:self.max_receipts]]
+        # Write intent comes from the task itself, not from the role's name.
+        inferred_read_only = bool(task.metadata.get("read_only")) or "do not modify" in task.title.lower()
+        return ExecutionPacket(
+            role=task.owner.replace("_", " ").title(),
+            task=f"{task.title}\nOverall goal: {task.metadata.get('goal', task.title)}",
+            project_name=project_name, project_type=project_type,
+            working_directory=Path(working_directory).resolve(), dependency_receipts=summarized,
+            allowed_files=allowed_files or list(task.metadata.get("allowed_files", [])),
+            required_skills=required_skills or list(task.metadata.get("required_skills", task.required_capabilities)),
+            constraints=constraints or list(task.metadata.get("constraints", [])),
+            read_only=inferred_read_only if read_only is None else read_only,
+            artifact_type=getattr(task, "artifact_type", "unknown"),
+            responsibility=str(task.metadata.get("responsibility", "")),
+        )
+
+    def _summarize(self, receipt: Receipt) -> str:
+        parts = [f"{receipt.agent}/{receipt.task_id}: {receipt.summary}"]
+        if receipt.files:
+            parts.append("Files: " + ", ".join(receipt.files[:8]))
+        if receipt.findings:
+            parts.append("Findings: " + "; ".join(receipt.findings[:5]))
+        words = " ".join(parts).split()
+        suffix = " …[truncated]" if len(words) > self.receipt_word_limit else ""
+        return " ".join(words[:self.receipt_word_limit]) + suffix

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Universal Agent Platform</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <header><div><h1>Universal Agent Platform <small id="version"></small></h1><p id="subtitle">Bring your goal. Bring your AI. The platform builds the team.</p></div><div class="header-actions"><span id="ownerBadge" class="pill">owner: loading</span><button id="theme">Theme</button></div></header>
+  <nav class="topnav"><a href="/">Overview</a><a href="/#tasks">Tasks</a><a href="/agents">Agents</a><a href="/skills">Skills</a><a href="/tools">Tools</a><a href="/providers">Providers</a><a href="/profiles">Profiles</a><a href="/#runs">Runs</a><a href="/#performance">Performance</a></nav>
+  <main id="overviewPage">
+    <section class="toolbar"><label>Run <select id="runSelect"></select></label><span id="connection">● live</span></section>
+    <section class="metrics" id="metrics"></section>
+    <section class="grid explain-grid">
+      <article class="card"><h2>Active Team</h2><div id="liveTeam"></div><a href="/agents">View all Agents →</a></article>
+      <article class="card"><h2>Why this team?</h2><div id="whyTeam"></div></article>
+    </section>
+    <section class="grid" id="tasks">
+      <article class="card dag-card"><h2>Task DAG</h2><div id="dag" class="dag"></div></article>
+      <article class="card"><h2>Task Detail</h2><div id="detail" class="empty">Select a task node</div></article>
+      <article class="card"><h2>Invocations &amp; Usage</h2><div id="tokens"></div></article>
+      <article class="card"><h2>Capability Watch</h2><div id="capabilities"></div></article>
+      <article class="card"><h2>Why this provider?</h2><div id="routing"></div></article>
+      <article class="card"><h2>Performance History</h2><div id="performance"></div></article>
+      <article class="card"><h2>Efficiency</h2><div id="efficiency"></div></article>
+      <article class="card timeline-card"><h2>Timeline / Replay</h2><div id="timeline"></div></article>
+    </section>
+  </main>
+  <main id="agentsPage" class="registry-page hidden">
+    <section class="page-heading"><div><h2>Agents</h2><p>Reasoning responsibilities. An Agent is not a model, and a provider profile is not an Agent.</p></div><div id="agentOwner"></div></section>
+    <section class="metrics" id="agentMetrics"></section>
+    <section class="registry-toolbar"><input id="agentSearch" placeholder="Search agent, capability, or work profile"><select id="agentStatus"><option value="">All statuses</option><option>idle</option><option>working</option><option>disabled</option></select></section>
+    <section class="registry-layout"><div><div id="agentCards" class="registry-grid"></div><article class="card"><h2>Provider-native Profiles <span class="pill">READ ONLY</span></h2><p class="hint">Provider conventions, not universal Agents.</p><div id="profileCards"></div></article></div><aside id="agentDetail" class="card detail-panel"><div class="empty">Select an Agent</div></aside></section>
+  </main>
+  <main id="skillsPage" class="registry-page hidden">
+    <section class="page-heading"><div><h2>Skills</h2><p>Reusable knowledge, loaded lazily. Prefer a Skill over inventing an Agent.</p></div><div id="skillOwner"></div></section>
+    <section class="metrics" id="skillMetrics"></section>
+    <section class="registry-toolbar"><input id="skillSearch" placeholder="Search skill or capability"><select id="skillScope"><option value="">All scopes</option><option value="global">Global</option><option value="project">Project</option><option value="built-in">Built-in</option></select></section>
+    <section class="registry-layout"><div id="skillCards" class="registry-grid"></div><aside id="skillDetail" class="card detail-panel"><div class="empty">Select a Skill</div></aside></section>
+  </main>
+  <main id="toolsPage" class="registry-page hidden">
+    <section class="page-heading"><div><h2>Tools</h2><p>Deterministic actions. Not every task needs an AI Agent.</p></div><div id="toolOwner"></div></section>
+    <section class="metrics" id="toolMetrics"></section>
+    <section class="registry-toolbar"><input id="toolSearch" placeholder="Search tool or capability"><select id="toolRisk"><option value="">All risk levels</option><option value="safe">Safe</option><option value="low">Low</option><option value="moderate">Moderate</option><option value="high">High</option><option value="destructive">Destructive</option></select></section>
+    <section><div id="toolCards" class="registry-grid"></div></section>
+  </main>
+  <main id="providersPage" class="registry-page hidden">
+    <section class="page-heading"><div><h2>Providers</h2><p>AI execution backends and their real readiness. Credentials are never shown.</p></div><div id="providerOwner"></div></section>
+    <section class="metrics" id="providerMetrics"></section>
+    <section class="registry-layout"><div id="providerCards" class="registry-grid"></div><aside id="providerDetail" class="card detail-panel"><div class="empty">Select a Provider</div></aside></section>
+  </main>
+  <main id="profilesPage" class="registry-page hidden">
+    <section class="page-heading"><div><h2>Work Profiles</h2><p>Starter packs, not a closed taxonomy. A goal matching none of these is still planned.</p></div><div id="profileOwner"></div></section>
+    <section class="metrics" id="profileMetrics"></section>
+    <section class="registry-layout"><div id="workProfileCards" class="registry-grid"></div><aside id="workProfileDetail" class="card detail-panel"><div class="empty">Select a Work Profile</div></aside></section>
+  </main>
+  <script src="/assets/app.js"></script>
+</body>
+</html>

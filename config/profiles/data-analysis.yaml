@@ -1,0 +1,37 @@
+profile:
+  id: data-analysis
+  name: Data Analysis
+  description: Data exploration, statistics, and reporting. Artifacts include datasets and spreadsheets.
+  capabilities:
+    [data_exploration, statistics, visualization, data_quality, dataset_analysis,
+     reporting, query]
+  roles:
+    - id: data_explorer
+      name: Data Explorer
+      responsibility: Profile the data and report its shape, gaps, and quality.
+      capabilities: [data_exploration, data_quality, dataset_analysis]
+      stage: 10
+      read_only: true
+    - id: data_analyst
+      name: Data Analyst
+      responsibility: Run the analysis and produce the numbers the question needs.
+      capabilities: [statistics, query, visualization, reporting]
+      stage: 40
+    - id: analysis_reviewer
+      name: Analysis Reviewer
+      responsibility: Check method, sample size, and whether the conclusion follows.
+      capabilities: [evaluation, statistics]
+      stage: 90
+      optional: true
+      evaluative: true
+      read_only: true
+  skills: [sql, dataframes, charting]
+  tools: []
+  evaluation: [data_quality_check, method_review]
+  artifact_types: [dataset, spreadsheet, report, image, markdown]
+  approval_gates: [destructive_actions]
+  detection:
+    files: ["*.ipynb", "*.csv", "*.parquet", dbt_project.yml, queries]
+    keywords:
+      [analyse, analyze, dataset, statistics, correlation, distribution, chart,
+       dashboard metric, sql, query, cohort, aggregate, trend]

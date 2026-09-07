@@ -1,0 +1,48 @@
+# Installed global skill registry.
+#
+# A skill is reusable knowledge or a procedure. Prefer adding a skill over
+# adding an agent: an agent is a distinct reasoning responsibility, and most
+# things that look like agents ("Git Agent", "Pytest Agent") are skills or tools.
+skills:
+  # Software engineering
+  git: {description: Git version control, scope: global, capabilities: [version_control], lazy: true}
+  repository_search: {description: Targeted repository discovery, scope: global, capabilities: [repository_search, file_discovery], lazy: true}
+  python: {description: Python implementation tools, scope: global, capabilities: [python], lazy: true}
+  pytest: {description: Python test execution, scope: global, capabilities: [test, testing], lazy: true}
+  gradle: {description: Gradle build system, scope: global, capabilities: [build], lazy: true}
+  cmake: {description: Native build configuration, scope: global, capabilities: [native_build], lazy: true}
+  log_analysis: {description: Log and trace interpretation, scope: global, capabilities: [log_analysis], lazy: true}
+
+  # AI / ML engineering
+  qnn: {description: Qualcomm neural-network runtime expertise, scope: global, capabilities: [qnn_runtime, htp, tensor_contract], lazy: true}
+  quantization: {description: Quantization contracts and validation, scope: global, capabilities: [quantization, int8], lazy: true}
+  benchmark: {description: Benchmark design and measurement, scope: global, capabilities: [benchmarking, latency_analysis], lazy: true}
+  dataset_inspection: {description: Dataset profiling and quality checks, scope: global, capabilities: [dataset_analysis, data_quality, data_exploration], lazy: true}
+  evaluation_harness: {description: Accuracy and regression evaluation, scope: global, capabilities: [evaluation, accuracy_analysis, regression_analysis], lazy: true}
+
+  # Platform and operations
+  android: {description: Android platform conventions, scope: global, capabilities: [android], lazy: true}
+  adb: {description: Android device bridge, scope: global, capabilities: [adb], lazy: true}
+  docker: {description: Container images and compose, scope: global, capabilities: [containers], lazy: true}
+  linux: {description: Linux system administration, scope: global, capabilities: [linux, system_debugging], lazy: true}
+  ci_pipelines: {description: CI/CD pipeline configuration, scope: global, capabilities: [ci_cd, infrastructure], lazy: true}
+
+  # Design and UI/UX
+  design_system: {description: Component and token systems, scope: global, capabilities: [design_system, interaction_design], lazy: true}
+  wcag: {description: Accessibility standards, scope: global, capabilities: [accessibility], lazy: true}
+  user_flow: {description: User journey and flow modelling, scope: global, capabilities: [user_flow, information_architecture], lazy: true}
+  design_tokens: {description: Colour, spacing, and elevation tokens, scope: global, capabilities: [color, composition], lazy: true}
+  typography: {description: Type systems and hierarchy, scope: global, capabilities: [typography], lazy: true}
+
+  # Product, research, and writing
+  requirements_writing: {description: Requirements and acceptance criteria, scope: global, capabilities: [requirements, acceptance_criteria, user_story], lazy: true}
+  prioritization_frameworks: {description: Prioritization and roadmapping, scope: global, capabilities: [prioritization, roadmap], lazy: true}
+  source_discovery: {description: Finding and qualifying sources, scope: global, capabilities: [source_discovery, citation_review], lazy: true}
+  summarization: {description: Bounded summarization, scope: global, capabilities: [synthesis, summarization], lazy: true}
+  goal_analysis: {description: Turning a stated goal into concrete requirements, scope: global, capabilities: [goal_analysis, analysis], lazy: true}
+  style_guide: {description: Documentation voice and structure, scope: global, capabilities: [editing, content_review, documentation], lazy: true}
+
+  # Data
+  sql: {description: Relational querying, scope: global, capabilities: [query, statistics], lazy: true}
+  dataframes: {description: Tabular data manipulation, scope: global, capabilities: [data_exploration, statistics], lazy: true}
+  charting: {description: Chart and plot construction, scope: global, capabilities: [visualization], lazy: true}

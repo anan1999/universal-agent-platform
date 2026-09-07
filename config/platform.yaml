@@ -1,0 +1,11 @@
+platform:
+  dashboard_host: 127.0.0.1
+  dashboard_port: 8787
+  provider: mock
+  specialist_promotion_threshold: 3
+  max_agent_assignments_before_rotation: 3
+  command_execution: allowlist_only
+budget:
+  max_parallel_agents: 3
+  max_parallel_strong_agents: 1
+  max_escalations_per_task: 2

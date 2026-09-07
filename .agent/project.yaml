@@ -1,0 +1,8 @@
+project:
+  name: universal-agent-platform
+  type: python
+languages:
+- python
+orchestration:
+  owner: universal-agent-platform
+  threshold: non_trivial

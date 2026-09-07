@@ -1,0 +1,134 @@
+{
+  "schema_version": "1",
+  "name": "Universal Agent Platform",
+  "version": "2.0.0",
+  "type": "agent-orchestration-framework",
+  "summary": "Bring your goal. Bring your AI. The platform builds the team.",
+  "cli": "agentctl",
+
+  "documentation": {
+    "ai_bootstrap": "AI-BOOTSTRAP.md",
+    "readme": "README.md",
+    "manifest": "agent-platform.json",
+    "orchestration_ownership": "docs/orchestration-ownership.md",
+    "read_first_if_you_are_an_ai": "AI-BOOTSTRAP.md"
+  },
+
+  "install": {
+    "from_source": "pip install -e .",
+    "from_checkout": "git clone <repository-url> && cd universal-agent-platform && pip install -e .",
+    "requires_python": ">=3.11",
+    "verify": "agentctl --version"
+  },
+
+  "bootstrap": {
+    "setup": "agentctl setup --auto",
+    "project_init": "agentctl init --auto",
+    "project_attach": "agentctl attach",
+    "health": "agentctl doctor",
+    "detach": "agentctl attach --detach"
+  },
+
+  "detection": {
+    "installed": "agentctl --version",
+    "platform_home_env": "UNIVERSAL_AGENT_HOME",
+    "platform_home_default": "~/.universal-agent-platform",
+    "platform_config": "platform.yaml",
+    "project_initialized": ".agent/project.yaml",
+    "project_marker_file": "AGENTS.md",
+    "project_marker_start": "<!-- UAP:START -->",
+    "project_marker_end": "<!-- UAP:END -->"
+  },
+
+  "discovery": {
+    "providers": "agentctl providers --json",
+    "profiles": "agentctl profiles --json",
+    "models": "agentctl models --json",
+    "agents": "agentctl agents --json",
+    "skills": "agentctl skills --json",
+    "tools": "agentctl tools --json",
+    "project_status": "agentctl status --json"
+  },
+
+  "orchestration": {
+    "entrypoint": "agentctl orchestrate \"<goal>\" --json",
+    "plan_only": "agentctl run \"<goal>\" --dry-run --json",
+    "execute": "agentctl run \"<goal>\" --json",
+    "explain": "agentctl explain <run-id> --json",
+    "replay": "agentctl replay <run-id>",
+    "dashboard": "agentctl dashboard",
+    "recursion_guard_env": "UAP_CHILD_EXECUTION",
+    "recursion_guard_note": "A process started with UAP_CHILD_EXECUTION=1 is a bounded executor and must never invoke the orchestrator again."
+  },
+
+  "provider_architecture": {
+    "contract": "src/adaptive_agent/providers/base.py::AIProvider",
+    "registry": "src/adaptive_agent/providers/registry.py::ProviderRegistry",
+    "states": ["available", "installed", "configured", "connected", "unavailable", "unsupported"],
+    "capability_values": ["supported", "unsupported", "model_dependent", "unknown"],
+    "implemented": ["codex", "mock"],
+    "plugin_ready": ["openai", "anthropic", "gemini", "ollama", "openai_compatible"],
+    "selection": "auto",
+    "prefer_command": "agentctl provider prefer <provider-id>",
+    "note": "Plugin-ready providers report their real detection state but refuse to execute. They are not implemented in this build."
+  },
+
+  "model_registry": {
+    "catalog": "config/models.yaml",
+    "user_overrides": "$UNIVERSAL_AGENT_HOME/models.yaml",
+    "capability_levels": ["none", "low", "medium", "high", "very_high", "unknown"],
+    "note": "Routing selects (provider, model) from required capabilities. Model names never appear in core routing code."
+  },
+
+  "work_profiles": {
+    "builtin_directory": "config/profiles",
+    "user_directory": "$UNIVERSAL_AGENT_HOME/profiles",
+    "starter_packs": [
+      "general",
+      "software-engineering",
+      "ai-engineering",
+      "uiux",
+      "design",
+      "product",
+      "research",
+      "devops",
+      "data-analysis",
+      "technical-writing"
+    ],
+    "closed_taxonomy": false,
+    "unknown_domain_behavior": "Fall back to the general profile and compose a team from inferred capabilities. An unrecognized domain is never an error.",
+    "multi_profile": true
+  },
+
+  "project_initialization": {
+    "manifest": ".agent/project.yaml",
+    "command_allowlist": ".agent/commands.yaml",
+    "capabilities": ".agent/capabilities.yaml",
+    "auto_detect": true,
+    "detected_signals": [
+      "package.json", "pyproject.toml", "requirements.txt", "build.gradle",
+      "settings.gradle", "AndroidManifest.xml", "Dockerfile", "*.tf",
+      "*.ipynb", "*.fig", "docs/", "AGENTS.md", "README.md"
+    ],
+    "reversible": true,
+    "note": "init --dry-run reports the plan without writing. Nothing irreversible happens without an explicit command."
+  },
+
+  "safety": {
+    "dashboard_bind": "127.0.0.1",
+    "shell_execution_from_browser": false,
+    "project_commands": "allowlist only, from .agent/commands.yaml",
+    "destructive_git_recovery": "never automatic",
+    "secrets": "never stored in plaintext; credentials are never printed",
+    "approval_gates": ["destructive_actions", "deployment", "publishing", "external_side_effects"],
+    "plugin_trust_states": ["built_in", "trusted", "untrusted"],
+    "untrusted_plugin_execution": false
+  },
+
+  "testing": {
+    "command": "pytest",
+    "real_ai_quota_consumed": false,
+    "offline_provider": "mock",
+    "domain_matrix": "python scripts/domain_matrix.py"
+  }
+}

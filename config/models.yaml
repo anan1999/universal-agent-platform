@@ -1,0 +1,190 @@
+# Model catalog.
+#
+# Capability-first routing selects from this catalog. Model identifiers are
+# DATA: edit, extend, or replace this file (or add ~/.universal-agent-platform/models.yaml)
+# without touching any platform code. Nothing in src/ hardcodes a model name.
+#
+# Levels are descriptive: none | low | medium | high | very_high | unknown.
+# Cost: free | low | medium | high | very_high | unknown.
+# Latency: instant | fast | medium | slow | unknown.
+#
+# `tier` is a human-readable summary only. It is never a routing key.
+models:
+  codex:
+    gpt-5.6-luna:
+      display_name: Luna
+      model_id: gpt-5.6-luna
+      tier: fast
+      cost: low
+      latency: fast
+      availability: provider_dependent
+      capabilities:
+        reasoning: medium
+        coding: high
+        repository_search: high
+        file_discovery: high
+        log_analysis: high
+        testing: high
+        structured_output: high
+        tool_use: high
+        long_context: medium
+        writing: medium
+        analysis: medium
+        planning: medium
+        vision: unknown
+
+    gpt-5.6-sol:
+      display_name: Sol
+      model_id: gpt-5.6-sol
+      tier: balanced
+      cost: medium
+      latency: medium
+      availability: provider_dependent
+      capabilities:
+        reasoning: high
+        coding: very_high
+        debugging: high
+        code_review: high
+        architecture: high
+        repository_search: high
+        testing: high
+        structured_output: high
+        tool_use: high
+        long_context: high
+        writing: high
+        analysis: high
+        planning: high
+        research: medium
+        design: medium
+        vision: unknown
+
+    gpt-6-astra:
+      display_name: Astra
+      model_id: gpt-6-astra
+      tier: frontier
+      cost: high
+      latency: slow
+      availability: provider_dependent
+      capabilities:
+        reasoning: very_high
+        coding: very_high
+        debugging: very_high
+        code_review: very_high
+        architecture: very_high
+        repository_search: high
+        testing: high
+        structured_output: high
+        tool_use: high
+        long_context: very_high
+        writing: very_high
+        analysis: very_high
+        planning: very_high
+        research: high
+        design: high
+        evaluation: high
+        vision: unknown
+
+  mock:
+    mock-small:
+      display_name: Mock Small
+      tier: fast
+      cost: free
+      latency: instant
+      availability: always
+      capabilities:
+        reasoning: low
+        coding: low
+        repository_search: medium
+        file_discovery: medium
+        log_analysis: medium
+        testing: medium
+        writing: low
+        analysis: low
+        planning: low
+        design: low
+        research: low
+        structured_output: high
+        tool_use: medium
+        long_context: low
+
+    mock-standard:
+      display_name: Mock Standard
+      tier: balanced
+      cost: free
+      latency: instant
+      availability: always
+      capabilities:
+        reasoning: medium
+        coding: medium
+        debugging: medium
+        code_review: medium
+        repository_search: medium
+        testing: medium
+        writing: medium
+        analysis: medium
+        planning: medium
+        design: medium
+        research: medium
+        requirements: medium
+        evaluation: medium
+        structured_output: high
+        tool_use: medium
+        long_context: medium
+
+    mock-strong:
+      display_name: Mock Strong
+      tier: strong
+      cost: free
+      latency: instant
+      availability: always
+      capabilities:
+        reasoning: high
+        coding: high
+        debugging: high
+        code_review: high
+        architecture: high
+        repository_search: high
+        testing: high
+        writing: high
+        analysis: high
+        planning: high
+        design: high
+        research: high
+        requirements: high
+        evaluation: high
+        benchmarking: high
+        quantization: high
+        inference: high
+        accessibility: high
+        structured_output: high
+        tool_use: high
+        long_context: high
+
+    mock-strongest:
+      display_name: Mock Strongest
+      tier: frontier
+      cost: free
+      latency: instant
+      availability: always
+      capabilities:
+        reasoning: very_high
+        coding: very_high
+        debugging: very_high
+        code_review: very_high
+        architecture: very_high
+        repository_search: very_high
+        testing: very_high
+        writing: very_high
+        analysis: very_high
+        planning: very_high
+        design: very_high
+        research: very_high
+        requirements: very_high
+        evaluation: very_high
+        benchmarking: very_high
+        quantization: very_high
+        inference: very_high
+        accessibility: very_high
+        structured_output: very_high
+        tool_use: very_high
+        long_context: very_high

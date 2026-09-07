@@ -1,0 +1,37 @@
+profile:
+  id: technical-writing
+  name: Technical Writing
+  description: Documentation work. Artifacts are documents; there is no build to run.
+  capabilities:
+    [documentation, writing, information_architecture, editing, api_documentation,
+     tutorial, content_review]
+  roles:
+    - id: doc_planner
+      name: Documentation Planner
+      responsibility: Decide what needs documenting, for whom, and in what order.
+      capabilities: [information_architecture, documentation, planning]
+      stage: 20
+      read_only: true
+    - id: technical_writer
+      name: Technical Writer
+      responsibility: Write the documentation.
+      capabilities: [writing, documentation, api_documentation, tutorial]
+      stage: 50
+    - id: editor
+      name: Editor
+      responsibility: Check accuracy, completeness, and consistency of voice.
+      capabilities: [editing, content_review, evaluation]
+      stage: 90
+      optional: true
+      evaluative: true
+      read_only: true
+  skills: [style_guide, summarization]
+  tools: []
+  evaluation: [content_review, requirement_coverage]
+  artifact_types: [markdown, report, plan]
+  approval_gates: [publishing]
+  detection:
+    files: [README.md, docs, mkdocs.yml, docusaurus.config.js, CONTRIBUTING.md]
+    keywords:
+      [document, documentation, readme, guide, tutorial, changelog, explain,
+       write up, api reference, onboarding docs, release notes]

@@ -1,0 +1,4 @@
+commands:
+  test:
+    command: pytest
+    timeout: 1200
