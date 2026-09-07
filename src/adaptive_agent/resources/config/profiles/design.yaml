@@ -1,0 +1,36 @@
+profile:
+  id: design
+  name: Design
+  description: >
+    Visual and brand work. Artifacts are specifications, tokens, and imagery —
+    code output is not assumed.
+  capabilities: [visual_direction, typography, composition, branding, visual_review, color]
+  roles:
+    - id: art_director
+      name: Art Director
+      responsibility: Set the visual direction and the constraints it implies.
+      capabilities: [visual_direction, branding, composition]
+      stage: 20
+    - id: visual_designer
+      name: Visual Designer
+      responsibility: Produce the concrete visual specification or assets.
+      capabilities: [typography, composition, color, visual_direction]
+      stage: 50
+    - id: design_critic
+      name: Design Critic
+      responsibility: Review the output against the brief and the brand.
+      capabilities: [visual_review, evaluation]
+      stage: 90
+      optional: true
+      evaluative: true
+      read_only: true
+  skills: [design_tokens, typography]
+  tools: []
+  evaluation: [brief_compliance, visual_review]
+  artifact_types: [design_spec, image, markdown, plan]
+  approval_gates: [publishing]
+  detection:
+    files: [brand.json, design-tokens.json, "*.sketch", "*.fig"]
+    keywords:
+      [visual, brand, logo, typography, palette, color, mood board, illustration,
+       poster, identity, style guide, aesthetic]

@@ -1,0 +1,41 @@
+profile:
+  id: devops
+  name: DevOps
+  description: >
+    Infrastructure, pipelines, and operations. Almost everything here is a
+    real-world side effect, so approval gates matter more than elsewhere.
+  capabilities:
+    [infrastructure, ci_cd, containers, deployment, observability, incident_analysis,
+     configuration, provisioning, security_hardening]
+  roles:
+    - id: infrastructure_engineer
+      name: Infrastructure Engineer
+      responsibility: Define or change the infrastructure and pipeline configuration.
+      capabilities: [infrastructure, ci_cd, containers, configuration, provisioning]
+      stage: 40
+    - id: reliability_analyst
+      name: Reliability Analyst
+      responsibility: Analyse failures, telemetry, and operational risk.
+      capabilities: [observability, incident_analysis, log_analysis]
+      stage: 20
+      read_only: true
+    - id: change_reviewer
+      name: Change Reviewer
+      responsibility: Review the change for blast radius and rollback safety.
+      capabilities: [evaluation, security_hardening, deployment]
+      stage: 90
+      optional: true
+      evaluative: true
+      read_only: true
+  skills: [docker, linux, ci_pipelines]
+  tools: [project_build, git_status]
+  evaluation: [pipeline_check, rollback_review]
+  artifact_types: [configuration, report, source_code, test_result]
+  approval_gates: [deployment, destructive_actions, production_change, external_side_effects]
+  detection:
+    files:
+      [Dockerfile, docker-compose.yml, .github/workflows, .gitlab-ci.yml, Jenkinsfile,
+       main.tf, terraform.tf, kubernetes, helm, ansible.cfg, .circleci]
+    keywords:
+      [deploy, pipeline, ci, cd, docker, kubernetes, terraform, infrastructure,
+       rollout, rollback, monitoring, alerting, incident, provision, cluster]

@@ -21,6 +21,7 @@ from adaptive_agent.core.capabilities import Support
 from adaptive_agent.core.models import Receipt, Task
 from adaptive_agent.providers.base import (
     AIProvider,
+    ExecutionMode,
     ProgressCallback,
     ProviderCapabilities,
     ProviderKind,
@@ -114,6 +115,7 @@ class OllamaProvider(PlannedProvider):
     id = "ollama"
     display_name = "Ollama"
     kind = ProviderKind.LOCAL
+    execution_mode = ExecutionMode.LOCAL_MODEL
     executables = ("ollama",)
     credential_variables = ("OLLAMA_HOST",)
     declared = {"text": Support.SUPPORTED, "vision": Support.MODEL_DEPENDENT,
@@ -124,19 +126,6 @@ class OllamaProvider(PlannedProvider):
                 "code_execution": Support.UNSUPPORTED}
 
 
-class OpenAICompatibleProvider(PlannedProvider):
-    id = "openai_compatible"
-    display_name = "OpenAI-compatible endpoint"
-    kind = ProviderKind.API
-    credential_variables = ("OPENAI_BASE_URL", "OPENAI_COMPATIBLE_BASE_URL")
-    declared = {"text": Support.SUPPORTED, "vision": Support.UNKNOWN,
-                "tool_use": Support.UNKNOWN, "structured_output": Support.UNKNOWN,
-                "streaming": Support.UNKNOWN, "usage_reporting": Support.UNKNOWN,
-                "long_context": Support.UNKNOWN, "image_generation": Support.UNKNOWN,
-                "filesystem": Support.UNSUPPORTED, "shell": Support.UNSUPPORTED,
-                "code_execution": Support.UNSUPPORTED}
-
-
 PLANNED_PROVIDERS: tuple[type[PlannedProvider], ...] = (
-    OpenAIProvider, AnthropicProvider, GeminiProvider, OllamaProvider, OpenAICompatibleProvider,
+    OpenAIProvider, AnthropicProvider, GeminiProvider, OllamaProvider,
 )

@@ -212,10 +212,10 @@ def profile_registry(refresh: bool = False) -> WorkProfileRegistry:
     """Built-in profiles plus any installed in the user's platform home."""
     global _DEFAULT
     if _DEFAULT is None or refresh:
-        from adaptive_agent.runtime import PACKAGE_ROOT, platform_home
+        from adaptive_agent.runtime import RESOURCE_ROOT, platform_home
 
         _DEFAULT = WorkProfileRegistry.from_directories(
-            PACKAGE_ROOT / "config" / "profiles",
+            RESOURCE_ROOT / "config" / "profiles",
             platform_home() / "profiles",
         )
     return _DEFAULT

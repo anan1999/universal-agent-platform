@@ -21,7 +21,7 @@ from adaptive_agent.observability.event_bus import EventBus
 from adaptive_agent.profiles.registry import WorkProfileRegistry, profile_registry
 from adaptive_agent.providers.base import AIProvider
 from adaptive_agent.providers.registry import ProviderRegistry, providers as provider_registry
-from adaptive_agent.runtime import PACKAGE_ROOT, platform_home
+from adaptive_agent.runtime import RESOURCE_ROOT, platform_home
 from adaptive_agent.skills.registry import SkillRegistry
 from adaptive_agent.storage.database import Database
 from adaptive_agent.tasks.graph import TaskGraph
@@ -59,7 +59,7 @@ class Orchestrator:
         # V2 universal path.
         self.profiles = profiles or profile_registry()
         self.provider_registry = providers or provider_registry()
-        self.models = models or ModelRegistry.from_yaml(PACKAGE_ROOT / "config" / "models.yaml",
+        self.models = models or ModelRegistry.from_yaml(RESOURCE_ROOT / "config" / "models.yaml",
                                                         platform_home() / "models.yaml")
         self.analyzer = GoalAnalyzer(profiles=self.profiles)
         self.composer = TeamComposer(self.profiles, EvaluationRegistry())
@@ -76,8 +76,8 @@ class Orchestrator:
                 approvals: Sequence[str] = ()) -> Composition:
         analysis = self.analyzer.analyze(goal, self.active_profiles, project_signals)
         resolver = CapabilityResolver(
-            AgentRegistry.from_yaml(PACKAGE_ROOT / "config" / "default_agents.yaml"),
-            SkillRegistry.from_yaml(PACKAGE_ROOT / "config" / "default_skills.yaml"),
+            AgentRegistry.from_yaml(RESOURCE_ROOT / "config" / "default_agents.yaml"),
+            SkillRegistry.from_yaml(RESOURCE_ROOT / "config" / "default_skills.yaml"),
             self.tools, TeamManager(AgentRegistry(), self.events))
         team = self.composer.compose(analysis, resolver, run_id, constraints)
         graph = self.universal_planner.plan(run_id, goal, analysis, team)
@@ -105,6 +105,16 @@ class Orchestrator:
                 task.metadata["model"] = None
                 continue
             requirements = Requirement.many(task.required_capabilities or analysis.capabilities)
+            local_mutation = {"coding", "implementation", "debugging", "refactoring",
+                              "build", "configuration", "testing", "code_review"}
+            if (not task.metadata.get("read_only") and
+                    local_mutation.intersection(task.required_capabilities)):
+                requirements = Requirement.many([
+                    *requirements,
+                    Requirement("filesystem", reason="task modifies a local project"),
+                    Requirement("write_access", reason="task writes project artifacts"),
+                    Requirement("repository_access", reason="task requires repository context"),
+                ])
             decision = self.capability_router.route(
                 requirements, analysis.risk, analysis.complexity,
                 task.metadata.get("task_type", "unknown"), task.owner, available)
@@ -118,12 +128,15 @@ class Orchestrator:
         return rationale
 
     def _available_providers(self) -> list[str]:
-        implemented = self.provider_registry.implemented_ids()
-        # The scheduler executes with the injected provider unless a task names
-        # another one, so that provider is always considered available.
-        if self.provider_name and self.provider_name not in implemented:
-            implemented.append(self.provider_name)
-        return [self.provider_name] + [item for item in implemented if item != self.provider_name]
+        ready = self.provider_registry.ready_ids()
+        # The explicitly injected provider is always available to the current
+        # run. Mock is otherwise excluded whenever a real backend is ready.
+        if self.provider_name not in ready:
+            ready.insert(0, self.provider_name)
+        real = [item for item in ready if item != "mock"]
+        if self.provider_name == "mock":
+            return ["mock"]
+        return [self.provider_name] + [item for item in real if item != self.provider_name]
 
     def _provider_profile(self, provider: str, role: str) -> str | None:
         if provider not in self.provider_registry:

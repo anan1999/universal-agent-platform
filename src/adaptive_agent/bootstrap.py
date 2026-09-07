@@ -18,7 +18,7 @@ import yaml
 from adaptive_agent.models.registry import ModelRegistry
 from adaptive_agent.profiles.registry import profile_registry
 from adaptive_agent.providers.registry import providers as provider_registry
-from adaptive_agent.runtime import PACKAGE_ROOT, database, platform_home
+from adaptive_agent.runtime import RESOURCE_ROOT, database, platform_home
 
 
 PLATFORM_CONFIG = "platform.yaml"
@@ -125,7 +125,7 @@ def setup(auto: bool = False, non_interactive: bool = False) -> SetupResult:
     registry = profile_registry(refresh=True)
     result.checks.append(("Work profiles", "PASS", f"{len(registry.all())} installed"))
 
-    models = ModelRegistry.from_yaml(PACKAGE_ROOT / "config" / "models.yaml", home / "models.yaml")
+    models = ModelRegistry.from_yaml(RESOURCE_ROOT / "config" / "models.yaml", home / "models.yaml")
     result.checks.append(("Model registry", "PASS", f"{len(models.all())} models"))
 
     result.providers = provider_registry().discover()

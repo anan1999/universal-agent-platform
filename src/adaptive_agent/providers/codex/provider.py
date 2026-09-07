@@ -17,6 +17,7 @@ from adaptive_agent.core.execution_packet import ExecutionPacket, ExecutionPacke
 from adaptive_agent.core.models import Receipt, Task
 from adaptive_agent.providers.base import (
     AIProvider,
+    ExecutionMode,
     ProgressCallback,
     ProviderCapabilities,
     ProviderKind,
@@ -102,6 +103,7 @@ class CodexProvider(AIProvider):
     display_name = "Codex"
     kind = ProviderKind.CLI
     implemented = True
+    execution_mode = ExecutionMode.AGENTIC_LOCAL
 
     def __init__(self, executable: str | None = None, timeout: float = 900.0,
                  command_prefix: Sequence[str] | None = None, capabilities: CodexCapabilities | None = None):
@@ -125,7 +127,7 @@ class CodexProvider(AIProvider):
         if not probed.supports_noninteractive:
             return ProviderProbe(ProviderState.INSTALLED, "codex found but non-interactive mode is unavailable",
                                  version=probed.version, executable=probed.executable, error=probed.probe_error)
-        return ProviderProbe(ProviderState.CONFIGURED, "codex exec is available",
+        return ProviderProbe(ProviderState.CONNECTED, "codex exec is available",
                              version=probed.version, executable=probed.executable,
                              error=probed.probe_error,
                              configuration={"codex_home": (Path.home() / ".codex").is_dir()})
@@ -138,6 +140,8 @@ class CodexProvider(AIProvider):
             "vision": Support.MODEL_DEPENDENT,
             "tool_use": flag(probed.available),
             "filesystem": flag(probed.supports_working_directory),
+            "write_access": flag(probed.supports_working_directory),
+            "repository_access": flag(probed.supports_working_directory),
             "shell": flag(probed.available),
             "structured_output": flag(probed.supports_structured_output),
             "streaming": flag(probed.supports_jsonl),
@@ -152,7 +156,8 @@ class CodexProvider(AIProvider):
 
     def describe(self) -> dict[str, Any]:
         return {"id": self.id, "name": self.display_name, "kind": self.kind.value,
-                "implemented": True, "capabilities": self.capabilities().to_dict(),
+                "implemented": True, "execution_mode": self.execution_mode.value,
+                "capabilities": self.capabilities().to_dict(),
                 "codex": self.codex_capabilities.to_dict(), **self.probe().to_dict()}
 
     def _accumulate(self, usage: dict[str, int | bool | str]) -> None:
@@ -218,7 +223,8 @@ class CodexProvider(AIProvider):
         return Receipt(task_id=task.id, agent=task.owner, status=result["status"], summary=result["summary"],
                        files=result.get("files", []), findings=result.get("findings", []), token_usage=token_usage,
                        confidence=result.get("confidence", "unknown"), uncertainty_reason=result.get("uncertainty_reason", ""),
-                       needs_escalation=bool(result.get("needs_escalation", False)), model=str(model) if model else None,
+                       needs_escalation=bool(result.get("needs_escalation", False)), provider=self.id,
+                       model=str(model) if model else None,
                        duration_seconds=time.monotonic() - started)
 
     async def _communicate(self, args: list[str], prompt: str, working_directory: Path) -> tuple[int, bytes, bytes]:
@@ -303,7 +309,7 @@ class CodexProvider(AIProvider):
                        token_usage={"input": 0, "output": 0, "cached": 0, "source": "unavailable", "estimated": False},
                        confidence="unknown", uncertainty_reason=message,
                        needs_escalation=not environment and code != CodexErrorCode.TIMEOUT,
-                       error_code=code.value, model=str(model) if model else None,
+                       error_code=code.value, provider=CodexProvider.id, model=str(model) if model else None,
                        duration_seconds=time.monotonic() - started)
 
     def describe(self) -> str:

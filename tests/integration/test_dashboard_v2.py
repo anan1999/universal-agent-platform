@@ -40,7 +40,7 @@ def test_providers_report_state_without_exposing_secrets(client):
     identifiers = {item["id"] for item in payload}
     assert {"codex", "mock"} <= identifiers
     for item in payload:
-        assert item["status"] in {"available", "installed", "configured", "connected",
+        assert item["status"] in {"available", "installed", "unconfigured", "configured", "connected",
                                   "unavailable", "unsupported"}
         assert set(item["capabilities"].values()) <= {"supported", "unsupported",
                                                       "model_dependent", "unknown"}

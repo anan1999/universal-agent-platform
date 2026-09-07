@@ -29,6 +29,7 @@ class ProviderState(StrEnum):
 
     AVAILABLE = "available"      # adapter exists in this build
     INSTALLED = "installed"      # runtime or binary detected on this machine
+    UNCONFIGURED = "unconfigured"  # adapter exists but required settings are absent
     CONFIGURED = "configured"    # credentials or settings present
     CONNECTED = "connected"      # probe reached the backend successfully
     UNAVAILABLE = "unavailable"  # cannot be used right now
@@ -36,7 +37,8 @@ class ProviderState(StrEnum):
 
     @property
     def ready(self) -> bool:
-        return self in {ProviderState.CONFIGURED, ProviderState.CONNECTED}
+        # Configuration is not proof that a remote or local backend answers.
+        return self is ProviderState.CONNECTED
 
 
 class ProviderKind(StrEnum):
@@ -47,10 +49,18 @@ class ProviderKind(StrEnum):
     HYBRID = "hybrid"
 
 
+class ExecutionMode(StrEnum):
+    AGENTIC_LOCAL = "agentic_local"
+    API_REASONING = "api_reasoning"
+    LOCAL_MODEL = "local_model"
+    MOCK = "mock"
+
+
 #: Capability vocabulary every provider is described against. Providers may
 #: report capabilities outside this list; these are simply the well-known ones.
 PROVIDER_CAPABILITIES: tuple[str, ...] = (
-    "text", "vision", "tool_use", "filesystem", "shell", "structured_output",
+    "text", "vision", "tool_use", "filesystem", "write_access", "repository_access",
+    "shell", "structured_output",
     "streaming", "usage_reporting", "long_context", "image_generation", "code_execution",
 )
 
@@ -136,6 +146,7 @@ class AIProvider(ABC):
     id: ClassVar[str] = "unknown"
     display_name: ClassVar[str] = "Unknown Provider"
     kind: ClassVar[ProviderKind] = ProviderKind.API
+    execution_mode: ClassVar[ExecutionMode] = ExecutionMode.API_REASONING
     #: False for adapters that only exist as a plugin surface.
     implemented: ClassVar[bool] = True
 
@@ -176,5 +187,6 @@ class AIProvider(ABC):
     def describe(self) -> dict[str, Any]:
         probe = self.probe()
         return {"id": self.id, "name": self.display_name, "kind": self.kind.value,
+                "execution_mode": self.execution_mode.value,
                 "implemented": self.implemented, "capabilities": self.capabilities().to_dict(),
                 **probe.to_dict()}

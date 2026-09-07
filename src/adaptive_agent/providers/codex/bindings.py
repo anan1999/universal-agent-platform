@@ -13,7 +13,7 @@ from typing import Any
 
 import yaml
 
-from adaptive_agent.runtime import PACKAGE_ROOT, platform_home
+from adaptive_agent.runtime import RESOURCE_ROOT, platform_home
 
 
 def _read(path: Path) -> dict[str, Any]:
@@ -25,7 +25,7 @@ def _read(path: Path) -> dict[str, Any]:
 @lru_cache(maxsize=8)
 def _load(provider: str) -> dict[str, Any]:
     merged: dict[str, Any] = {}
-    for path in (PACKAGE_ROOT / "config" / "provider_bindings.yaml",
+    for path in (RESOURCE_ROOT / "config" / "provider_bindings.yaml",
                  platform_home() / "provider_bindings.yaml"):
         data = _read(path).get("providers", {}).get(provider, {})
         for section, values in data.items():

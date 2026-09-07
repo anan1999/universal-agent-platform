@@ -1,0 +1,56 @@
+profile:
+  id: software-engineering
+  name: Software Engineering
+  description: >
+    Code-producing work. Explorer, Developer, Tester, and Reviewer are profile
+    roles. These roles are a suggestion from this profile,
+    not platform architecture.
+  capabilities:
+    [repository_search, file_discovery, dependency_discovery, coding, implementation,
+     refactor, bug_fix, debugging, testing, test, build, code_review, regression_review,
+     architecture_review, log_analysis, version_control]
+  roles:
+    - id: explorer
+      name: Explorer
+      responsibility: Locate the relevant code and report where the work must happen.
+      capabilities: [repository_search, file_discovery, dependency_discovery, log_analysis]
+      skills: [repository_search, git]
+      stage: 10
+      read_only: true
+    - id: developer
+      name: Developer
+      responsibility: Implement the change.
+      capabilities: [coding, implementation, refactor, bug_fix, debugging]
+      skills: [git]
+      stage: 40
+    - id: tester
+      name: Tester
+      responsibility: Validate the change against the project's own test and build commands.
+      capabilities: [testing, test, build, smoke_test]
+      stage: 70
+      optional: true
+      evaluative: true
+    - id: reviewer
+      name: Reviewer
+      responsibility: Independent regression and correctness review.
+      capabilities: [code_review, regression_review, architecture_review]
+      skills: [git]
+      stage: 90
+      optional: true
+      evaluative: true
+      read_only: true
+  skills: [git, repository_search, log_analysis]
+  tools: [git_status, git_diff, project_test, project_build]
+  evaluation: [unit_tests, build_check, code_review]
+  artifact_types: [source_code, test_result, report, workspace]
+  approval_gates: [destructive_actions, deployment, publishing]
+  detection:
+    files:
+      [pyproject.toml, requirements.txt, setup.py, package.json, tsconfig.json,
+       go.mod, Cargo.toml, pom.xml, build.gradle, build.gradle.kts, settings.gradle,
+       settings.gradle.kts, CMakeLists.txt, Makefile, AndroidManifest.xml, .git]
+    keywords:
+      [implement, refactor, bug, fix, code, compile, function, class, api, endpoint,
+       library, module, test, unit test, regression, merge, pull request]
+  # Optional and explicitly opt-in. Empty by default so no model is bound to a role.
+  default_models: {}

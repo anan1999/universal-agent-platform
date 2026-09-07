@@ -72,8 +72,10 @@ class ProviderRegistry:
         """Probe every registered adapter. Never returns credential values."""
         results = []
         for descriptor in self._descriptors.values():
+            execution_mode = "unknown"
             try:
                 provider = descriptor.factory(**kwargs) if descriptor.implemented else descriptor.factory()
+                execution_mode = provider.execution_mode.value
                 probe = provider.probe()
                 capabilities = provider.capabilities().to_dict()
                 error = probe.error
@@ -84,6 +86,7 @@ class ProviderRegistry:
                 state = ProviderState.UNAVAILABLE
             results.append({
                 "id": descriptor.id, "name": descriptor.display_name, "type": descriptor.kind.value,
+                "execution_mode": execution_mode,
                 "status": state.value, "ready": state.ready, "implemented": descriptor.implemented,
                 "trust": descriptor.trust, "detail": detail, "notes": descriptor.notes,
                 "error": error, "capabilities": capabilities,
@@ -107,6 +110,14 @@ def _mock_factory(**kwargs: Any) -> AIProvider:
     return MockProvider(delay=kwargs.get("delay", 0.02))
 
 
+def _openai_compatible_factory(**kwargs: Any) -> AIProvider:
+    from adaptive_agent.providers.openai_compatible import OpenAICompatibleProvider
+
+    accepted = {name: kwargs[name] for name in ("base_url", "api_key", "model", "timeout", "transport")
+                if name in kwargs}
+    return OpenAICompatibleProvider(**accepted)
+
+
 def _codex_profile(role: str) -> str | None:
     from adaptive_agent.providers.codex import codex_profile_for
 
@@ -121,6 +132,9 @@ def default_registry() -> ProviderRegistry:
                            notes="First validated real adapter.", profile_for_role=_codex_profile),
         ProviderDescriptor("mock", "Mock", ProviderKind.TEST, _mock_factory,
                            notes="Deterministic; consumes zero AI quota."),
+        ProviderDescriptor("openai_compatible", "OpenAI-compatible endpoint", ProviderKind.API,
+                           _openai_compatible_factory,
+                           notes="Environment-configured API reasoning adapter; no filesystem access."),
     ])
     for planned in PLANNED_PROVIDERS:
         registry.register(ProviderDescriptor(

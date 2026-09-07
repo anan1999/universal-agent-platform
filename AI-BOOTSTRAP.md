@@ -18,9 +18,9 @@ sufficient team** of reasoning roles, routes each role to an available **provide
 builds a dependency-ordered **task DAG**, executes it, and records receipts, artifacts and
 performance history that a local dashboard renders.
 
-It is not tied to any AI vendor and not tied to software engineering. Codex and a
-deterministic mock are the two providers implemented today; others are plugin-ready
-interfaces that honestly report themselves as unimplemented. Work profiles cover ten starter
+It is not tied to any AI vendor and not tied to software engineering. Codex, a deterministic
+mock, and an environment-configured OpenAI-compatible endpoint are implemented today; other
+interfaces honestly report themselves as unimplemented. Work profiles cover ten starter
 domains, and a goal that matches none of them is composed from inferred capabilities rather
 than rejected.
 
@@ -55,7 +55,7 @@ agentctl --version
 If that prints a version, skip to step 4. If the command is not found:
 
 ```bash
-pip install -e .          # from a checkout of this repository
+pip install git+https://github.com/anan1999/universal-agent-platform.git
 ```
 
 Python 3.11 or newer is required. Verify with `agentctl --version`.
@@ -150,9 +150,9 @@ agentctl doctor
 - `UNAVAILABLE` — implemented, but the runtime is missing
 - `UNSUPPORTED` — no adapter exists in this build
 
-Read these literally. **A plugin-ready provider is not a working provider.** OpenAI, Anthropic,
-Gemini, Ollama and OpenAI-compatible endpoints have interfaces but no implementation in this
-build; they will refuse to execute and say so. Never tell the user a provider works because it
+Read these literally. **A detected provider is not necessarily a working provider.** OpenAI,
+Anthropic, Gemini, and Ollama currently have no direct execution adapter; they refuse execution
+and say so. OpenAI-compatible is ready only after its bounded endpoint probe connects. Never tell the user a provider works because it
 appears in the list, and never present detected credentials as a working integration.
 
 Credentials are never printed. Do not try to read them and do not echo them anywhere.
@@ -186,7 +186,7 @@ justification, and the resulting DAG. After a run:
 ```bash
 agentctl explain <run-id> --json     # why this team, why this provider
 agentctl replay <run-id>             # event timeline
-agentctl dashboard                   # http://127.0.0.1:8765
+agentctl dashboard                   # http://127.0.0.1:8787
 ```
 
 Report the outcome to the user in terms of what was produced and what was checked. If the run
@@ -214,7 +214,7 @@ than doing the user's actual work.
 ## 11. Upgrade
 
 ```bash
-git pull && pip install -e .
+pip install --upgrade git+https://github.com/anan1999/universal-agent-platform.git
 agentctl doctor
 agentctl init --upgrade        # per project, refreshes markers only
 ```
@@ -240,9 +240,9 @@ is left in place; deleting it is the user's call, since it holds their run histo
 
 | Symptom | Cause and fix |
 |---|---|
-| `agentctl: command not found` | Not installed, or the install went to a different interpreter. Re-run `pip install -e .` and check `agentctl --version`. |
+| `agentctl: command not found` | Not installed, or the install went to a different interpreter. Install from the documented GitHub URL and check `agentctl --version`. |
 | `Recursion blocked` | `UAP_CHILD_EXECUTION=1` is set. You are inside a task. Do the bounded work; do not orchestrate. |
-| Every provider shows `UNSUPPORTED` | Expected. Only Codex and Mock are implemented. Use `--provider mock` to validate behavior offline. |
+| No real provider is ready | Configure Codex or an OpenAI-compatible endpoint; use `--provider mock` only to validate behavior offline. |
 | Codex shows `UNAVAILABLE` | The `codex` executable is not on `PATH`. Install it or use the mock provider. |
 | A run stalls at an approval task | A human gate is waiting. This is intended. Tell the user what needs approving. |
 | A command "is not allowlisted" | Add it to `.agent/commands.yaml` — but ask the user first. |
@@ -256,7 +256,7 @@ is left in place; deleting it is the user's call, since it holds their run histo
 If the user says *"use this repository for agent orchestration and then build X"*, do this:
 
 1. Read this file and `agent-platform.json`.
-2. `agentctl --version` — install with `pip install -e .` only if missing.
+2. `agentctl --version` — install from the documented GitHub URL only if missing.
 3. `agentctl setup --auto` — skip if already configured.
 4. `cd` to the user's project. `agentctl init --auto --dry-run`, show them the result, then
    `agentctl init --auto`.

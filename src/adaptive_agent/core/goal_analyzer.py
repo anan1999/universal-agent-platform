@@ -196,10 +196,10 @@ def _contains(text: str, phrase: str) -> bool:
 
 
 def default_lexicon() -> dict[str, Any]:
-    from adaptive_agent.runtime import PACKAGE_ROOT, platform_home
+    from adaptive_agent.runtime import RESOURCE_ROOT, platform_home
 
     merged: dict[str, Any] = {}
-    for path in (PACKAGE_ROOT / "config" / "capability_lexicon.yaml",
+    for path in (RESOURCE_ROOT / "config" / "capability_lexicon.yaml",
                  platform_home() / "capability_lexicon.yaml"):
         if not path.exists():
             continue

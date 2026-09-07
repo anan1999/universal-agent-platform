@@ -6,6 +6,7 @@ from adaptive_agent.core.capabilities import Support
 from adaptive_agent.core.models import Receipt, Task
 from adaptive_agent.providers.base import (
     AIProvider,
+    ExecutionMode,
     ProgressCallback,
     ProviderCapabilities,
     ProviderKind,
@@ -22,6 +23,7 @@ class MockProvider(AIProvider):
     display_name = "Mock"
     kind = ProviderKind.TEST
     implemented = True
+    execution_mode = ExecutionMode.MOCK
 
     def __init__(self, delay: float = 0.02, fail_titles: set[str] | None = None):
         self.delay = delay
@@ -35,6 +37,7 @@ class MockProvider(AIProvider):
         return ProviderCapabilities({
             "text": Support.SUPPORTED, "vision": Support.UNSUPPORTED,
             "tool_use": Support.SUPPORTED, "filesystem": Support.UNSUPPORTED,
+            "write_access": Support.UNSUPPORTED, "repository_access": Support.UNSUPPORTED,
             "shell": Support.UNSUPPORTED, "structured_output": Support.SUPPORTED,
             "streaming": Support.UNSUPPORTED, "usage_reporting": Support.UNSUPPORTED,
             "long_context": Support.UNKNOWN, "image_generation": Support.UNSUPPORTED,
@@ -65,5 +68,6 @@ class MockProvider(AIProvider):
             confidence="low" if failed else "high",
             needs_escalation=failed,
             error_code="TASK_FAILURE" if failed else None,
+            provider=self.id,
             model=task.metadata.get("model", "mock-standard"),
         )

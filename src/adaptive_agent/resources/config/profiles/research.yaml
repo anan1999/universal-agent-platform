@@ -1,0 +1,36 @@
+profile:
+  id: research
+  name: Research
+  description: Evidence gathering, synthesis, and comparison. Artifacts are reports and evidence tables.
+  capabilities:
+    [source_discovery, evidence_analysis, synthesis, comparison, citation_review, research]
+  roles:
+    - id: source_scout
+      name: Source Scout
+      responsibility: Find and qualify the sources the question actually depends on.
+      capabilities: [source_discovery, research]
+      stage: 10
+      read_only: true
+    - id: analyst
+      name: Evidence Analyst
+      responsibility: Extract, compare, and weigh the evidence.
+      capabilities: [evidence_analysis, comparison, synthesis]
+      stage: 40
+    - id: citation_reviewer
+      name: Citation Reviewer
+      responsibility: Verify every claim is supported by a real, correctly attributed source.
+      capabilities: [citation_review, evaluation]
+      stage: 90
+      optional: true
+      evaluative: true
+      read_only: true
+  skills: [source_discovery, summarization]
+  tools: []
+  evaluation: [citation_validation, evidence_coverage]
+  artifact_types: [report, research_notes, markdown, spreadsheet]
+  approval_gates: [publishing]
+  detection:
+    files: [references.bib, docs/research]
+    keywords:
+      [research, investigate, compare, survey, literature, evidence, cite,
+       sources, state of the art, prior art, findings]

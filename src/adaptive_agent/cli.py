@@ -21,7 +21,7 @@ from adaptive_agent.bootstrap import (
     setup as run_setup,
 )
 from adaptive_agent.core.artifacts import Artifact, ArtifactStore, ArtifactType
-from adaptive_agent.core.models import new_id
+from adaptive_agent.core.models import Task, new_id
 from adaptive_agent.core.orchestrator import Orchestrator
 from adaptive_agent.git.worktree import WorktreeManager
 from adaptive_agent.project.adapter import (
@@ -45,7 +45,7 @@ from adaptive_agent.registry_view import (
     skills as registry_skills,
     tools as registry_tools,
 )
-from adaptive_agent.runtime import PACKAGE_ROOT, database, event_bus, platform_home
+from adaptive_agent.runtime import RESOURCE_ROOT, database, event_bus, platform_home
 
 
 def parser() -> argparse.ArgumentParser:
@@ -99,23 +99,28 @@ def parser() -> argparse.ArgumentParser:
     dashboard.add_argument("--host", default="127.0.0.1")
     dashboard.add_argument("--port", type=int, default=8787)
 
-    commands.add_parser("status")
+    status_command = commands.add_parser("status")
+    status_command.add_argument("--json", action="store_true")
     agents_command = commands.add_parser("agents")
     agents_command.add_argument("--verbose", action="store_true")
+    agents_command.add_argument("--json", action="store_true")
     agent_command = commands.add_parser("agent")
     agent_subcommands = agent_command.add_subparsers(dest="agent_command", required=True)
     agent_show = agent_subcommands.add_parser("show")
     agent_show.add_argument("name")
 
-    commands.add_parser("skills")
+    skills_command = commands.add_parser("skills")
+    skills_command.add_argument("--json", action="store_true")
     skill_command = commands.add_parser("skill")
     skill_subcommands = skill_command.add_subparsers(dest="skill_command", required=True)
     skill_show = skill_subcommands.add_parser("show")
     skill_show.add_argument("name")
 
-    commands.add_parser("tools", help="list deterministic tools")
+    tools_command = commands.add_parser("tools", help="list deterministic tools")
+    tools_command.add_argument("--json", action="store_true")
     profiles_command = commands.add_parser("profiles", help="list installed work profiles")
     profiles_command.add_argument("--verbose", action="store_true")
+    profiles_command.add_argument("--json", action="store_true")
     profile_command = commands.add_parser("profile")
     profile_subcommands = profile_command.add_subparsers(dest="profile_command", required=True)
     profile_show = profile_subcommands.add_parser("show")
@@ -123,13 +128,25 @@ def parser() -> argparse.ArgumentParser:
 
     providers_command = commands.add_parser("providers", help="list AI providers and readiness")
     providers_command.add_argument("--verbose", action="store_true")
+    providers_command.add_argument("--json", action="store_true")
     provider_command = commands.add_parser("provider")
     provider_subcommands = provider_command.add_subparsers(dest="provider_command", required=True)
     provider_prefer = provider_subcommands.add_parser("prefer")
     provider_prefer.add_argument("name", nargs="+")
     provider_subcommands.add_parser("show").add_argument("name")
 
-    commands.add_parser("models", help="list the model catalog")
+    provider_test = commands.add_parser("provider-test", help="run one tiny read-only provider request")
+    provider_test.add_argument("name")
+    provider_test.add_argument("--timeout", type=float, default=30.0)
+    provider_test.add_argument("--prompt", default="Return exactly: UAP_PROVIDER_OK")
+    provider_test.add_argument("--json", action="store_true")
+
+    demo = commands.add_parser("demo", help="offline deterministic cross-provider routing demo")
+    demo.add_argument("--delay", type=float, default=0.0, help="accepted for compatibility; no provider executes")
+    demo.add_argument("--json", action="store_true")
+
+    models_command = commands.add_parser("models", help="list the model catalog")
+    models_command.add_argument("--json", action="store_true")
     commands.add_parser("registry")
     for name in ("tasks", "runs", "doctor", "artifacts"):
         commands.add_parser(name)
@@ -472,7 +489,7 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(plan.to_dict(), indent=2) if args.json else plan.render())
             return 0
         try:
-            info = initialize_project(path, PACKAGE_ROOT / "templates", args.force, args.upgrade,
+            info = initialize_project(path, RESOURCE_ROOT / "templates", args.force, args.upgrade,
                                       selected_profiles, args.auto)
         except FileExistsError as error:
             print(f"{error}. Use --upgrade to refresh markers or --force to overwrite.", file=sys.stderr)
@@ -490,6 +507,8 @@ def main(argv: list[str] | None = None) -> int:
             print(plan.render(pending=False))
             print(f"\nProject initialized: {path}")
             print(f"Active work profiles: {', '.join(payload['profiles']) or 'inferred per goal'}")
+            print('\nSuggested next step:\n  agentctl run "<your goal>" --dry-run')
+            print('\nOr tell your preferred AI assistant:\n  Use the Universal Agent Platform for this project.')
         return 0
 
     if args.command == "attach":
@@ -499,7 +518,7 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps({"detached": changed}, indent=2) if args.json
                   else "Detached. Orchestration returned to the user:\n" + "\n".join(f"  {c}" for c in changed))
             return 0
-        info = initialize_project(path, PACKAGE_ROOT / "templates", force=False, upgrade=True,
+        info = initialize_project(path, RESOURCE_ROOT / "templates", force=False, upgrade=True,
                                   profiles=selected_profiles, auto=selected_profiles is None)
         payload = {"path": str(path), "profiles": project_profiles(path), "type": info.type}
         print(json.dumps(payload, indent=2) if args.json
@@ -553,10 +572,15 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "status":
-        print(_project_status(db, Path.cwd()))
+        if args.json:
+            print(json.dumps({"project": orchestration_config(Path.cwd()),
+                              "profiles": project_profiles(Path.cwd()),
+                              "providers_ready": provider_registry().ready_ids()}, indent=2))
+        else:
+            print(_project_status(db, Path.cwd()))
     elif args.command == "agents":
         values = registry_agents(db)
-        if args.verbose:
+        if args.verbose or args.json:
             print(json.dumps(values, indent=2))
         else:
             print(_table(["NAME", "TYPE", "STATUS", "WORK PROFILE", "PROVIDER", "MODEL"],
@@ -571,7 +595,10 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(item, indent=2))
     elif args.command == "skills":
         values = registry_skills(db)
-        print(_table(["NAME", "SCOPE", "LOADED", "USED BY"],
+        if args.json:
+            print(json.dumps(values, indent=2))
+        else:
+            print(_table(["NAME", "SCOPE", "LOADED", "USED BY"],
                      [[item["name"], item["scope"].upper(), "yes" if item["loaded"] else "no",
                        ", ".join(item["used_by_agents"]) or "none"] for item in values]))
     elif args.command == "skill":
@@ -582,12 +609,16 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         print(json.dumps(item, indent=2))
     elif args.command == "tools":
-        print(_table(["TOOL", "RISK", "EXECUTION", "CAPABILITIES"],
+        values = registry_tools()
+        if args.json:
+            print(json.dumps(values, indent=2))
+        else:
+            print(_table(["TOOL", "RISK", "EXECUTION", "CAPABILITIES"],
                      [[item["name"], item["risk"].upper(), item["execution"],
-                       ", ".join(item["capabilities"])] for item in registry_tools()]))
+                       ", ".join(item["capabilities"])] for item in values]))
     elif args.command == "profiles":
         values = registry_profiles()
-        if args.verbose:
+        if args.verbose or args.json:
             print(json.dumps(values, indent=2))
         else:
             print(_table(["PROFILE", "ROLES", "CAPABILITIES", "EVALUATION", "TRUST"],
@@ -601,12 +632,13 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(item, indent=2))
     elif args.command == "providers":
         values = registry_providers(db)
-        if args.verbose:
+        if args.verbose or args.json:
             print(json.dumps(values, indent=2))
         else:
-            print(_table(["PROVIDER", "STATUS", "TYPE", "MODELS", "DETAIL"],
+            print(_table(["PROVIDER", "STATUS", "TYPE", "EXECUTION", "MODELS", "DETAIL"],
                          [[item["name"], "READY" if item["ready"] else item["status"].upper(),
-                           item["type"].upper(), str(len(item["models"])), item["detail"]]
+                           item["type"].upper(), item["execution_mode"],
+                           str(len(item["models"])), item["detail"]]
                           for item in values]))
     elif args.command == "provider":
         if args.provider_command == "prefer":
@@ -618,12 +650,54 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"Provider not found: {args.name}", file=sys.stderr)
                 return 2
             print(json.dumps(item, indent=2))
+    elif args.command == "provider-test":
+        if args.name not in provider_registry():
+            print(f"Provider not found: {args.name}", file=sys.stderr)
+            return 2
+        provider = provider_registry().create(args.name, timeout=args.timeout)
+        probe = provider.probe()
+        if not probe.ready:
+            payload = {"provider": args.name, "status": probe.state.value,
+                       "detail": probe.detail, "executed": False}
+            print(json.dumps(payload, indent=2) if args.json else
+                  f"{args.name}: {probe.state.value.upper()} - {probe.detail}")
+            return 2
+        task = Task(new_id("TASK"), new_id("RUN"), args.prompt,
+                    "provider_test", ["text"], metadata={
+                        "goal": args.prompt, "read_only": True,
+                        "model": "env:UAP_OPENAI_COMPATIBLE_MODEL" if args.name == "openai_compatible" else None,
+                    })
+        receipt = asyncio.run(provider.execute(task))
+        payload = {"provider": args.name, "status": receipt.status,
+                   "output": receipt.summary, "model": receipt.model,
+                   "duration_seconds": receipt.duration_seconds,
+                   "usage": receipt.token_usage, "error": receipt.error_code}
+        print(json.dumps(payload, indent=2) if args.json else
+              f"{args.name}: {receipt.status.upper()} ({receipt.duration_seconds:.2f}s)\n{receipt.summary}")
+        return 0 if receipt.status == "completed" else 1
+    elif args.command == "demo":
+        from adaptive_agent.core.cross_provider_demo import cross_provider_demo
+
+        payload = cross_provider_demo()
+        if args.json:
+            print(json.dumps(payload, indent=2))
+        else:
+            print("Offline cross-provider routing demo (zero quota)\n")
+            for role, decision in payload["routes"].items():
+                print(f"{role}: {decision['provider']} / {decision['model']}")
+                for reason in decision["reasons"]:
+                    print(f"  - {reason}")
+        return 0
     elif args.command == "models":
-        print(_table(["MODEL", "PROVIDER", "TIER", "COST", "LATENCY", "TOP CAPABILITIES"],
+        values = model_registry().to_dict()
+        if args.json:
+            print(json.dumps(values, indent=2))
+        else:
+            print(_table(["MODEL", "PROVIDER", "TIER", "COST", "LATENCY", "TOP CAPABILITIES"],
                      [[item["id"], item["provider"], item["tier"], item["cost"], item["latency"],
                        ", ".join(sorted(name for name, level in item["capabilities"].items()
                                         if level in {"high", "very_high"})[:4]) or "-"]
-                      for item in model_registry().to_dict()]))
+                      for item in values]))
     elif args.command == "registry":
         print(json.dumps({"orchestration": orchestration_config(Path.cwd()),
                           "platform": platform_config(),

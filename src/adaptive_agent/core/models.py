@@ -72,6 +72,7 @@ class Receipt:
     uncertainty_reason: str = ""
     needs_escalation: bool = False
     error_code: str | None = None
+    provider: str | None = None
     model: str | None = None
     duration_seconds: float = 0.0
     retry_count: int = 0

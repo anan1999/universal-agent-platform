@@ -7,7 +7,10 @@ from adaptive_agent.observability.event_bus import EventBus
 from adaptive_agent.storage.database import Database
 
 
+# Public source-tree documents live here during development. Runtime code must
+# never rely on this path: an installed wheel has no repository checkout.
 PACKAGE_ROOT = Path(__file__).resolve().parents[2]
+RESOURCE_ROOT = Path(__file__).resolve().parent / "resources"
 
 
 def platform_home() -> Path:

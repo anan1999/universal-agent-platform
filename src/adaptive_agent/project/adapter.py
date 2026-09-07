@@ -76,8 +76,6 @@ def initialize_project(path: Path, templates: Path, force: bool = False, upgrade
     """Write the project adapter. Never overwrites project content the user owns."""
     path = path.resolve()
     agent_dir = path / ".agent"
-    if agent_dir.exists() and not (force or upgrade):
-        raise FileExistsError(f"project already initialized: {agent_dir}")
     info = discover(path)
     agent_dir.mkdir(parents=True, exist_ok=True)
     (agent_dir / "knowledge").mkdir(exist_ok=True)
@@ -88,8 +86,7 @@ def initialize_project(path: Path, templates: Path, force: bool = False, upgrade
     project["project"] = {**project.get("project", {}), "name": info.name, "type": info.type}
     project["languages"] = info.languages
 
-    selected = list(profiles) if profiles else (info.recommended_profiles if auto else
-                                                project.get("profiles") or info.recommended_profiles)
+    selected = list(profiles) if profiles else project.get("profiles") or info.recommended_profiles
     project["profiles"] = sorted(dict.fromkeys(selected))
     project["orchestration"] = {**DEFAULT_ORCHESTRATION, **project.get("orchestration", {}),
                                 "owner": "universal-agent-platform"}

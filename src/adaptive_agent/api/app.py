@@ -11,12 +11,12 @@ from fastapi.staticfiles import StaticFiles
 from adaptive_agent.observability.event_bus import EventBus
 from adaptive_agent.observability.performance import PerformanceTracker
 from adaptive_agent import __version__
-from adaptive_agent.runtime import PACKAGE_ROOT, database
+from adaptive_agent.runtime import RESOURCE_ROOT, database
 from adaptive_agent.registry_view import (
     agents as registry_agents, model_registry, profiles as registry_profiles,
     providers as registry_providers, skills as registry_skills, tools as registry_tools,
 )
-from adaptive_agent.project.adapter import orchestration_config, project_profiles
+from adaptive_agent.project.adapter import UAP_START, orchestration_config, project_profiles
 from adaptive_agent.storage.database import Database
 
 
@@ -36,6 +36,26 @@ def create_app(db: Database | None = None, events: EventBus | None = None) -> Fa
     @app.get("/api/health")
     def health():
         return {"status": "ok", "version": __version__}
+
+    @app.get("/api/bootstrap-status")
+    def bootstrap_status():
+        project = Path.cwd()
+        installed = all((RESOURCE_ROOT / relative).exists() for relative in (
+            "config/models.yaml", "config/profiles/general.yaml",
+            "templates/capabilities.yaml", "dashboard/index.html"))
+        agents_path = project / "AGENTS.md"
+        marker = agents_path.is_file() and UAP_START in agents_path.read_text(encoding="utf-8")
+        initialized = ((project / ".agent" / "project.yaml").is_file() and marker and
+                       orchestration_config(project)["owner"] == "universal-agent-platform")
+        provider_items = registry_providers(db)
+        active = project_profiles(project) if initialized else []
+        return {
+            "platform_installation": "ready" if installed else "fail",
+            "project_initialization": "ready" if initialized else "not_initialized",
+            "provider_availability": sum(1 for item in provider_items if item["ready"]),
+            "profiles_active": len(active),
+            "health": "pass" if installed else "fail",
+        }
 
     @app.get("/api/projects")
     def projects():
@@ -265,7 +285,7 @@ def create_app(db: Database | None = None, events: EventBus | None = None) -> Fa
                     yield ": keepalive\n\n"
         return StreamingResponse(stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache"})
 
-    dashboard = PACKAGE_ROOT / "dashboard"
+    dashboard = RESOURCE_ROOT / "dashboard"
     if dashboard.exists():
         app.mount("/assets", StaticFiles(directory=dashboard), name="assets")
 

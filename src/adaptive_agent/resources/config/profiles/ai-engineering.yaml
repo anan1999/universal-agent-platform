@@ -1,0 +1,45 @@
+profile:
+  id: ai-engineering
+  name: AI / ML Engineering
+  description: >
+    Model, dataset, inference, and evaluation work. Vendor runtimes (QNN,
+    TensorRT, CoreML, ONNX) are skills or plugins, never core concepts.
+  capabilities:
+    [model_analysis, dataset_analysis, inference, evaluation, benchmarking,
+     quantization, deployment, accuracy_analysis, latency_analysis, regression_analysis]
+  roles:
+    - id: ml_engineer
+      name: ML Engineer
+      responsibility: Change the model, pipeline, or inference path.
+      capabilities: [model_analysis, inference, quantization, deployment]
+      stage: 40
+    - id: evaluator
+      name: Evaluator
+      responsibility: Measure accuracy and correctness against a defined baseline.
+      capabilities: [evaluation, accuracy_analysis, dataset_analysis]
+      stage: 70
+      evaluative: true
+    - id: performance_analyst
+      name: Performance Analyst
+      responsibility: Measure and explain latency, throughput, and resource cost.
+      capabilities: [benchmarking, latency_analysis, regression_analysis]
+      stage: 60
+    - id: researcher
+      name: Researcher
+      responsibility: Find prior art and applicable techniques before implementation.
+      capabilities: [research, source_discovery, evidence_analysis]
+      stage: 20
+      optional: true
+      read_only: true
+  skills: [benchmark, dataset_inspection, evaluation_harness]
+  tools: [project_test, benchmark_run]
+  evaluation: [accuracy_check, latency_benchmark, regression_check]
+  artifact_types: [benchmark, dataset, report, source_code, test_result]
+  approval_gates: [deployment, destructive_actions]
+  detection:
+    files:
+      [requirements.txt, environment.yml, model.onnx, "*.ipynb", train.py,
+       config.yaml, dvc.yaml, params.yaml]
+    keywords:
+      [model, inference, dataset, benchmark, latency, throughput, accuracy,
+       quantization, int8, fp16, training, fine-tune, embedding, evaluation, gpu, npu]

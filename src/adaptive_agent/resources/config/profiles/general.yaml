@@ -1,0 +1,36 @@
+profile:
+  id: general
+  name: General
+  description: >
+    Minimal fallback for work no other profile covers. Never rejects a goal:
+    it analyses, infers capabilities, and lets the Team Composer build a team
+    from whatever the goal actually needs.
+  capabilities: [goal_analysis, planning, analysis, synthesis, writing, research, evaluation]
+  roles:
+    - id: analyst
+      name: Analyst
+      responsibility: Understand the goal, gather context, and state what the work actually requires.
+      capabilities: [goal_analysis, analysis, research]
+      stage: 10
+      read_only: true
+    - id: practitioner
+      name: Practitioner
+      responsibility: Produce the substantive output the goal asks for.
+      capabilities: [planning, synthesis, writing]
+      stage: 40
+    - id: quality_reviewer
+      name: Quality Reviewer
+      responsibility: Check the output against the stated goal before it is delivered.
+      capabilities: [evaluation, analysis]
+      stage: 90
+      optional: true
+      evaluative: true
+      read_only: true
+  skills: [goal_analysis, summarization]
+  tools: []
+  evaluation: [goal_coverage]
+  artifact_types: [plan, report, markdown, unknown]
+  approval_gates: [destructive_actions, external_side_effects]
+  detection:
+    files: []
+    keywords: []

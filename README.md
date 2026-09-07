@@ -7,7 +7,8 @@ minimum sufficient team of reasoning roles, routes each role to a provider and m
 actually do the job, builds a dependency-ordered task DAG, executes it, and records receipts,
 artifacts and performance history that a local dashboard renders.
 
-It is not tied to one AI vendor and not tied to software engineering. Version **2.0.0**.
+It is provider-agnostic, capability-first, work-profile-driven, local-first, inspectable,
+auditable, and extensible. It is not tied to software engineering. Version **2.1.0**.
 
 ---
 
@@ -21,7 +22,8 @@ The machine-readable contract is [`agent-platform.json`](agent-platform.json).
 The short version:
 
 ```bash
-agentctl --version            # install with `pip install -e .` only if missing
+agentctl --version
+# If missing: pip install git+https://github.com/anan1999/universal-agent-platform.git
 agentctl setup --auto         # once per machine
 cd <the user's project>
 agentctl init --auto --dry-run    # show the user before applying
@@ -37,25 +39,56 @@ not orchestrate again.
 
 ---
 
-## FOR HUMANS
-
-### Install
-
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-python -m pip install -e .
-```
-
-Activation on Linux/macOS is `source .venv/bin/activate`. Python 3.11 or newer is required.
-You install the platform once; you do not clone it into every project.
+## Install once
 
 ```bash
+pip install git+https://github.com/anan1999/universal-agent-platform.git
 agentctl setup --auto
 ```
 
-Setup creates the platform home, initializes the database, discovers which providers are
-actually present, and runs health checks.
+Python 3.11 or newer is required.
+
+## Use in any project
+
+```bash
+cd my-project
+agentctl init --auto --dry-run
+agentctl init --auto
+agentctl doctor
+```
+
+Then use your preferred AI normally, or preview a plan with
+`agentctl run "<your goal>" --dry-run`.
+
+## Copy this into any AI assistant
+
+```text
+I want to build <describe your project>.
+
+Use the following repository as the agent orchestration framework:
+https://github.com/anan1999/universal-agent-platform
+
+Read AI-BOOTSTRAP.md and agent-platform.json. If the platform is not installed,
+install it using the documented GitHub installation method. Set it up once for
+this machine, initialize the current project, run health checks, then use the
+platform to determine capabilities, compose the minimum sufficient team, select
+providers and models, load skills and tools, plan the task DAG, and execute the
+work. Do not manually assign agents, models, or providers unless the framework
+explicitly requires a user decision. After initialization succeeds, proceed
+directly with the requested work.
+```
+
+## FOR HUMANS
+
+### Development install
+
+```powershell
+git clone https://github.com/anan1999/universal-agent-platform.git
+cd universal-agent-platform
+python -m pip install -e ".[dev]"
+```
+
+Editable installation is for contributors; it is not required for normal use.
 
 ### Use it on a project
 
@@ -139,18 +172,36 @@ agentctl providers
 
 | Provider | State in this build |
 |---|---|
-| Codex | implemented, validated against the real CLI |
-| Mock | implemented, deterministic and offline |
-| OpenAI, Anthropic, Gemini, Ollama, OpenAI-compatible | plugin-ready interface only |
+| Codex | ✅ Implemented and validated against the real CLI |
+| Mock | ✅ Implemented, deterministic and offline |
+| OpenAI-compatible | ✅ Implemented; ready only after a successful endpoint probe |
+| Ollama | 🟡 Runtime detection only; direct adapter not implemented |
+| OpenAI | ⚪ Adapter not implemented |
+| Anthropic / Claude | ⚪ Adapter not implemented |
+| Gemini | ⚪ Adapter not implemented |
 
-Plugin-ready providers report their real detection state — they will tell you if credentials or
+Unimplemented providers report their real detection state — they will tell you if credentials or
 a binary are present — but they refuse to execute rather than pretend. Provider states are
-`available`, `installed`, `configured`, `connected`, `unavailable` and `unsupported`, and
+`available`, `installed`, `unconfigured`, `configured`, `connected`, `unavailable` and `unsupported`, and
 capabilities are `supported`, `unsupported`, `model_dependent` or `unknown`. Credentials are
 never printed.
 
 Selection defaults to `auto`. To bias it: `agentctl provider prefer codex`, or set
 `providers.preference` in `.agent/project.yaml`. No provider is ever required.
+
+The OpenAI-compatible adapter reads its base URL, model, and optional key from environment
+variables; it never stores or prints key values and it has no project filesystem access.
+
+```bash
+export UAP_OPENAI_COMPATIBLE_BASE_URL=http://127.0.0.1:11434/v1
+export UAP_OPENAI_COMPATIBLE_MODEL=qwen2.5-coder:7b
+agentctl provider-test openai_compatible
+```
+
+Set `UAP_OPENAI_COMPATIBLE_API_KEY` when the endpoint needs authentication, or set
+`UAP_OPENAI_COMPATIBLE_API_KEY_ENV` to the name of an existing secret environment variable.
+Project files must not contain the secret value. Run `agentctl demo --delay 0` for a completely
+offline cross-provider routing demonstration.
 
 Adding one means implementing `AIProvider` in `providers/<name>/`, registering a descriptor,
 and adding models to `config/models.yaml`. The orchestrator does not change.
@@ -216,7 +267,8 @@ is in `docs/`. The release evidence, including the bounded real-provider run, is
 - Goal analysis and planning are deterministic and rule-based, not LLM-generated. This keeps
   planning free and reproducible, but it will not infer intent that the goal text does not
   state.
-- Only Codex and Mock execute. The other providers are interfaces awaiting implementation.
+- Codex, Mock, and the configured OpenAI-compatible adapter execute. Other provider names are
+  truthful placeholders awaiting adapters.
 - Adaptive routing needs five comparable samples before history influences a decision, and it
   ranks candidates rather than modifying policy.
 - Worktree integration exposes safe primitives but does not auto-merge branches.

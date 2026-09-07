@@ -1,7 +1,7 @@
 {
   "schema_version": "1",
   "name": "Universal Agent Platform",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "type": "agent-orchestration-framework",
   "summary": "Bring your goal. Bring your AI. The platform builds the team.",
   "cli": "agentctl",
@@ -15,8 +15,9 @@
   },
 
   "install": {
-    "from_source": "pip install -e .",
-    "from_checkout": "git clone <repository-url> && cd universal-agent-platform && pip install -e .",
+    "recommended": "pip install git+https://github.com/anan1999/universal-agent-platform.git",
+    "from_pypi": null,
+    "development": "git clone https://github.com/anan1999/universal-agent-platform.git && cd universal-agent-platform && pip install -e \".[dev]\"",
     "requires_python": ">=3.11",
     "verify": "agentctl --version"
   },
@@ -64,13 +65,20 @@
   "provider_architecture": {
     "contract": "src/adaptive_agent/providers/base.py::AIProvider",
     "registry": "src/adaptive_agent/providers/registry.py::ProviderRegistry",
-    "states": ["available", "installed", "configured", "connected", "unavailable", "unsupported"],
+    "states": ["available", "installed", "unconfigured", "configured", "connected", "unavailable", "unsupported"],
+    "execution_modes": ["agentic_local", "api_reasoning", "local_model", "mock"],
     "capability_values": ["supported", "unsupported", "model_dependent", "unknown"],
-    "implemented": ["codex", "mock"],
-    "plugin_ready": ["openai", "anthropic", "gemini", "ollama", "openai_compatible"],
+    "implemented": ["codex", "mock", "openai_compatible"],
+    "plugin_ready": ["openai", "anthropic", "gemini", "ollama"],
     "selection": "auto",
     "prefer_command": "agentctl provider prefer <provider-id>",
-    "note": "Plugin-ready providers report their real detection state but refuse to execute. They are not implemented in this build."
+    "test_command": "agentctl provider-test <provider-id>",
+    "openai_compatible_environment": {
+      "base_url": "UAP_OPENAI_COMPATIBLE_BASE_URL",
+      "model": "UAP_OPENAI_COMPATIBLE_MODEL",
+      "api_key": "UAP_OPENAI_COMPATIBLE_API_KEY or the variable named by UAP_OPENAI_COMPATIBLE_API_KEY_ENV"
+    },
+    "note": "OpenAI-compatible is API reasoning only and becomes ready after a successful bounded probe. Placeholder providers refuse execution."
   },
 
   "model_registry": {
@@ -129,6 +137,7 @@
     "command": "pytest",
     "real_ai_quota_consumed": false,
     "offline_provider": "mock",
+    "cross_provider_demo": "agentctl demo --delay 0",
     "domain_matrix": "python scripts/domain_matrix.py"
   }
 }

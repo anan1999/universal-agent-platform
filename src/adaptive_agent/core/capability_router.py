@@ -19,6 +19,7 @@ from adaptive_agent.core.capabilities import (
 )
 from adaptive_agent.models.registry import ModelDescriptor, ModelRegistry
 from adaptive_agent.providers.registry import ProviderRegistry
+from adaptive_agent.core.capabilities import Support
 from adaptive_agent.storage.database import Database
 
 
@@ -92,6 +93,7 @@ class CapabilityRouter:
         self.database = database
         self.preferences = [str(item) for item in preferences] or ["auto"]
         self.minimum_history_samples = minimum_history_samples
+        self._provider_capabilities: dict[str, Any] = {}
 
     # -- provider selection ------------------------------------------------
 
@@ -140,6 +142,15 @@ class CapabilityRouter:
                                    [item.to_dict() for item in candidates[:5]], samples)
 
         best = viable[0]
+        earlier = providers[:providers.index(best.provider)] if best.provider in providers else []
+        rejected_earlier = [item for item in candidates
+                            if item.provider in earlier and item.disqualified]
+        if rejected_earlier:
+            rejected = rejected_earlier[0]
+            best.reasons.append(
+                f"Preferred provider {rejected.provider} rejected: {rejected.disqualified}; "
+                f"selected {best.provider} instead."
+            )
         descriptor = self.models.get(best.model)
         reasoning = self._reasoning(floor, risk_value, descriptor)
         decision = RoutingDecision(
@@ -147,7 +158,9 @@ class CapabilityRouter:
             capability_signature=capability_key,
             required_capabilities=[item.name for item in wanted],
             risk=risk_value.value, complexity=complexity_value.value,
-            reasons=best.reasons, candidates=[item.to_dict() for item in viable[:5]],
+            reasons=best.reasons,
+            candidates=[item.to_dict() for item in viable[:5]] +
+                       [item.to_dict() for item in candidates if item.disqualified][:5],
             historical_samples=samples, model_class=self._model_class(descriptor),
             agent=agent_role, task_type=task_type)
         return decision
@@ -160,7 +173,16 @@ class CapabilityRouter:
         reasons: list[str] = []
         score = 0.0
         matched, attempted = [], []
+        provider_capabilities = self._provider_capabilities.get(model.provider)
+        if provider_capabilities is None:
+            provider_capabilities = self.providers.instance(model.provider).capabilities()
+            self._provider_capabilities[model.provider] = provider_capabilities
         for requirement in wanted:
+            provider_support = provider_capabilities.get(requirement.name)
+            if provider_support is Support.UNSUPPORTED and requirement.mandatory:
+                return Candidate(model.provider, model.id, model.model_id, 0.0,
+                                 [f"{model.provider} declares {requirement.name} unsupported."],
+                                 disqualified=f"provider lacks {requirement.name}")
             actual = model.level(requirement.name)
             target = requirement.level if requirement.level is not Level.UNKNOWN else floor
             if actual is Level.NONE:

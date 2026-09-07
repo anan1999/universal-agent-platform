@@ -17,7 +17,7 @@ from adaptive_agent.core.tools import ToolRegistry
 from adaptive_agent.models.registry import ModelRegistry
 from adaptive_agent.profiles.registry import profile_registry
 from adaptive_agent.providers.registry import providers as provider_registry
-from adaptive_agent.runtime import PACKAGE_ROOT, platform_home
+from adaptive_agent.runtime import RESOURCE_ROOT, platform_home
 from adaptive_agent.skills.registry import SkillRegistry
 from adaptive_agent.storage.database import Database
 
@@ -40,7 +40,7 @@ def _profile_role_ids() -> dict[str, str]:
 def agents(db: Database) -> list[dict[str, Any]]:
     from adaptive_agent.providers.codex import codex_profile_for
 
-    configured = AgentRegistry.from_yaml(PACKAGE_ROOT / "config" / "default_agents.yaml").all()
+    configured = AgentRegistry.from_yaml(RESOURCE_ROOT / "config" / "default_agents.yaml").all()
     declared_by_profile = _profile_role_ids()
     overrides = {row["name"]: row for row in db.query("SELECT * FROM agents")}
     running = {row["owner"]: row for row in db.query(
@@ -72,7 +72,7 @@ def agents(db: Database) -> list[dict[str, Any]]:
                        "reasoning": spec.get("reasoning"),
                        "work_profile": spec.get("profile") or declared_by_profile.get(name, "general"),
                        "capabilities": spec.get("capabilities", []), "skills": spec.get("skills", []),
-                       "scope": spec.get("scope", "global"), "source": str(PACKAGE_ROOT / "config" / "default_agents.yaml"),
+                       "scope": spec.get("scope", "global"), "source": str(RESOURCE_ROOT / "config" / "default_agents.yaml"),
                        "enabled": status != "disabled", "current_task": task,
                        "project_id": None, "context_health": "healthy",
                        "token_usage": usage.get(name, {}).get("tokens", 0),
@@ -106,7 +106,7 @@ def agents(db: Database) -> list[dict[str, Any]]:
 
 
 def skills(db: Database) -> list[dict[str, Any]]:
-    configured = SkillRegistry.from_yaml(PACKAGE_ROOT / "config" / "default_skills.yaml").all()
+    configured = SkillRegistry.from_yaml(RESOURCE_ROOT / "config" / "default_skills.yaml").all()
     overrides = {row["name"]: row for row in db.query("SELECT * FROM skills")}
     associations = db.query("SELECT * FROM agent_skills ORDER BY loaded_at DESC")
     agent_specs = {item["id"]: item for item in agents(db)}
@@ -119,7 +119,7 @@ def skills(db: Database) -> list[dict[str, Any]]:
         used_by = sorted({agent["id"] for agent in agent_specs.values() if name in agent["skills"]} |
                          {row["agent_id"] for row in history})
         result.append({"id": name, "name": _title(name), "description": spec.get("description", ""),
-                       "scope": spec.get("scope", "built-in"), "source": str(PACKAGE_ROOT / "config" / "default_skills.yaml"),
+                       "scope": spec.get("scope", "built-in"), "source": str(RESOURCE_ROOT / "config" / "default_skills.yaml"),
                        "capabilities": spec.get("capabilities", []),
                        "enabled": bool(override["enabled"]) if override else spec.get("enabled", True),
                        "lazy_load": bool(spec.get("lazy", True)), "loaded": any(row["loaded"] for row in history),
@@ -160,24 +160,30 @@ def providers(db: Database | None = None) -> list[dict[str, Any]]:
         success = {row["provider"]: row for row in db.query(
             "SELECT provider,COUNT(*) runs,AVG(success) success_rate FROM agent_performance "
             "WHERE provider != '' GROUP BY provider")}
+        recent: dict[str, list[str]] = {}
+        for row in db.query("SELECT provider,task_id FROM token_usage WHERE provider != '' ORDER BY rowid DESC"):
+            values = recent.setdefault(row["provider"], [])
+            if row["task_id"] not in values and len(values) < 8:
+                values.append(row["task_id"])
     else:
-        success = {}
+        success, recent = {}, {}
     for item in discovered:
         item["models"] = [model.to_dict() for model in models.for_provider(item["id"])]
         item["usage"] = {"tokens": usage.get(item["id"], {}).get("tokens", 0),
                          "invocations": usage.get(item["id"], {}).get("invocations", 0)}
         item["recent_success"] = success.get(item["id"], {}).get("success_rate")
         item["run_count"] = success.get(item["id"], {}).get("runs", 0)
+        item["recent_tasks"] = recent.get(item["id"], [])
     return discovered
 
 
 def model_registry() -> ModelRegistry:
-    return ModelRegistry.from_yaml(PACKAGE_ROOT / "config" / "models.yaml",
+    return ModelRegistry.from_yaml(RESOURCE_ROOT / "config" / "models.yaml",
                                    platform_home() / "models.yaml")
 
 
 def profiles() -> list[dict[str, Any]]:
-    installed_skills = set(SkillRegistry.from_yaml(PACKAGE_ROOT / "config" / "default_skills.yaml").all())
+    installed_skills = set(SkillRegistry.from_yaml(RESOURCE_ROOT / "config" / "default_skills.yaml").all())
     tools = {tool.id for tool in ToolRegistry.default().all()}
     evaluations = EvaluationRegistry()
     result = []

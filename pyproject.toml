@@ -1,15 +1,30 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "universal-agent-platform"
-version = "2.0.0"
+version = "2.1.0"
 description = "Universal Agent Platform: bring your goal, bring your AI, the platform builds the team"
 readme = "README.md"
 requires-python = ">=3.11"
-license = {text = "MIT"}
+license = "MIT"
+keywords = ["ai-agents", "multi-agent", "orchestration", "provider-agnostic", "workflow"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Framework :: FastAPI",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
 dependencies = ["fastapi>=0.110", "uvicorn>=0.27", "pydantic>=2.6", "PyYAML>=6"]
+
+[project.urls]
+Homepage = "https://github.com/anan1999/universal-agent-platform"
+Repository = "https://github.com/anan1999/universal-agent-platform"
+Issues = "https://github.com/anan1999/universal-agent-platform/issues"
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "httpx>=0.27"]
@@ -22,6 +37,17 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+adaptive_agent = [
+    "resources/config/*.yaml",
+    "resources/config/profiles/*.yaml",
+    "resources/templates/*.yaml",
+    "resources/templates/*.md",
+    "resources/dashboard/*.html",
+    "resources/dashboard/*.css",
+    "resources/dashboard/*.js",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

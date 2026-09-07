@@ -1,0 +1,11 @@
+# Optional, provider-specific conventions. Purely advisory.
+#
+# The universal capability router does NOT read this file. It exists so an
+# environment that already has named Codex agent profiles can keep using them
+# for display and for `codex exec --profile`, without those names leaking into
+# platform architecture. Delete this file and the platform still works.
+providers:
+  codex:
+    role_profiles:
+      explorer: luna_worker
+      tester: luna_worker

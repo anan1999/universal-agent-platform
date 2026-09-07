@@ -1,0 +1,36 @@
+profile:
+  id: product
+  name: Product
+  description: Requirements, prioritization, and roadmap work. Artifacts are documents.
+  capabilities:
+    [requirements, prioritization, user_story, roadmap, competitive_analysis,
+     acceptance_criteria, scoping]
+  roles:
+    - id: product_strategist
+      name: Product Strategist
+      responsibility: Frame the problem, the users, and the success criteria.
+      capabilities: [requirements, roadmap, scoping, competitive_analysis]
+      stage: 20
+    - id: product_analyst
+      name: Product Analyst
+      responsibility: Write the concrete requirements, stories, and acceptance criteria.
+      capabilities: [requirements, user_story, acceptance_criteria, prioritization]
+      stage: 50
+    - id: requirements_reviewer
+      name: Requirements Reviewer
+      responsibility: Check the requirements are testable, complete, and non-contradictory.
+      capabilities: [acceptance_criteria, evaluation, analysis]
+      stage: 90
+      optional: true
+      evaluative: true
+      read_only: true
+  skills: [requirements_writing, prioritization_frameworks]
+  tools: []
+  evaluation: [requirement_coverage, acceptance_criteria_check]
+  artifact_types: [plan, report, markdown, spreadsheet]
+  approval_gates: [publishing]
+  detection:
+    files: [ROADMAP.md, PRD.md, docs/product]
+    keywords:
+      [requirements, roadmap, prd, user story, acceptance criteria, backlog,
+       prioritize, feature, scope, stakeholder, mvp, competitive]

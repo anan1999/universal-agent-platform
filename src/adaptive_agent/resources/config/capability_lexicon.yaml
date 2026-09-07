@@ -1,0 +1,100 @@
+# Goal-text signals. This file is DATA: the Goal Analyzer contains no keyword
+# literals, so new domains are added here (or by a profile's `detection.keywords`)
+# without touching Python.
+#
+# A goal that matches nothing is not an error. It falls back to the general
+# profile's capabilities and is still planned and executed.
+
+capabilities:
+  repository_search: [locate, find where, where is, search the, explore the, trace, look up]
+  coding: [implement, code, write a function, add a method, build the, create the endpoint, port]
+  refactor: [refactor, restructure, clean up, extract, rename, simplify the code]
+  bug_fix: [bug, broken, crash, regression, fails with, error when, not working, defect]
+  debugging: [debug, root cause, stack trace, reproduce, why does it fail, investigate the failure]
+  testing: [test, unit test, integration test, coverage, assert, verify the behaviour, verify the behavior]
+  build: [build, compile, package, bundle, assemble]
+  code_review: [review the code, code review, pull request, merge request, diff review]
+  documentation: [document, documentation, readme, changelog, guide, tutorial, api reference, write up]
+  writing: [write, draft, rewrite, summarize, summarise, article, post, copy]
+  editing: [edit, proofread, tighten, polish the wording]
+  requirements: [requirements, spec, specification, prd, scope, acceptance criteria]
+  user_story: [user story, as a user, epic, backlog item]
+  prioritization: [prioritize, prioritise, rank, roadmap, sequence the work]
+  competitive_analysis: [competitor, competitive, market comparison, alternatives to]
+  research: [research, investigate, survey, literature, state of the art, prior art, explore options]
+  source_discovery: [find sources, references, citations, papers, studies]
+  evidence_analysis: [evidence, corroborate, substantiate, verify the claim]
+  synthesis: [synthesize, synthesise, summarize findings, consolidate, bring together]
+  comparison: [compare, versus, trade-off, tradeoff, pros and cons, evaluate options]
+  user_flow: [user flow, user journey, onboarding flow, navigation flow, screen flow]
+  information_architecture: [information architecture, sitemap, navigation, hierarchy, taxonomy]
+  wireframing: [wireframe, mockup, layout the, screen design, prototype the]
+  usability: [usability, confusing, hard to use, friction, user testing]
+  accessibility: [accessibility, a11y, wcag, screen reader, contrast ratio, keyboard navigation]
+  design_system: [design system, component library, tokens, style guide]
+  visual_direction: [visual direction, look and feel, aesthetic, mood board, art direction]
+  typography: [typography, typeface, font, type scale]
+  branding: [brand, logo, identity, brand guidelines]
+  color: [color palette, colour palette, color scheme, colour scheme]
+  visual_review: [design review, visual review, critique the design]
+  model_analysis: [model architecture, weights, checkpoint, layers, the model]
+  dataset_analysis: [dataset, training data, labels, data distribution, samples]
+  inference: [inference, prediction, forward pass, serving the model, runtime execution]
+  quantization: [quantize, quantise, quantization, int8, int4, fp16, calibration]
+  benchmarking: [benchmark, throughput, latency, fps, ms per, profiling, performance regression]
+  evaluation: [evaluate, accuracy, precision, recall, f1, validate the results, score]
+  deployment: [deploy, release, ship to, roll out, publish the build]
+  infrastructure: [infrastructure, provision, cluster, vm, load balancer, networking]
+  ci_cd: [ci, cd, pipeline, workflow, github action, jenkins, build server]
+  containers: [docker, container, image tag, compose, kubernetes, helm]
+  observability: [monitoring, metrics, tracing, alerting, dashboards for, telemetry]
+  incident_analysis: [incident, outage, postmortem, degradation, on-call]
+  configuration: [configure, configuration, settings file, environment variable, yaml config]
+  security_hardening: [harden, vulnerability, cve, secrets, permissions, threat model]
+  data_exploration: [explore the data, profile the data, data quality, missing values]
+  statistics: [statistics, correlation, distribution, significance, regression analysis, mean]
+  visualization: [chart, plot, graph the, visualize, visualise, histogram]
+  query: [sql, query the, join the tables, aggregate the]
+  planning: [plan, break down, steps to, approach for, strategy for, organize, organise]
+  analysis: [analyse, analyze, assess, examine, understand why, explain the]
+  goal_analysis: [i want to, help me, figure out, work out how]
+
+# Complexity signals. Later entries win when several match.
+complexity:
+  trivial: [typo, rename this label, change the wording, one line, tiny, trivial]
+  small: [add a comment, small change, minor, quick, single file, tweak]
+  normal: []
+  complex: [across the, multiple, end to end, end-to-end, migrate, redesign, architecture, integrate, whole system, refactor the]
+  critical: [production, security, data loss, irreversible, breaking change, all users, compliance, outage]
+
+risk:
+  high: [production, delete, drop table, irreversible, destructive, security, credentials, migrate the database, force push, deploy]
+  medium: [refactor, migrate, breaking, schema, upgrade the, replace the]
+
+# Goals matching these are planned as read-only and never get a write worktree.
+read_only:
+  [do not modify, don't modify, read-only, read only, without changing, explain,
+   describe, what does, how does, summarize the existing, summarise the existing,
+   review, audit, investigate, locate, find where]
+
+# Actions that require a human approval gate before the platform performs them.
+approval_signals:
+  destructive_actions: [delete, remove all, drop table, wipe, purge, force push, reset --hard, rm -rf]
+  deployment: [deploy, release to production, roll out, ship to production]
+  publishing: [publish, post to, upload to, submit to]
+  external_side_effects: [send email, send the email, notify the team, charge, payment, api call to production]
+  production_change: [production database, prod cluster, live environment]
+
+# Goal wording that suggests the shape of the deliverable.
+artifacts:
+  source_code: [implement, code, function, refactor, endpoint, patch]
+  test_result: [test, verify, validate]
+  report: [report, analysis, findings, investigate, compare]
+  markdown: [document, readme, guide, write up, notes]
+  design_spec: [wireframe, design, layout, mockup, component]
+  image: [logo, illustration, mood board, diagram]
+  dataset: [dataset, export the data, csv]
+  benchmark: [benchmark, latency, throughput, profiling]
+  plan: [plan, roadmap, requirements, strategy, steps]
+  research_notes: [research, sources, literature, prior art]
+  spreadsheet: [spreadsheet, table of, matrix of]
