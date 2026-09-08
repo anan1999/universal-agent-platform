@@ -8,6 +8,7 @@ from adaptive_agent.agents.registry import AgentRegistry
 from adaptive_agent.core.capabilities import Requirement
 from adaptive_agent.core.capability_resolver import CapabilityResolver
 from adaptive_agent.core.capability_router import CapabilityRouter
+from adaptive_agent.core.consumption import ConsumptionPolicy, consumption_policy
 from adaptive_agent.core.evaluation import EvaluationRegistry
 from adaptive_agent.core.goal_analyzer import GoalAnalysis, GoalAnalyzer
 from adaptive_agent.core.models import Event, TaskKind, new_id, now_iso
@@ -36,10 +37,12 @@ class Composition:
     graph: TaskGraph
     provider_rationale: list[dict[str, Any]] = field(default_factory=list)
     mode: str = "universal"
+    consumption: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {"mode": self.mode, "analysis": self.analysis.to_dict(),
-                "team": self.team.to_dict(), "provider_rationale": list(self.provider_rationale)}
+                "team": self.team.to_dict(), "provider_rationale": list(self.provider_rationale),
+                "consumption": dict(self.consumption)}
 
 
 class Orchestrator:
@@ -49,12 +52,14 @@ class Orchestrator:
                  providers: ProviderRegistry | None = None,
                  models: ModelRegistry | None = None,
                  provider_preference: Sequence[str] = ("auto",),
-                 active_profiles: Sequence[str] = ()):
+                 active_profiles: Sequence[str] = (),
+                 consumption_mode: str = "balanced"):
         self.database = database
         self.events = events or EventBus(database)
         self.provider = provider
         self.provider_name = provider_name or getattr(provider, "id", None) or "mock"
         self.active_profiles = list(active_profiles)
+        self.consumption_policy: ConsumptionPolicy = consumption_policy(consumption_mode)
 
         # V2 universal path.
         self.profiles = profiles or profile_registry()
@@ -62,10 +67,11 @@ class Orchestrator:
         self.models = models or ModelRegistry.from_yaml(RESOURCE_ROOT / "config" / "models.yaml",
                                                         platform_home() / "models.yaml")
         self.analyzer = GoalAnalyzer(profiles=self.profiles)
-        self.composer = TeamComposer(self.profiles, EvaluationRegistry())
+        self.composer = TeamComposer(self.profiles, EvaluationRegistry(), self.consumption_policy)
         self.universal_planner = UniversalPlanner()
         self.capability_router = CapabilityRouter(self.models, self.provider_registry, database,
-                                                  preferences=provider_preference)
+                                                  preferences=provider_preference,
+                                                  policy=self.consumption_policy)
         self.tools = ToolRegistry.default()
 
     # -- composition -------------------------------------------------------
@@ -83,7 +89,8 @@ class Orchestrator:
         graph = self.universal_planner.plan(run_id, goal, analysis, team)
         rationale = self._route(graph, analysis, team, working_directory, project_name,
                                 project_type, approvals)
-        return Composition(analysis, team, graph, rationale)
+        return Composition(analysis, team, graph, rationale,
+                           consumption=self.consumption_policy.to_dict())
 
     def _route(self, graph: TaskGraph, analysis: GoalAnalysis, team: TeamPlan,
                working_directory: str | None, project_name: str, project_type: str,
@@ -196,7 +203,12 @@ class Orchestrator:
                                       provider_name=self.provider_name,
                                       capability_router=self.capability_router,
                                       tools=self.tools, approvals=approvals,
-                                      provider_registry=self.provider_registry).run(graph)
+                                      provider_registry=self.provider_registry,
+                                      max_parallel_agents=self.consumption_policy.max_parallel_agents,
+                                      max_parallel_strong_agents=self.consumption_policy.max_parallel_strong_agents,
+                                      max_escalations=self.consumption_policy.max_escalations_per_task,
+                                      receipt_word_limit=self.consumption_policy.receipt_word_limit,
+                                      max_context_receipts=self.consumption_policy.max_context_receipts).run(graph)
         except asyncio.CancelledError:
             self.database.execute("UPDATE runs SET status='cancelled',completed_at=? WHERE id=?", (now_iso(), run_id))
             raise

@@ -32,6 +32,7 @@ DEFAULT_PLATFORM_CONFIG: dict[str, Any] = {
         "plugin_execution": "trusted_only",
     },
     "providers": {"preference": ["auto"]},
+    "consumption": {"mode": "balanced"},
     "budget": {"max_parallel_agents": 3, "max_parallel_strong_agents": 1,
                "max_escalations_per_task": 2},
     "adaptive": {"minimum_history_samples": 5, "escalation_threshold": 0.25},
@@ -95,6 +96,24 @@ def set_provider_preference(*preferred: str) -> list[str]:
     config["providers"] = {**config.get("providers", {}), "preference": list(preferred) or ["auto"]}
     (home / PLATFORM_CONFIG).write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
     return list(preferred)
+
+
+def consumption_mode() -> str:
+    from adaptive_agent.core.consumption import ConsumptionMode
+
+    return ConsumptionMode.coerce((platform_config().get("consumption") or {}).get("mode")).value
+
+
+def set_consumption_mode(mode: str) -> str:
+    from adaptive_agent.core.consumption import ConsumptionMode
+
+    selected = ConsumptionMode.coerce(mode).value
+    home = platform_home()
+    home.mkdir(parents=True, exist_ok=True)
+    config = platform_config()
+    config["consumption"] = {**config.get("consumption", {}), "mode": selected}
+    (home / PLATFORM_CONFIG).write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+    return selected
 
 
 def setup(auto: bool = False, non_interactive: bool = False) -> SetupResult:

@@ -62,6 +62,15 @@
     "recursion_guard_note": "A process started with UAP_CHILD_EXECUTION=1 is a bounded executor and must never invoke the orchestrator again."
   },
 
+  "consumption_policies": {
+    "default": "balanced",
+    "available": ["economy", "balanced", "maximum"],
+    "show_or_set_global": "agentctl consumption [economy|balanced|maximum]",
+    "per_run": "agentctl run \"<goal>\" --consumption economy",
+    "project_config": ".agent/project.yaml::consumption.mode",
+    "note": "Economy reduces orchestration overhead but never bypasses mandatory provider capabilities, deterministic checks, or human approval gates."
+  },
+
   "provider_architecture": {
     "contract": "src/adaptive_agent/providers/base.py::AIProvider",
     "registry": "src/adaptive_agent/providers/registry.py::ProviderRegistry",

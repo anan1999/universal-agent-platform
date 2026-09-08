@@ -9,3 +9,5 @@ budget:
   max_parallel_agents: 3
   max_parallel_strong_agents: 1
   max_escalations_per_task: 2
+consumption:
+  mode: balanced

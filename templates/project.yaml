@@ -1,3 +1,4 @@
 project: {name: unknown, type: unknown}
 languages: [unknown]
 orchestration: {owner: universal-agent-platform, threshold: non_trivial}
+consumption: {mode: balanced}

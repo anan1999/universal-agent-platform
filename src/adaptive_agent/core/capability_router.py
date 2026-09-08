@@ -20,6 +20,7 @@ from adaptive_agent.core.capabilities import (
 from adaptive_agent.models.registry import ModelDescriptor, ModelRegistry
 from adaptive_agent.providers.registry import ProviderRegistry
 from adaptive_agent.core.capabilities import Support
+from adaptive_agent.core.consumption import ConsumptionPolicy, consumption_policy
 from adaptive_agent.storage.database import Database
 
 
@@ -87,13 +88,15 @@ class RoutingDecision:
 class CapabilityRouter:
     def __init__(self, models: ModelRegistry, providers: ProviderRegistry,
                  database: Database | None = None, preferences: Sequence[str] = ("auto",),
-                 minimum_history_samples: int = 5):
+                 minimum_history_samples: int = 5,
+                 policy: ConsumptionPolicy | None = None):
         self.models = models
         self.providers = providers
         self.database = database
         self.preferences = [str(item) for item in preferences] or ["auto"]
         self.minimum_history_samples = minimum_history_samples
         self._provider_capabilities: dict[str, Any] = {}
+        self.policy = policy or consumption_policy()
 
     # -- provider selection ------------------------------------------------
 
@@ -152,7 +155,7 @@ class CapabilityRouter:
                 f"selected {best.provider} instead."
             )
         descriptor = self.models.get(best.model)
-        reasoning = self._reasoning(floor, risk_value, descriptor)
+        reasoning = self.policy.reasoning(self._reasoning(floor, risk_value, descriptor), risk_value)
         decision = RoutingDecision(
             provider=best.provider, model=best.model, reasoning=reasoning,
             capability_signature=capability_key,
@@ -213,7 +216,7 @@ class CapabilityRouter:
                 reasons.append("Stronger than this task requires; kept as a candidate but not preferred.")
 
         # Cost and latency: cheaper and faster wins when capability is equal.
-        score -= 0.35 * model.cost_rank
+        score -= self.policy.cost_weight * model.cost_rank
         score -= 0.15 * model.latency_rank
 
         # Availability.

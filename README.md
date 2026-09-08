@@ -60,6 +60,24 @@ agentctl doctor
 Then use your preferred AI normally, or preview a plan with
 `agentctl run "<your goal>" --dry-run`.
 
+## Control subscription usage
+
+UAP has three quota-conscious orchestration policies. `balanced` preserves the normal V2.1
+behavior. `economy` runs agents sequentially, prefers lower-cost compatible models and lower
+reasoning for non-high-risk work, carries fewer and shorter receipts, caps team growth, and
+allows only one escalation per task. `maximum` provides wider concurrency, context and
+escalation budgets for difficult work. Capabilities, deterministic validation and approval
+gates remain mandatory in every mode.
+
+```bash
+agentctl consumption                 # show the global policy
+agentctl consumption economy         # set the global policy
+agentctl run "<your goal>" --consumption economy --dry-run
+```
+
+Set `consumption.mode` in `.agent/project.yaml` for a project default. A per-run flag takes
+precedence over the project setting, which takes precedence over the global setting.
+
 ## Copy this into any AI assistant
 
 ```text

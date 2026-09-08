@@ -59,6 +59,11 @@ def project_provider_preference(path: Path) -> list[str]:
     return [str(item) for item in preference] or ["auto"]
 
 
+def project_consumption_mode(path: Path) -> str | None:
+    value = ((project_config(path).get("consumption") or {}).get("mode"))
+    return str(value) if value else None
+
+
 def update_agents_marker(path: Path) -> None:
     target = Path(path).resolve() / "AGENTS.md"
     existing = target.read_text(encoding="utf-8") if target.exists() else ""
@@ -91,6 +96,7 @@ def initialize_project(path: Path, templates: Path, force: bool = False, upgrade
     project["orchestration"] = {**DEFAULT_ORCHESTRATION, **project.get("orchestration", {}),
                                 "owner": "universal-agent-platform"}
     project["providers"] = project.get("providers") or {"preference": ["auto"]}
+    project["consumption"] = project.get("consumption") or {"mode": "balanced"}
     project["constraints"] = project.get("constraints") or {
         "require_human_approval_for": ["destructive_actions", "deployment", "publishing"]}
     project_path.write_text(yaml.safe_dump(project, sort_keys=False), encoding="utf-8")

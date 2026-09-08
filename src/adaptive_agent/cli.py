@@ -15,9 +15,11 @@ from adaptive_agent import __version__
 from adaptive_agent.api.app import create_app
 from adaptive_agent.bootstrap import (
     analyze_project,
+    consumption_mode,
     platform_config,
     provider_preference,
     set_provider_preference,
+    set_consumption_mode,
     setup as run_setup,
 )
 from adaptive_agent.core.artifacts import Artifact, ArtifactStore, ArtifactType
@@ -31,6 +33,7 @@ from adaptive_agent.project.adapter import (
     initialize_project,
     orchestration_config,
     project_constraints,
+    project_consumption_mode,
     project_profiles,
     project_provider_preference,
 )
@@ -85,6 +88,8 @@ def parser() -> argparse.ArgumentParser:
     run.add_argument("--approve", action="append", default=[], metavar="GATE",
                      help="authorize one approval gate for this run; repeatable")
     run.add_argument("--explain", action="store_true", help="print the composition rationale and exit")
+    run.add_argument("--consumption", choices=("economy", "balanced", "maximum"),
+                     help="override the project consumption policy for this run")
 
     orchestrate = commands.add_parser("orchestrate", help="canonical AI-assistant orchestration entrypoint")
     orchestrate.add_argument("goal")
@@ -94,6 +99,8 @@ def parser() -> argparse.ArgumentParser:
     orchestrate.add_argument("--in-place", action="store_true")
     orchestrate.add_argument("--profiles")
     orchestrate.add_argument("--approve", action="append", default=[], metavar="GATE")
+    orchestrate.add_argument("--consumption", choices=("economy", "balanced", "maximum"),
+                             help="override the project consumption policy for this run")
 
     dashboard = commands.add_parser("dashboard", help="serve the local dashboard")
     dashboard.add_argument("--host", default="127.0.0.1")
@@ -134,6 +141,10 @@ def parser() -> argparse.ArgumentParser:
     provider_prefer = provider_subcommands.add_parser("prefer")
     provider_prefer.add_argument("name", nargs="+")
     provider_subcommands.add_parser("show").add_argument("name")
+
+    consumption = commands.add_parser("consumption", help="show or set the global quota policy")
+    consumption.add_argument("mode", nargs="?", choices=("economy", "balanced", "maximum"))
+    consumption.add_argument("--json", action="store_true")
 
     provider_test = commands.add_parser("provider-test", help="run one tiny read-only provider request")
     provider_test.add_argument("name")
@@ -226,7 +237,8 @@ def _prepare_worktree(goal: str, provider_name: str, run_id: str, in_place: bool
 def _run_goal(goal: str, provider_name: str = "mock", delay: float = 0.02,
               timeout: float = 900, in_place: bool = False, entry_source: str = "cli",
               orchestration_owner: str = "universal-agent-platform", profiles: list[str] | None = None,
-              approvals: list[str] | None = None) -> tuple[str, str, str | None]:
+              approvals: list[str] | None = None,
+              consumption: str | None = None) -> tuple[str, str, str | None]:
     db = database()
     run_id = new_id("RUN")
     resolved = _resolve_provider(provider_name)
@@ -235,7 +247,8 @@ def _run_goal(goal: str, provider_name: str = "mock", delay: float = 0.02,
     project_id = _project_id(db, Path.cwd())
     orchestrator = _orchestrator(
         db, resolved, timeout, delay, profiles,
-        provider_preference_override=[resolved] if provider_name != "auto" else None)
+        provider_preference_override=[resolved] if provider_name != "auto" else None,
+        consumption_override=consumption)
     try:
         completed_id = asyncio.run(orchestrator.run_goal(
             goal, project_id, str(workdir), run_id, info.name, info.type,
@@ -253,7 +266,8 @@ def _run_goal(goal: str, provider_name: str = "mock", delay: float = 0.02,
 
 def _orchestrator(db, provider_name: str, timeout: float = 900, delay: float = 0.02,
                   profiles: list[str] | None = None, provider=None,
-                  provider_preference_override: list[str] | None = None) -> Orchestrator:
+                  provider_preference_override: list[str] | None = None,
+                  consumption_override: str | None = None) -> Orchestrator:
     cwd = Path.cwd()
     preference = provider_preference_override or project_provider_preference(cwd)
     if provider_preference_override is None and preference == ["auto"]:
@@ -261,17 +275,21 @@ def _orchestrator(db, provider_name: str, timeout: float = 900, delay: float = 0
     return Orchestrator(db, provider or _provider(provider_name, timeout, delay), event_bus(db),
                         provider_name=provider_name,
                         provider_preference=preference,
-                        active_profiles=profiles if profiles is not None else project_profiles(cwd))
+                        active_profiles=profiles if profiles is not None else project_profiles(cwd),
+                        consumption_mode=(consumption_override or project_consumption_mode(cwd)
+                                          or consumption_mode()))
 
 
-def _dry_run(goal: str, provider_name: str, profiles: list[str] | None = None) -> dict:
+def _dry_run(goal: str, provider_name: str, profiles: list[str] | None = None,
+             consumption: str | None = None) -> dict:
     db = database()
     info = discover(Path.cwd())
     resolved = _resolve_provider(provider_name)
     # Dry-run spawns no external process; the provider name only shapes routing.
     orchestrator = _orchestrator(
         db, resolved, profiles=profiles, provider=MockProvider(delay=0),
-        provider_preference_override=[resolved] if provider_name != "auto" else None)
+        provider_preference_override=[resolved] if provider_name != "auto" else None,
+        consumption_override=consumption)
     composition = orchestrator.plan("RUN-DRYRUN", goal, working_directory=str(Path.cwd()),
                                     project_name=info.name, project_type=info.type,
                                     project_signals=info.signals,
@@ -281,6 +299,7 @@ def _dry_run(goal: str, provider_name: str, profiles: list[str] | None = None) -
         "dry_run": True,
         "mode": composition.mode,
         "provider": resolved,
+        "consumption": composition.consumption,
         "project": {"name": info.name, "type": info.type, "path": str(Path.cwd()),
                     "recommended_profiles": info.recommended_profiles},
         "analysis": composition.analysis.to_dict(),
@@ -331,6 +350,7 @@ def _run_summary(db, run_id: str, worktree: str | None = None) -> dict:
             "orchestration_owner": run.get("orchestration_owner", "universal-agent-platform"),
             "entry_source": run.get("entry_source", "cli"),
             "work_profiles": [item for item in str(run.get("work_profiles", "")).split(",") if item],
+            "consumption": composition.get("consumption", {}),
             "team": composition.get("team", {}).get("rationale", []),
             "tasks": f"{completed} / {len(tasks)} completed",
             "agents": [{"agent": item["owner"], "status": item["status"], "kind": item.get("kind", "agent"),
@@ -362,6 +382,7 @@ def _project_status(db, path: Path) -> str:
         f"Orchestration owner: {'Universal Agent Platform' if config['owner'] == 'universal-agent-platform' else config['owner']}",
         f"Platform enabled: {'YES' if config['owner'] == 'universal-agent-platform' and marker else 'NO'}",
         f"Active work profiles: {', '.join(active)}",
+        f"Consumption policy: {project_consumption_mode(path) or consumption_mode()}",
         f"Ready providers: {', '.join(ready) or 'none'}",
         "Child execution guard: READY",
         f"Router authority: {'platform' if config['owner'] == 'universal-agent-platform' else config['owner']}",
@@ -423,6 +444,7 @@ def _doctor(db) -> str:
               f"Universal orchestration {yes(config['owner'] == 'universal-agent-platform')}",
               f"Project marker     {yes(marker)}",
               f"Active profiles    {', '.join(project_profiles(Path.cwd())) or 'inferred per goal'}",
+              f"Consumption       {project_consumption_mode(Path.cwd()) or consumption_mode()}",
               f"Approval gates     {', '.join(project_constraints(Path.cwd())) or 'none configured'}",
               "Recursion protection PASS",
               f"Router authority   {'platform' if config['owner'] == 'universal-agent-platform' else config['owner']}",
@@ -444,6 +466,7 @@ def _explain(db, run_id: str) -> dict:
     return {
         "run_id": run_id,
         "mode": composition.get("mode", "unknown"),
+        "consumption": composition.get("consumption", {}),
         "why_this_team": {
             "goal_requires": analysis.get("capabilities", []),
             "complexity": analysis.get("complexity"),
@@ -536,7 +559,8 @@ def main(argv: list[str] | None = None) -> int:
         try:
             run_id, status, worktree = _run_goal(args.goal, args.provider, timeout=args.timeout,
                                                  in_place=args.in_place, entry_source="codex_parent",
-                                                 profiles=selected_profiles, approvals=args.approve)
+                                                 profiles=selected_profiles, approvals=args.approve,
+                                                 consumption=args.consumption)
         except (RuntimeError, ValueError) as error:
             print(f"Run preparation failed: {error}", file=sys.stderr)
             return 2
@@ -550,12 +574,14 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "run":
         if args.dry_run or args.explain:
-            print(json.dumps(_dry_run(args.goal, args.provider, selected_profiles), indent=2))
+            print(json.dumps(_dry_run(args.goal, args.provider, selected_profiles,
+                                      args.consumption), indent=2))
             return 0
         try:
             run_id, status, worktree = _run_goal(args.goal, args.provider, timeout=args.timeout,
                                                  in_place=args.in_place, profiles=selected_profiles,
-                                                 approvals=args.approve)
+                                                 approvals=args.approve,
+                                                 consumption=args.consumption)
         except (RuntimeError, ValueError) as error:
             print(f"Run preparation failed: {error}", file=sys.stderr)
             return 2
@@ -575,6 +601,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.json:
             print(json.dumps({"project": orchestration_config(Path.cwd()),
                               "profiles": project_profiles(Path.cwd()),
+                              "consumption": project_consumption_mode(Path.cwd()) or consumption_mode(),
                               "providers_ready": provider_registry().ready_ids()}, indent=2))
         else:
             print(_project_status(db, Path.cwd()))
@@ -675,6 +702,17 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(payload, indent=2) if args.json else
               f"{args.name}: {receipt.status.upper()} ({receipt.duration_seconds:.2f}s)\n{receipt.summary}")
         return 0 if receipt.status == "completed" else 1
+    elif args.command == "consumption":
+        selected = set_consumption_mode(args.mode) if args.mode else consumption_mode()
+        from adaptive_agent.core.consumption import consumption_policy
+
+        payload = consumption_policy(selected).to_dict()
+        print(json.dumps(payload, indent=2) if args.json else
+              f"Consumption policy: {selected}\n"
+              f"Parallel agents: {payload['max_parallel_agents']}\n"
+              f"Escalations per task: {payload['max_escalations_per_task']}\n"
+              f"Context receipts: {payload['max_context_receipts']}")
+        return 0
     elif args.command == "demo":
         from adaptive_agent.core.cross_provider_demo import cross_provider_demo
 

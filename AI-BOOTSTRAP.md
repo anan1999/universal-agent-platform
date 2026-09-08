@@ -161,7 +161,21 @@ Credentials are never printed. Do not try to read them and do not echo them anyw
 readiness, and dashboard binding. Run it before reporting success to the user, and run it
 first whenever something behaves unexpectedly.
 
-## 9. Invoke orchestration
+## 9. Choose a consumption policy
+
+The default `balanced` policy preserves normal orchestration. If the user asks to conserve a
+subscription allowance, use `economy`; it reduces agent fan-out, reasoning, carried context,
+and retries without bypassing capability checks, deterministic validation, or approvals.
+
+```bash
+agentctl consumption
+agentctl run "<goal>" --consumption economy --dry-run --json
+```
+
+Do not silently select `maximum`. A per-run `--consumption` override is safer than changing
+the global default for a single task.
+
+## 10. Invoke orchestration
 
 This is the main entry point:
 
@@ -192,7 +206,7 @@ agentctl dashboard                   # http://127.0.0.1:8787
 Report the outcome to the user in terms of what was produced and what was checked. If the run
 failed, give them the root cause from `explain`, not a wall of log output.
 
-## 10. Safety
+## 11. Safety
 
 These constraints are enforced by the platform. Do not attempt to work around them; if one
 blocks you, that is the answer, and you should tell the user rather than route around it.
@@ -211,7 +225,7 @@ Also: do not consume the user's real AI quota to explore or test. `pytest` and t
 provider are free and offline. Use `--provider mock` when you are checking behavior rather
 than doing the user's actual work.
 
-## 11. Upgrade
+## 12. Upgrade
 
 ```bash
 pip install --upgrade git+https://github.com/anan1999/universal-agent-platform.git
@@ -222,7 +236,7 @@ agentctl init --upgrade        # per project, refreshes markers only
 Database migrations are additive and run automatically. Existing runs, receipts and
 performance history stay readable.
 
-## 12. Uninstall and detach
+## 13. Uninstall and detach
 
 To hand orchestration back to the user for one project, leaving history intact:
 
@@ -236,7 +250,7 @@ This removes the platform's marked block from `AGENTS.md` and disables orchestra
 To remove the tool entirely: `pip uninstall universal-agent-platform`. The platform home
 is left in place; deleting it is the user's call, since it holds their run history.
 
-## 13. Troubleshooting
+## 14. Troubleshooting
 
 | Symptom | Cause and fix |
 |---|---|

@@ -17,6 +17,7 @@ from adaptive_agent.core.capabilities import Complexity, Level, Requirement, Ris
 from adaptive_agent.core.capability_resolver import CapabilityResolver, ResolutionPlan, Strategy
 from adaptive_agent.core.evaluation import EvaluationRegistry, EvaluationStrategy
 from adaptive_agent.core.goal_analyzer import GoalAnalysis
+from adaptive_agent.core.consumption import ConsumptionPolicy, consumption_policy
 from adaptive_agent.profiles.registry import ProfileRole, WorkProfileRegistry
 
 
@@ -55,6 +56,7 @@ class TeamPlan:
     tools: list[str] = field(default_factory=list)
     approval_gates: list[str] = field(default_factory=list)
     resolutions: ResolutionPlan = field(default_factory=ResolutionPlan)
+    consumption_mode: str = "balanced"
 
     @property
     def capability_signature(self) -> str:
@@ -68,14 +70,17 @@ class TeamPlan:
                 "rationale": list(self.rationale), "omitted": list(self.omitted),
                 "evaluation": [item.to_dict() for item in self.evaluation],
                 "tools": list(self.tools), "approval_gates": list(self.approval_gates),
-                "resolutions": self.resolutions.to_dict()}
+                "resolutions": self.resolutions.to_dict(),
+                "consumption_mode": self.consumption_mode}
 
 
 class TeamComposer:
     def __init__(self, profiles: WorkProfileRegistry,
-                 evaluations: EvaluationRegistry | None = None):
+                 evaluations: EvaluationRegistry | None = None,
+                 policy: ConsumptionPolicy | None = None):
         self.profiles = profiles
         self.evaluations = evaluations or EvaluationRegistry()
+        self.policy = policy or consumption_policy()
 
     def compose(self, analysis: GoalAnalysis, resolver: CapabilityResolver | None = None,
                 run_id: str = "", constraints: Sequence[str] = ()) -> TeamPlan:
@@ -83,6 +88,7 @@ class TeamComposer:
         candidates = self.profiles.roles(analysis.profiles)
         rationale: list[str] = []
         omitted: list[dict[str, str]] = []
+        rationale.append(f"Consumption policy: {self.policy.mode.value}.")
 
         if analysis.inferred:
             rationale.append("The goal matched no known domain, so the team was composed from "
@@ -122,7 +128,8 @@ class TeamComposer:
                         complexity=analysis.complexity, risk=analysis.risk,
                         profiles=list(analysis.profiles), capabilities=sorted(wanted),
                         rationale=rationale, omitted=omitted, evaluation=evaluation,
-                        tools=tools, approval_gates=gates, resolutions=resolutions)
+                        tools=tools, approval_gates=gates, resolutions=resolutions,
+                        consumption_mode=self.policy.mode.value)
 
     # -- selection ---------------------------------------------------------
 
@@ -159,7 +166,7 @@ class TeamComposer:
                 rationale.append("Goal is read-only, so only non-modifying roles were selected.")
                 matched = readers
 
-        limit = analysis.complexity.max_team_size
+        limit = self.policy.team_limit(analysis.complexity.max_team_size, analysis.risk)
         essential = [(role, overlap) for role, overlap in matched if not role.optional]
         optional = [(role, overlap) for role, overlap in matched if role.optional]
 
@@ -215,7 +222,7 @@ class TeamComposer:
 
     def _enforce_budget(self, members: list[TeamMember], analysis: GoalAnalysis,
                         omitted: list[dict[str, str]]) -> list[TeamMember]:
-        limit = analysis.complexity.max_team_size
+        limit = self.policy.team_limit(analysis.complexity.max_team_size, analysis.risk)
         if len(members) <= limit:
             return members
         ordered = sorted(members, key=lambda item: (item.evaluative, item.stage))

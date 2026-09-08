@@ -27,7 +27,8 @@ class Scheduler:
                  max_parallel_agents: int = 3, max_parallel_strong_agents: int = 1,
                  max_escalations: int = 2, capability_router: CapabilityRouter | None = None,
                  tools: ToolRegistry | None = None, approvals: Sequence[str] = (),
-                 provider_registry: ProviderRegistry | None = None):
+                 provider_registry: ProviderRegistry | None = None,
+                 receipt_word_limit: int = 160, max_context_receipts: int = 4):
         self.database = database
         self.events = events
         self.provider = provider
@@ -44,6 +45,7 @@ class Scheduler:
         self.strong_parallel = asyncio.Semaphore(max_parallel_strong_agents)
         self.completed_receipts: dict[str, Receipt] = {}
         self._provider_cache: dict[str, AIProvider] = {provider_name: provider}
+        self.packet_builder = ExecutionPacketBuilder(receipt_word_limit, max_context_receipts)
 
     async def run(self, graph: TaskGraph) -> bool:
         graph.validate()
@@ -147,7 +149,7 @@ class Scheduler:
 
                 context_ids = task.metadata.get("context_receipts", task.dependencies)
                 dependency_receipts = [self.completed_receipts[item] for item in context_ids if item in self.completed_receipts]
-                packet = ExecutionPacketBuilder().build(
+                packet = self.packet_builder.build(
                     task,
                     task.metadata.get("working_directory", "."),
                     task.metadata.get("project_name", "project"),

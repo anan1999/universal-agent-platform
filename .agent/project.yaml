@@ -6,3 +6,5 @@ languages:
 orchestration:
   owner: universal-agent-platform
   threshold: non_trivial
+consumption:
+  mode: economy

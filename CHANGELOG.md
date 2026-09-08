@@ -9,6 +9,7 @@ All notable changes follow semantic versioning.
 - Added provider execution modes and capability-aware rejection/fallback routing.
 - Simplified Git URL installation and AI bootstrap instructions.
 - Added install, idempotency, provider, routing, and version consistency validation.
+- Added economy, balanced, and maximum consumption policies with CLI, project, and per-run selection.
 
 ## 2.0.0
 
