@@ -11,12 +11,19 @@ from fastapi.staticfiles import StaticFiles
 from adaptive_agent.observability.event_bus import EventBus
 from adaptive_agent.observability.performance import PerformanceTracker
 from adaptive_agent import __version__
+from adaptive_agent.bootstrap import consumption_mode
+from adaptive_agent.core.consumption import consumption_policy
 from adaptive_agent.runtime import RESOURCE_ROOT, database
 from adaptive_agent.registry_view import (
     agents as registry_agents, model_registry, profiles as registry_profiles,
     providers as registry_providers, skills as registry_skills, tools as registry_tools,
 )
-from adaptive_agent.project.adapter import UAP_START, orchestration_config, project_profiles
+from adaptive_agent.project.adapter import (
+    UAP_START,
+    orchestration_config,
+    project_consumption_mode,
+    project_profiles,
+)
 from adaptive_agent.storage.database import Database
 
 
@@ -49,12 +56,15 @@ def create_app(db: Database | None = None, events: EventBus | None = None) -> Fa
                        orchestration_config(project)["owner"] == "universal-agent-platform")
         provider_items = registry_providers(db)
         active = project_profiles(project) if initialized else []
+        selected_consumption = project_consumption_mode(project) or consumption_mode()
+        limits = consumption_policy(selected_consumption).to_dict()
         return {
             "platform_installation": "ready" if installed else "fail",
             "project_initialization": "ready" if initialized else "not_initialized",
             "provider_availability": sum(1 for item in provider_items if item["ready"]),
             "profiles_active": len(active),
             "health": "pass" if installed else "fail",
+            "consumption": {"mode": selected_consumption, "limits": limits},
         }
 
     @app.get("/api/projects")
@@ -227,6 +237,7 @@ def create_app(db: Database | None = None, events: EventBus | None = None) -> Fa
         return {"run_id": run_id, "goal": rows[0]["goal"],
                 "work_profiles": [item for item in str(rows[0].get("work_profiles", "")).split(",") if item],
                 "analysis": stored.get("analysis", {}), "team": stored.get("team", {}),
+                "consumption": stored.get("consumption", {}),
                 "routing": routing}
 
     @app.get("/api/orchestration")
@@ -242,7 +253,14 @@ def create_app(db: Database | None = None, events: EventBus | None = None) -> Fa
     @app.get("/api/token-usage")
     def tokens(run_id: str | None = None):
         where, params = (" WHERE run_id=?", (run_id,)) if run_id else ("", ())
-        return db.query(f"SELECT run_id,task_id,agent,SUM(input_tokens) input_tokens,SUM(output_tokens) output_tokens,SUM(cached_tokens) cached_tokens,SUM(input_tokens+output_tokens) total_tokens,MAX(estimated) estimated,token_source FROM token_usage{where} GROUP BY run_id,task_id,agent,token_source", params)
+        return db.query(
+            f"SELECT run_id,task_id,agent,provider,SUM(input_tokens) input_tokens,"
+            f"SUM(output_tokens) output_tokens,SUM(cached_tokens) cached_tokens,"
+            f"SUM(input_tokens+output_tokens) total_tokens,MAX(estimated) estimated,"
+            f"token_source,SUM(invocation_count) invocations FROM token_usage{where} "
+            f"GROUP BY run_id,task_id,agent,provider,token_source",
+            params,
+        )
 
     @app.get("/api/performance")
     def performance():

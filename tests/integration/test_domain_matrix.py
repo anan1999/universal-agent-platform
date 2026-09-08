@@ -165,6 +165,14 @@ def test_multiple_profiles_do_not_activate_every_role(project):
     assert plan["team"]["omitted"], "unused candidate roles must be explained"
 
 
+def test_typo_with_four_active_profiles_still_uses_one_agent(project):
+    plan = _dry_run("Fix a typo in API documentation.", "mock",
+                    profiles=["product", "uiux", "software-engineering", "ai-engineering"])
+    assert len(_agents(plan)) == 1
+    assert len(plan["analysis"]["profiles"]) >= 4
+    assert plan["team"]["omitted"], "profile roles are candidates, not an automatic fan-out"
+
+
 # -- Routing is capability-first --------------------------------------------
 
 def test_routing_is_explained_by_capability_not_by_role_name(project):

@@ -128,6 +128,8 @@ def test_composition_answers_why_this_team(run):
     assert team["rationale"], "the run must record why"
     assert all(member["reason"] for member in team["members"])
     assert payload["analysis"]["capabilities"]
+    assert payload["consumption"]["mode"] == "balanced"
+    assert payload["consumption"]["max_parallel_agents"] == 3
 
 
 def test_composition_answers_why_this_provider(run):
@@ -150,6 +152,26 @@ def test_composition_records_omissions_not_just_selections(run):
 
 def test_composition_of_unknown_run_is_a_404(client):
     assert client.get("/api/runs/RUN-NOPE/composition").status_code == 404
+
+
+def test_token_usage_attributes_provider_source_and_invocations(run):
+    client, run_id = run
+    payload = client.get("/api/token-usage", params={"run_id": run_id}).json()
+    assert payload
+    assert all(item["provider"] == "mock" for item in payload)
+    assert all(item["token_source"] in {"measured", "estimated", "unavailable"} for item in payload)
+    assert sum(item["invocations"] for item in payload) > 0
+
+
+def test_bootstrap_status_exposes_effective_consumption(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    agent_dir = tmp_path / ".agent"
+    agent_dir.mkdir()
+    (agent_dir / "project.yaml").write_text("consumption:\n  mode: economy\n", encoding="utf-8")
+    payload = TestClient(create_app(Database(tmp_path / "status.db"))).get("/api/bootstrap-status").json()
+    assert payload["consumption"]["mode"] == "economy"
+    assert payload["consumption"]["limits"]["max_parallel_agents"] == 1
+    assert payload["consumption"]["limits"]["max_context_receipts"] == 2
 
 
 # -- Routing -----------------------------------------------------------------

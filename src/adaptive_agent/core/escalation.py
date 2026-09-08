@@ -33,8 +33,9 @@ class EscalationManager:
     """
 
     #: Suffixes that mean "the environment is wrong", which no model can fix.
-    ENVIRONMENT_SUFFIXES = ("NOT_FOUND", "AUTH_ERROR", "INVALID_ARGUMENT",
-                            "CAPABILITY_UNAVAILABLE", "NOT_IMPLEMENTED", "UNAVAILABLE")
+    ENVIRONMENT_SUFFIXES = ("NOT_FOUND", "AUTH", "AUTH_ERROR", "INVALID_ARGUMENT",
+                            "INVALID_RESPONSE", "CONNECTION", "CAPABILITY_UNAVAILABLE",
+                            "NOT_IMPLEMENTED", "UNAVAILABLE")
     TIMEOUT_SUFFIX = "TIMEOUT"
 
     def __init__(self, max_escalations: int = 2):

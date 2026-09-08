@@ -9,7 +9,7 @@ const fmt=x=>x==null?'Unavailable':Number(x).toLocaleString();
 const pct=x=>x==null?'Unavailable':Math.round(x*100)+'%';
 const row=(label,value)=>`<div class="row"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`;
 
-async function shell(){const [orchestration,health,bootstrap]=await Promise.all([api('/api/orchestration'),api('/api/health'),api('/api/bootstrap-status')]);state.orchestration=orchestration;$('version').textContent='v'+health.version;$('ownerBadge').textContent=`Owner: ${orchestration.owner==='universal-agent-platform'?'Platform':orchestration.owner}`;$('bootstrapHealth').innerHTML=metric('Platform installation',bootstrap.platform_installation.toUpperCase())+metric('Project initialization',bootstrap.project_initialization.toUpperCase())+metric('Ready providers',bootstrap.provider_availability)+metric('Active profiles',bootstrap.profiles_active)+metric('Health',bootstrap.health.toUpperCase())}
+async function shell(){const [orchestration,health,bootstrap]=await Promise.all([api('/api/orchestration'),api('/api/health'),api('/api/bootstrap-status')]);state.orchestration=orchestration;$('version').textContent='v'+health.version;$('ownerBadge').textContent=`Owner: ${orchestration.owner==='universal-agent-platform'?'Platform':orchestration.owner}`;$('bootstrapHealth').innerHTML=metric('Platform installation',bootstrap.platform_installation.toUpperCase())+metric('Project initialization',bootstrap.project_initialization.toUpperCase())+metric('Ready providers',bootstrap.provider_availability)+metric('Active profiles',bootstrap.profiles_active)+metric('Consumption',bootstrap.consumption.mode.toUpperCase())+metric('Health',bootstrap.health.toUpperCase())}
 
 // -- Overview ----------------------------------------------------------------
 
@@ -21,7 +21,8 @@ function renderRun(run,tokens,caps,routing,performance,efficiency,composition){
   const invocations=tokens.reduce((n,t)=>n+(t.invocations||0),0);
   const deterministic=tasks.filter(t=>t.kind&&t.kind!=='agent').length;
   const profiles=(composition.work_profiles||[]).join(', ')||'inferred';
-  $('metrics').innerHTML=metric('Run status',run.status)+metric('Work profiles',profiles)+metric('Tasks',tasks.length)+metric('AI invocations',invocations||tasks.filter(t=>!t.kind||t.kind==='agent').length)+metric('Deterministic steps',deterministic)+metric('Tokens',total.toLocaleString());
+  const consumption=composition.consumption||{},limits=consumption.limits||consumption;
+  $('metrics').innerHTML=metric('Run status',run.status)+metric('Work profiles',profiles)+metric('Consumption',consumption.mode||'balanced')+metric('Team limit',limits.max_team_members==null?'profile default':limits.max_team_members)+metric('Tasks',tasks.length)+metric('AI invocations',invocations||tasks.filter(t=>!t.kind||t.kind==='agent').length)+metric('Deterministic steps',deterministic)+metric('Tokens',total.toLocaleString());
   renderTeam(composition);
   $('dag').innerHTML=rows(tasks.map(t=>{const kind=t.kind||'agent',routed=t.data.metadata?.model||(kind==='agent'?'unrouted':'no AI');return `<div class="node ${esc(t.status)} kind-${esc(kind)}" data-task="${esc(t.id)}"><div class="owner">${esc(t.owner)} · ${esc(routed)}</div><div>${esc(t.title)}</div><span class="pill">${esc(t.status)}</span><span class="pill kind">${esc(kind)}</span><small>${esc(t.id)} · dependencies: ${esc((t.data.dependencies||[]).join(', ')||'none')}</small></div>`}),'No tasks');
   document.querySelectorAll('.node').forEach(n=>n.onclick=()=>showTask(tasks.find(t=>t.id===n.dataset.task),tokens));

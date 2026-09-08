@@ -147,7 +147,8 @@ class OpenAICompatibleProvider(AIProvider):
                 payload.pop("response_format")
                 status, raw = await asyncio.to_thread(self._request, payload)
             if status < 200 or status >= 300:
-                return self._failure(task, f"PROVIDER_HTTP_{status}",
+                code = "PROVIDER_AUTH_ERROR" if status in {401, 403} else f"PROVIDER_HTTP_{status}"
+                return self._failure(task, code,
                                      f"Compatible endpoint returned HTTP {status}.", started, model)
             response = json.loads(raw.decode("utf-8"))
             output = self._content(response)
@@ -165,7 +166,7 @@ class OpenAICompatibleProvider(AIProvider):
         except TimeoutError:
             return self._failure(task, "PROVIDER_TIMEOUT", "Compatible endpoint timed out.", started, model)
         except HTTPError as error:
-            code = "PROVIDER_AUTH" if error.code in {401, 403} else f"PROVIDER_HTTP_{error.code}"
+            code = "PROVIDER_AUTH_ERROR" if error.code in {401, 403} else f"PROVIDER_HTTP_{error.code}"
             return self._failure(task, code, f"Compatible endpoint returned HTTP {error.code}.", started, model)
         except (URLError, OSError) as error:
             return self._failure(task, "PROVIDER_CONNECTION", type(error).__name__, started, model)

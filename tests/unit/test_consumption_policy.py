@@ -79,3 +79,20 @@ def test_packet_builder_accepts_economy_context_budget():
     builder = ExecutionPacketBuilder(receipt_word_limit=80, max_receipts=2)
     assert builder.receipt_word_limit == 80
     assert builder.max_receipts == 2
+
+
+def test_economy_keeps_human_gate_for_high_risk_work(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    plan = _dry_run("Deploy the service to the production cluster", "mock", consumption="economy")
+    assert plan["analysis"]["risk"] == Risk.HIGH.value
+    assert any(task["kind"] == "approval" for task in plan["tasks"])
+    assert any(task["agent"].endswith("reviewer") for task in plan["tasks"]
+               if task["kind"] == "agent")
+
+
+def test_economy_keeps_deterministic_validation(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "pyproject.toml").write_text("[project]\nname='tiny'\n", encoding="utf-8")
+    plan = _dry_run("Fix a simple Python arithmetic bug and run the existing test.",
+                    "mock", consumption="economy")
+    assert any(task["kind"] == "tool" and "test" in task["agent"] for task in plan["tasks"])

@@ -2,6 +2,7 @@ import asyncio
 import json
 
 from adaptive_agent.core.models import Task
+from adaptive_agent.core.escalation import EscalationManager, FailureKind
 from adaptive_agent.providers.base import ProviderState
 from adaptive_agent.providers.openai_compatible import OpenAICompatibleProvider
 
@@ -78,3 +79,42 @@ def test_structured_output_falls_back_once_when_endpoint_rejects_it():
     assert receipt.status == "completed"
     assert "response_format" in bodies[0]
     assert "response_format" not in bodies[1]
+
+
+def test_auth_failure_is_classified_and_never_requests_stronger_model():
+    provider = OpenAICompatibleProvider(
+        "http://localhost:9999/v1", model="test-model",
+        transport=lambda *args: (401, b'{"error":"invalid key"}'),
+    )
+    task = Task("TASK-AUTH", "RUN", "tiny request", "tester", ["text"], model_class="cheap")
+    receipt = asyncio.run(provider.execute(task))
+    decision = EscalationManager().decide(task, receipt, 0)
+    assert receipt.error_code == "PROVIDER_AUTH_ERROR"
+    assert receipt.needs_escalation is False
+    assert decision.failure_kind is FailureKind.ENVIRONMENT
+    assert decision.escalate is False
+
+
+def test_invalid_model_http_failure_does_not_auto_escalate():
+    provider = OpenAICompatibleProvider(
+        "http://localhost:9999/v1", model="missing-model",
+        transport=lambda *args: (404, b'{"error":"model not found"}'),
+    )
+    task = Task("TASK-MODEL", "RUN", "tiny request", "tester", ["text"], model_class="cheap")
+    receipt = asyncio.run(provider.execute(task))
+    assert receipt.error_code == "PROVIDER_HTTP_404"
+    assert EscalationManager().decide(task, receipt, 0).escalate is False
+
+
+def test_malformed_json_is_environment_failure_without_usage_or_escalation():
+    provider = OpenAICompatibleProvider(
+        "http://localhost:9999/v1", model="test-model",
+        transport=lambda *args: (200, b'not-json'),
+    )
+    task = Task("TASK-JSON", "RUN", "tiny request", "tester", ["text"], model_class="cheap")
+    receipt = asyncio.run(provider.execute(task))
+    decision = EscalationManager().decide(task, receipt, 0)
+    assert receipt.error_code == "PROVIDER_INVALID_RESPONSE"
+    assert receipt.token_usage["source"] == "unavailable"
+    assert decision.failure_kind is FailureKind.ENVIRONMENT
+    assert decision.escalate is False
