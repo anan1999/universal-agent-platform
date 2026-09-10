@@ -17,6 +17,11 @@ during early tasks, then retrieves only what a later task needs. Cold start may 
 the intended benefit is cumulative. It reports cold,
 warm, and revalidation starts honestly; no token saving is claimed without measured evidence.
 
+For example, an early task can learn a project API validation workflow. That procedure is stored as
+a review-required, project-local Skill under `.agent/skills/`. A fresh later AI session can discover
+and reuse that Skill; source changes invalidate it for revalidation instead of silently loading stale
+instructions.
+
 ---
 
 ## FOR AI ASSISTANTS

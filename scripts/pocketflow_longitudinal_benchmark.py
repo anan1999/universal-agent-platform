@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import time
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -56,17 +57,41 @@ def arguments() -> argparse.Namespace:
 
 
 def dry_run() -> dict[str, Any]:
-    """Offline contract check for the five write-enabled benchmark tasks."""
-    from adaptive_agent.core.goal_analyzer import GoalAnalyzer
+    """Offline contract check using the same Orchestrator planner as real runs."""
+    from adaptive_agent.core.orchestrator import Orchestrator
+    from adaptive_agent.providers.mock import MockProvider
     rows = []
-    for number, goal in enumerate(TASKS, 1):
-        analysis = GoalAnalyzer().analyze(goal)
-        required = sorted(set(analysis.capabilities) | {"filesystem", "repository_access", "write_access"})
-        rows.append({"task_number": number, "goal": goal, "read_only": False,
-                     "required_capabilities": required, "strategy": "implementation/write-enabled",
-                     "agent_count": 1, "selected_tools": ["filesystem", "shell"],
-                     "approvals": list(analysis.approval_gates), "selected_skills": [],
-                     "provider_requirements": required, "ready": not analysis.read_only})
+    with tempfile.TemporaryDirectory(prefix="uap-pocketflow-dry-") as directory:
+        root = Path(directory)
+        seed(root)
+        initialize_project(root, RESOURCE_ROOT / "templates", auto=True)
+        db = Database(root / "history.db")
+        orchestrator = Orchestrator(db, MockProvider(), EventBus(db), provider_name="mock",
+                                    active_profiles=["software-engineering"], consumption_mode="economy")
+        for number, goal in enumerate(TASKS, 1):
+            composition = orchestrator.compose(new_id("DRY"), goal, str(root),
+                                               project_name="pocketflow-expenses", project_type="python")
+            task_rows = []
+            ready = not composition.analysis.read_only
+            for task in composition.graph.tasks.values():
+                task_data = task.to_dict()
+                task_rows.append(task_data)
+                if task.kind.value == "agent":
+                    routing = task.metadata.get("routing", {})
+                    required = set(routing.get("required_capabilities", task.required_capabilities))
+                    writable = (not bool(task.metadata.get("read_only", False)) and
+                                {"filesystem", "write_access", "repository_access"} <= required)
+                    ready = ready and writable
+            rows.append({"task_number": number, "goal": goal,
+                         "read_only": composition.analysis.read_only,
+                         "strategy": composition.execution_plan.strategy.value if composition.execution_plan else None,
+                         "agent_count": composition.execution_plan.ai_agents if composition.execution_plan else 0,
+                         "selected_tools": composition.execution_plan.tools if composition.execution_plan else [],
+                         "approvals": list(composition.team.approval_gates),
+                         "selected_skills": [item.manifest.id for item in composition.execution_plan.selected_skills] if composition.execution_plan else [],
+                         "provider_requirements": sorted({capability for task in composition.graph.tasks.values()
+                                                          for capability in task.metadata.get("routing", {}).get("required_capabilities", [])}),
+                         "tasks": task_rows, "ready": ready})
     return {"tasks": rows, "ready_for_real_benchmark": all(row["ready"] for row in rows)}
 
 

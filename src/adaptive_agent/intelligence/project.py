@@ -89,6 +89,9 @@ class IntelligenceItem:
     failures: int = 0
     repairs: int = 0
     last_used: str | None = None
+    occurrence_count: int = 0
+    evidence_count: int = 0
+    last_seen_task: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -197,6 +200,18 @@ class ProjectIntelligenceStore:
             if (old.kind == item.kind and old.status != IntelligenceStatus.SUPERSEDED.value
                     and old.summary.strip().lower() == item.summary.strip().lower()
                     and item.kind in {IntelligenceKind.SKILL.value, IntelligenceKind.AGENT.value}):
+                if item.kind == IntelligenceKind.AGENT.value:
+                    old.evidence = list(dict.fromkeys([*old.evidence, *item.evidence]))
+                    old.related_paths = sorted(set([*old.related_paths, *item.related_paths]))
+                    old.capabilities = sorted(set([*old.capabilities, *item.capabilities]))
+                    old.occurrence_count = max(1, old.occurrence_count) + 1
+                    old.evidence_count = len(old.evidence)
+                    old.last_seen_task = item.first_created_task
+                    if old.occurrence_count >= 2 and old.status == IntelligenceStatus.NEEDS_REVIEW.value:
+                        old.status = IntelligenceStatus.TEMPORARY.value
+                        old.persistence_decision = PersistenceDecision.TEMPORARY.value
+                    data["items"] = [value.to_dict() if value.id != old.id else old.to_dict() for value in existing]
+                    self._write(data)
                 return old
             if old.id == item.id and old.status != IntelligenceStatus.SUPERSEDED.value:
                 if old.summary == item.summary and old.source_hashes == item.source_hashes:
@@ -245,6 +260,19 @@ class ProjectIntelligenceStore:
             value = json.loads(manifest_path.read_text(encoding="utf-8"))
             value["status"] = "deprecated"
             value.setdefault("provenance", {})["intelligence_status"] = IntelligenceStatus.NEEDS_REVALIDATION.value
+            manifest_path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        except (OSError, ValueError):
+            return
+
+    def _sync_skill_manifest_status(self, item_id: str, status: str) -> None:
+        skill_id = re.sub(r"[^a-z0-9_-]+", "-", item_id.lower()).strip("-") or "project-skill"
+        manifest_path = self.agent_dir / "skills" / skill_id / "skill.json"
+        if not manifest_path.exists():
+            return
+        try:
+            value = json.loads(manifest_path.read_text(encoding="utf-8"))
+            value["status"] = "temporary" if status in {"validated", "promotion_candidate"} else status
+            value.setdefault("provenance", {})["intelligence_status"] = status
             manifest_path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         except (OSError, ValueError):
             return
@@ -364,6 +392,7 @@ class ProjectIntelligenceStore:
                         count = raw["validated_reuse_count"]
                         raw["status"] = (IntelligenceStatus.PROMOTION_CANDIDATE.value if count >= 2
                                           else IntelligenceStatus.VALIDATED.value)
+                        self._sync_skill_manifest_status(raw.get("id", ""), raw["status"])
         self._write(data)
 
     def status(self) -> dict[str, Any]:
@@ -371,7 +400,8 @@ class ProjectIntelligenceStore:
         items = [IntelligenceItem.from_dict(value) for value in data["items"]]
         current = [item for item in items if item.status in {IntelligenceStatus.CURRENT.value,
                                                               IntelligenceStatus.TEMPORARY.value,
-                                                              IntelligenceStatus.VALIDATED.value}]
+                                                              IntelligenceStatus.VALIDATED.value,
+                                                              IntelligenceStatus.PROMOTION_CANDIDATE.value}]
         counts = {kind.value: sum(item.kind == kind.value and item.status in {IntelligenceStatus.CURRENT.value,
                                                                                 IntelligenceStatus.TEMPORARY.value,
                                                                                 IntelligenceStatus.VALIDATED.value,
@@ -531,7 +561,8 @@ class ProjectIntelligenceStore:
                                     kind=normalized, summary=summary, capabilities=list(candidate.get("capabilities") or []),
                                     tags=list(candidate.get("tags") or []), related_paths=list(candidate.get("related_paths") or []),
                                     evidence=evidence, validation=validation, expected_reuse=expected,
-                                    first_created_task=run_id, why_persisted=str(candidate.get("why_persisted") or "structured execution evidence"),
+                                    first_created_task=run_id, last_seen_task=run_id, occurrence_count=1,
+                                    evidence_count=len(evidence), why_persisted=str(candidate.get("why_persisted") or "structured execution evidence"),
                                     persistence_decision=(PersistenceDecision.NEEDS_REVIEW.value if is_role_candidate else
                                                           PersistenceDecision.TEMPORARY.value if normalized == "skill" else
                                                           PersistenceDecision.CURRENT.value),
@@ -546,18 +577,20 @@ class ProjectIntelligenceStore:
         skill_id = re.sub(r"[^a-z0-9_-]+", "-", item.id.lower()).strip("-") or "project-skill"
         directory = self.agent_dir / "skills" / skill_id
         directory.mkdir(parents=True, exist_ok=True)
+        capabilities = item.capabilities or ["project-specific-procedure"]
+        procedure_text = detail.strip()
         manifest = {
             "id": skill_id, "version": "0.1.0", "description": item.summary,
-            "capabilities": item.capabilities or ["project-specific-procedure"],
-            "scope": "project", "entrypoint": "SKILL.md", "trust": "review_required",
+            "capabilities": capabilities, "entrypoint": "SKILL.md", "trust": "review_required",
             "status": "temporary", "evaluation": [item.validation],
             "provenance": {"source": "project_intelligence", "creation_task": item.first_created_task,
                            "evidence": item.evidence, "related_paths": item.related_paths},
+            "estimated_context_tokens": max(1, (len(procedure_text) + len(item.summary) + 3) // 4),
         }
         (directory / "skill.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         (directory / "SKILL.md").write_text(
             f"# {skill_id}\n\n## Purpose\n{item.summary}\n\n## When to use\n"
-            f"Use when the task matches: {', '.join(item.capabilities) or 'this project procedure'}.\n\n"
+            f"Use when the task matches: {', '.join(capabilities)}.\n\n"
             f"## Procedure\n{detail}\n\n## Validation\n{item.validation}\n\n"
             "## Boundaries\nThis temporary Skill is project-local and review-required.\n", encoding="utf-8")
 
@@ -639,7 +672,13 @@ class ProjectIntelligenceStore:
         average = actual / (len(warm) + 1) if warm else float(cold_cost)
         return {"runs": len(warm) + 1, "cold_cost": cold_cost, "warm_costs": warm,
                 "baseline_cost": baseline, "actual_cost": actual, "savings": savings,
-                "average_cost": average, "break_even_run": 2 if warm and warm[0] < cold_cost else None}
+                "average_cost": average, "break_even_run": 2 if warm and warm[0] < cold_cost else None,
+                "status": "ILLUSTRATIVE_ONLY", "savings_claimable": False}
+
+    @staticmethod
+    def illustrative_amortization_estimate(cold_cost: int, warm_costs: Iterable[int]) -> dict[str, Any]:
+        """Deprecated non-authoritative estimate retained only for compatibility."""
+        return ProjectIntelligenceStore.amortization(cold_cost, warm_costs)
 
     def hash_paths(self, paths: Iterable[str]) -> dict[str, str]:
         values: dict[str, str] = {}

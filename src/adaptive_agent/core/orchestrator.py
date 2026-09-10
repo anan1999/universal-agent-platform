@@ -100,8 +100,9 @@ class Orchestrator:
                 goal, analysis.capabilities, record_reuse=record_intelligence)
         self.skills.discover_directory(RESOURCE_ROOT / "skills", SkillTrust.BUILT_IN)
         self.skills.discover_directory(platform_home() / "skills", SkillTrust.TRUSTED)
-        if working_directory:
-            self.skills.discover_directory(Path(working_directory) / ".agent" / "skills",
+        project_root = intelligence_directory or working_directory
+        if project_root:
+            self.skills.discover_directory(Path(project_root) / ".agent" / "skills",
                                            SkillTrust.PROJECT_LOCAL)
         execution = ExecutionPlanner(
             self.tools, SkillResolver(self.skills.manifests()),

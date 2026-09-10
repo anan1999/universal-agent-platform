@@ -1,4 +1,7 @@
 from adaptive_agent.intelligence.project import IntelligenceDistiller, ProjectIntelligenceStore
+from adaptive_agent.skills.manifest import SkillTrust
+from adaptive_agent.skills.registry import SkillRegistry
+from adaptive_agent.skills.resolver import SkillResolver
 
 
 def test_distiller_normalizes_external_evidence_and_materializes_skill(tmp_path):
@@ -20,6 +23,14 @@ def test_distiller_normalizes_external_evidence_and_materializes_skill(tmp_path)
     assert skill.status == "temporary"
     assert (tmp_path / ".agent" / "skills" / skill.id / "skill.json").is_file()
     assert next(item for item in learned if item.kind == "agent").status == "needs_review"
+
+    fresh = SkillRegistry()
+    discovered = fresh.discover_directory(tmp_path / ".agent" / "skills", SkillTrust.PROJECT_LOCAL)
+    assert skill.id in discovered
+    selected, _ = SkillResolver(fresh.manifests()).select(["api"])
+    assert selected and selected[0].manifest.id == skill.id
+    loaded = fresh.load_selected(skill.id)
+    assert "Procedure" in loaded.instructions
 
 
 def test_learning_evidence_is_not_invented_and_quality_gates_reuse(tmp_path):
