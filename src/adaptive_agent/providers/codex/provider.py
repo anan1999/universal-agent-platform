@@ -87,7 +87,8 @@ class CodexCapabilities:
 RESULT_SCHEMA = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object", "additionalProperties": False,
-    "required": ["status", "summary", "files", "findings", "confidence", "uncertainty_reason", "needs_escalation"],
+    "required": ["status", "summary", "files", "findings", "confidence", "uncertainty_reason",
+                 "needs_escalation", "learning_evidence"],
     "properties": {
         "status": {"type": "string", "enum": ["completed", "failed", "blocked"]},
         "summary": {"type": "string"},
@@ -96,7 +97,26 @@ RESULT_SCHEMA = {
         "confidence": {"type": "string", "enum": ["high", "medium", "low", "unknown"]},
         "uncertainty_reason": {"type": "string"},
         "needs_escalation": {"type": "boolean"},
-        "learning_evidence": {"type": "array", "items": {"type": "object"}},
+        "learning_evidence": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "required": ["type", "summary", "evidence", "related_paths", "capabilities",
+                         "tags", "expected_reuse", "validation", "detail", "rationale",
+                         "alternatives", "procedure_steps", "inputs", "outputs", "evaluation"],
+            "properties": {
+                "type": {"type": "string"}, "summary": {"type": "string"},
+                "evidence": {"type": "array", "items": {"type": "string"}},
+                "related_paths": {"type": "array", "items": {"type": "string"}},
+                "capabilities": {"type": "array", "items": {"type": "string"}},
+                "tags": {"type": "array", "items": {"type": "string"}},
+                "expected_reuse": {"type": "integer"}, "validation": {"type": "string"},
+                "detail": {"type": "string"}, "rationale": {"type": "string"},
+                "alternatives": {"type": "array", "items": {"type": "string"}},
+                "procedure_steps": {"type": "array", "items": {"type": "string"}},
+                "inputs": {"type": "array", "items": {"type": "string"}},
+                "outputs": {"type": "array", "items": {"type": "string"}},
+                "evaluation": {"type": "array", "items": {"type": "string"}},
+            },
+        }},
     },
 }
 
@@ -186,6 +206,8 @@ class CodexProvider(AIProvider):
         model = task.metadata.get("model")
         args = [*self.command_prefix, "exec", "--ephemeral", "--ignore-user-config", "--json",
                 "--color", "never", "-C", str(packet.working_directory)]
+        if not (working_directory / ".git").exists():
+            args.append("--skip-git-repo-check")
         # Codex 0.153+ makes --approve-for-me mutually exclusive with an
         # explicit --sandbox; the flag itself uses the workspace-write sandbox.
         if not packet.read_only and probed.supports_auto_approval:
@@ -212,8 +234,9 @@ class CodexProvider(AIProvider):
         stderr_text = stderr.decode("utf-8", errors="replace")
         stdout_text = stdout.decode("utf-8", errors="replace")
         if returncode != 0:
-            return self._failure(task, self.classify_failure(stderr_text or stdout_text),
-                                 self._bounded_error(stderr_text or stdout_text), started, model=model)
+            diagnostic = stdout_text.strip() or stderr_text.strip()
+            return self._failure(task, self.classify_failure(diagnostic),
+                                 self._bounded_error(diagnostic), started, model=model)
         try:
             result, usage, execution_id = self._parse_jsonl(stdout_text)
         except (ValueError, json.JSONDecodeError) as error:

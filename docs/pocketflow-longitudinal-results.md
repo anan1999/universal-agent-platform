@@ -2,69 +2,52 @@
 
 ## Environment
 
-- UAP: 2.3.0
-- Commit: 2400cf1f6c8dcbba73eefc54f57b82de69ccec73
+- UAP: 2.3.1
+- Commit: 00fa3b5aa2b3bebc5a26bb8ced5775850c2ac887
 - Provider: codex
-- Model: gpt-5.6-luna
-- Date: 2026-09-10T06:29:46Z
+- Model: provider default
+- Date: 2026-09-10T12:49:30Z
 
 ## Task 1
 
-- Baseline: completed, 137365 tokens (measured)
-- UAP: failed, 48930 tokens (measured)
-- Quality: baseline=True, UAP=False
+- Baseline: completed, 144020 tokens (measured)
+- UAP: completed, 90577 tokens (measured)
+- Quality: baseline=True, UAP=True
 - State: COLD
+- Paired comparison valid: True
+- Canonical source: baseline
 - Reuse hits: 0; rediscovery: 1
 
 ## Task 2
 
-- Baseline: failed, 0 tokens (unavailable)
-- UAP: failed, 0 tokens (unavailable)
-- Quality: baseline=False, UAP=False
-- State: WARM
-- Reuse hits: 3; rediscovery: 0
+- Baseline: completed, 485468 tokens (measured)
+- UAP: completed, 100109 tokens (measured)
+- Quality: baseline=True, UAP=True
+- State: REVALIDATION
+- Paired comparison valid: True
+- Canonical source: uap (legacy evaluator recovery)
+- Reuse hits: 0; rediscovery: 0
 
-## Task 3
+## Interrupted
 
-- Baseline: failed, 0 tokens (unavailable)
-- UAP: failed, 0 tokens (unavailable)
-- Quality: baseline=False, UAP=False
-- State: WARM
-- Reuse hits: 5; rediscovery: 0
-
-## Task 4
-
-- Baseline: failed, 0 tokens (unavailable)
-- UAP: failed, 0 tokens (unavailable)
-- Quality: baseline=False, UAP=False
-- State: WARM
-- Reuse hits: 8; rediscovery: 0
-
-## Task 5
-
-- Baseline: failed, 0 tokens (unavailable)
-- UAP: failed, 0 tokens (unavailable)
-- Quality: baseline=False, UAP=False
-- State: WARM
-- Reuse hits: 8; rediscovery: 0
+- Task: 3
+- Stage: baseline
+- Status: blocked
+- Error: none
+- Detail: Task 3 baseline returned blocked after modifying and testing the project; the original ephemeral provider summary was unavailable.
 
 ## Cumulative
 
-- Baseline measured total: 137,365 for the one completed baseline task; later tasks unavailable
-- UAP measured total: 48,930 for the one blocked UAP task; later tasks unavailable
-- Quality: baseline Task 1 passed; UAP Task 1 failed; later paired quality unavailable
-- Break-even: **not claimable** because paired tasks did not have equivalent successful quality
+- Baseline total: 629488
+- UAP total: 190686
+- Valid paired tasks: 2
+- Savings claimable: False
+- Break-even: NOT_CLAIMABLE
 
 ## Intelligence ROI
 
-- Final state: `{"schema_version": 1, "level": 3, "level_name": "optimized", "items": 12, "current": 12, "counts": {"knowledge": 1, "decision": 0, "skill": 0, "agent": 0, "command": 1, "evaluation": 0, "artifact": 0, "known_issue": 0, "task_history": 5, "receipt": 5}, "runs": 5, "reuse_hits": 24, "knowledge_created": 1, "skill_reuse_hits": 0, "agent_reuse_hits": 0, "rediscovery_count": 1, "context_chars": 3697, "estimated_context_tokens": 926, "cold_runs": 1, "warm_runs": 4, "revalidation_runs": 0}`
+- Final state: `{"schema_version": 1, "level": 0, "level_name": "unknown", "items": 8, "current": 5, "counts": {"knowledge": 0, "decision": 0, "skill": 0, "agent": 0, "command": 0, "evaluation": 0, "artifact": 1, "known_issue": 0, "task_history": 2, "receipt": 2}, "runs": 2, "reuse_hits": 0, "reusable_intelligence_hits": 0, "validated_reusable_hits": 0, "historical": {"receipt": 2, "task_history": 2}, "typed_reuse_hits": {"evaluation": 0, "agent": 0, "knowledge": 0, "command": 0, "skill": 0, "decision": 0, "known_issue": 0}, "selected_only": 0, "selected_reuse_hits": 0, "validated_reuse": 0, "knowledge_created": 0, "skill_reuse_hits": 0, "agent_reuse_hits": 0, "rediscovery_count": 1, "context_chars": 0, "estimated_context_tokens": 0, "cold_runs": 1, "warm_runs": 0, "revalidation_runs": 1}`
 
 ## Limitations
 
-This is an **inconclusive acceptance run**, not evidence of savings. Task 1 UAP was blocked by a
-read-only execution-policy classification; Tasks 2–5 hit the provider usage limit. The harness
-was corrected to use implementation-coded goals and an explicit software-engineering profile;
-run it again after the usage window resets. Provider sessions are ephemeral, but provider-side
-caching may still exist. Files explored are unavailable unless the provider reports them. Paired
-task inputs are reset to the same accepted source checkpoint; UAP alone retains its durable
-`.agent` intelligence.
+Provider sessions are ephemeral, but provider-side caching may still exist. Files explored are unavailable unless the provider reports them. Paired task inputs are reset to the same accepted source checkpoint. Canonical checkpoint policy is fixed: if both systems pass, baseline is canonical; if only one passes, the passing result is canonical; token counts never choose the checkpoint. Task 2 used the UAP checkpoint only as a documented recovery exception after the former App.jsx-only evaluator produced a false negative and had already discarded the baseline tree. UAP alone retains durable `.agent` intelligence.

@@ -4,7 +4,7 @@ import sys
 
 from adaptive_agent.core.execution_packet import ExecutionPacketBuilder
 from adaptive_agent.core.models import Receipt, Task
-from adaptive_agent.providers.codex import CodexCapabilities, CodexErrorCode, CodexProvider
+from adaptive_agent.providers.codex import RESULT_SCHEMA, CodexCapabilities, CodexErrorCode, CodexProvider
 
 
 def test_capability_detection_from_fake_executable(tmp_path):
@@ -34,6 +34,11 @@ def test_execution_packet_is_bounded_and_has_no_chat_history(tmp_path):
     assert "DEPENDENCY RECEIPTS" in rendered
     assert "[truncated]" in rendered
     assert "chat history" not in rendered.lower()
+    assert "explicitly evaluate whether" in rendered
+    assert "Use an empty array only" in rendered
+    assert "Never invent learning evidence" in rendered
+    assert "learning_evidence" in RESULT_SCHEMA["required"]
+    assert RESULT_SCHEMA["properties"]["learning_evidence"]["items"]["additionalProperties"] is False
 
 
 def test_real_provider_contract_with_fake_subprocess(tmp_path):
@@ -54,6 +59,7 @@ def test_real_provider_contract_with_fake_subprocess(tmp_path):
             assert args[-1] == "-"
             assert "--approve-for-me" in args
             assert "--sandbox" not in args
+            assert "--skip-git-repo-check" in args
             assert "ROLE:" in prompt
             return 0, output.encode(), b""
 

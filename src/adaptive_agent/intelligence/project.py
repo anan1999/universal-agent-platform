@@ -751,7 +751,10 @@ class IntelligenceDistiller:
                 procedure = raw.get("procedure") or raw.get("procedure_steps") or raw.get("detail")
                 if not procedure or self._generic(summary):
                     continue
-                raw = {**raw, "detail": procedure, "expected_reuse": max(2, int(raw.get("expected_reuse", 1)))}
+                procedure_text = ("\n".join(f"{index}. {step}" for index, step in enumerate(procedure, 1))
+                                  if isinstance(procedure, list) else str(procedure))
+                raw = {**raw, "detail": procedure_text,
+                       "expected_reuse": max(2, int(raw.get("expected_reuse", 1)))}
             if kind == "agent_role_candidate" and self._generic_agent(summary):
                 continue
             key = (kind, summary.lower())

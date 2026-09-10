@@ -10,7 +10,7 @@ def test_distiller_normalizes_external_evidence_and_materializes_skill(tmp_path)
         structured_evidence=[
             {"type": "knowledge", "summary": "API base path is /api", "evidence": ["backend/app.py"]},
             {"type": "procedure", "summary": "PocketFlow API contract validation",
-             "procedure": "1. update schema\n2. run pytest", "evidence": ["successful contract test"],
+             "procedure_steps": ["update schema", "run pytest"], "evidence": ["successful contract test"],
              "capabilities": ["api"], "expected_reuse": 3, "validation": "evidence_backed"},
             {"type": "agent_role", "summary": "backend-maintainer", "evidence": ["two maintenance tasks"],
              "capabilities": ["backend"], "expected_reuse": 1},
@@ -31,6 +31,7 @@ def test_distiller_normalizes_external_evidence_and_materializes_skill(tmp_path)
     assert selected and selected[0].manifest.id == skill.id
     loaded = fresh.load_selected(skill.id)
     assert "Procedure" in loaded.instructions
+    assert "1. update schema" in loaded.instructions
 
 
 def test_learning_evidence_is_not_invented_and_quality_gates_reuse(tmp_path):

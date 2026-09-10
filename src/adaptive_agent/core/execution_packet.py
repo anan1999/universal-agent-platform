@@ -46,7 +46,9 @@ class ExecutionPacket:
             "Use only this packet and the workspace content the task actually needs.",
             "Do not inspect unrelated directories or include full logs in the response.",
             f"Keep the final structured response within {self.max_output_words} words.",
-            "If you discover a stable project fact, explicit decision, validated command, concrete project-specific procedure, recurring role, evaluation rule, or evidence-backed issue that future tasks are likely to need, you may include it in learning_evidence. Do not include temporary debugging notes, generic advice, hidden reasoning, or transcripts.",
+            "Before returning, explicitly evaluate whether the work produced a stable project fact, explicit decision, validated command, concrete project-specific procedure, recurring role, evaluation rule, or evidence-backed issue that future tasks are likely to need.",
+            "When such reusable evidence exists, include it in learning_evidence with concrete evidence, related source paths, capabilities, expected reuse, and validation. Use an empty array only when no candidate survives that evidence gate.",
+            "Never invent learning evidence or include temporary debugging notes, generic advice, hidden reasoning, or transcripts.",
         ])
         if self.read_only:
             constraints.append("Do not modify anything in the workspace.")
@@ -68,7 +70,7 @@ class ExecutionPacket:
             section("REUSED AGENT ROLE CONTEXT", self.agent_role_context),
             section("PROJECT CONTEXT ATTRIBUTION", self.context_attribution),
             section("CONSTRAINTS", constraints),
-            "EXPECTED OUTPUT:\nReturn one JSON object matching the supplied schema. Confidence is a workflow signal: high, medium, low, or unknown.",
+            "EXPECTED OUTPUT:\nReturn one JSON object matching the supplied schema. Confidence is a workflow signal: high, medium, low, or unknown. The learning_evidence field is required; apply the evidence gate above before choosing items or an empty array.",
         ]
         return "\n\n".join(item for item in sections if item)
 

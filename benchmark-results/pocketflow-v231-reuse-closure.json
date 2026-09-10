@@ -1,0 +1,321 @@
+{
+  "environment": {
+    "uap": "2.3.1",
+    "commit": "00fa3b5aa2b3bebc5a26bb8ced5775850c2ac887",
+    "provider": "codex",
+    "model": null,
+    "reasoning": "medium",
+    "date": "2026-09-10T12:49:30Z"
+  },
+  "tasks": [
+    {
+      "task_number": 1,
+      "goal": "Implement the backend foundation for a personal expense app: FastAPI, SQLite, an Expense model, CRUD API, and backend tests.",
+      "baseline": {
+        "status": "completed",
+        "provider": "codex",
+        "model": null,
+        "reasoning": "medium",
+        "input_tokens": 138509,
+        "cached_input": 114432,
+        "output_tokens": 5511,
+        "token_source": "measured",
+        "ai_invocations": 1,
+        "handoffs": 0,
+        "deterministic_tool_calls": 0,
+        "files_explored": {
+          "value": null,
+          "source": "unavailable"
+        },
+        "skill_context_tokens": 0,
+        "knowledge_context_tokens": 0,
+        "decision_context_items": 0,
+        "duration_seconds": 231.20299999999997,
+        "retries": 0,
+        "files_modified": [
+          "app/__init__.py",
+          "app/models.py",
+          "app/database.py",
+          "app/main.py",
+          "tests/test_expenses.py",
+          "pyproject.toml",
+          "README.md",
+          ".gitignore"
+        ],
+        "error": null
+      },
+      "uap": {
+        "run_id": "RUN-76705AB5BC",
+        "status": "completed",
+        "provider": "codex",
+        "model": [
+          "gpt-5.6-luna"
+        ],
+        "input_tokens": 87662,
+        "cached_input": 65536,
+        "output_tokens": 2915,
+        "token_source": "measured",
+        "ai_invocations": 1,
+        "retries": 0,
+        "duration_seconds": 90.25,
+        "handoffs": 0,
+        "deterministic_tool_calls": 1,
+        "files_explored": {
+          "value": null,
+          "source": "unavailable"
+        },
+        "skill_context_tokens": 0,
+        "decision_context_items": 0,
+        "files_modified": [
+          "app/__init__.py",
+          "app/db.py",
+          "app/main.py",
+          "app/schemas.py"
+        ],
+        "temperature": "cold",
+        "reuse_hits": 0,
+        "rediscovery": 1,
+        "knowledge_context_chars": 0,
+        "knowledge_context_tokens_estimated": 0
+      },
+      "baseline_tokens": 144020,
+      "uap_tokens": 90577,
+      "cumulative_baseline": 144020,
+      "cumulative_uap": 90577,
+      "quality": {
+        "baseline": {
+          "passed": true,
+          "checks": [
+            {
+              "name": "pytest",
+              "passed": true
+            },
+            {
+              "name": "backend",
+              "passed": true
+            }
+          ],
+          "duration_seconds": 7.1720000000000255,
+          "stdout": "............................                                             [100%]\n============================== warnings summary ===============================\n..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1\n  C:\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n28 passed, 1 warning in 4.37s\n",
+          "stderr": ""
+        },
+        "uap": {
+          "passed": true,
+          "checks": [
+            {
+              "name": "pytest",
+              "passed": true
+            },
+            {
+              "name": "backend",
+              "passed": true
+            }
+          ],
+          "duration_seconds": 1.969000000000051,
+          "stdout": ".                                                                        [100%]\n1 passed in 0.05s\n",
+          "stderr": ""
+        }
+      },
+      "reuse_hits": 0,
+      "rediscovery": 1,
+      "cold_or_warm": "cold",
+      "comparison_valid": true,
+      "paired_source_files": 3
+    },
+    {
+      "task_number": 2,
+      "goal": "Implement a compact React expense dashboard that calls the existing API and handles loading and error states.",
+      "baseline": {
+        "status": "completed",
+        "provider": "codex",
+        "model": null,
+        "reasoning": "medium",
+        "input_tokens": 477566,
+        "cached_input": 443904,
+        "output_tokens": 7902,
+        "token_source": "measured",
+        "ai_invocations": 1,
+        "handoffs": 0,
+        "deterministic_tool_calls": 0,
+        "files_explored": {
+          "value": null,
+          "source": "unavailable"
+        },
+        "skill_context_tokens": 0,
+        "knowledge_context_tokens": 0,
+        "decision_context_items": 0,
+        "duration_seconds": 391.03199999999924,
+        "retries": 0,
+        "files_modified": [
+          "frontend/package.json",
+          "frontend/package-lock.json",
+          "frontend/index.html",
+          "frontend/vite.config.js",
+          "frontend/src/main.jsx",
+          "frontend/src/Dashboard.jsx",
+          "frontend/src/api.js",
+          "frontend/src/styles.css",
+          "frontend/src/Dashboard.test.jsx",
+          "frontend/src/test-setup.js",
+          ".gitignore",
+          "README.md"
+        ],
+        "error": null
+      },
+      "uap": {
+        "run_id": "RUN-89D59C4932",
+        "status": "completed",
+        "provider": "codex",
+        "model": [
+          "gpt-5.6-luna"
+        ],
+        "input_tokens": 96586,
+        "cached_input": 71680,
+        "output_tokens": 3523,
+        "token_source": "measured",
+        "ai_invocations": 1,
+        "retries": 0,
+        "duration_seconds": null,
+        "handoffs": 0,
+        "deterministic_tool_calls": 1,
+        "files_explored": {
+          "value": null,
+          "source": "unavailable"
+        },
+        "skill_context_tokens": 0,
+        "decision_context_items": 0,
+        "files_modified": [
+          "app/main.py",
+          "frontend/index.html",
+          "frontend/package.json",
+          "frontend/src/main.jsx",
+          "frontend/src/styles.css",
+          "frontend/vite.config.js"
+        ],
+        "temperature": "revalidation",
+        "reuse_hits": 0,
+        "rediscovery": 0,
+        "knowledge_context_chars": 0,
+        "knowledge_context_tokens_estimated": 0
+      },
+      "baseline_tokens": 485468,
+      "uap_tokens": 100109,
+      "cumulative_baseline": 629488,
+      "cumulative_uap": 190686,
+      "quality": {
+        "baseline": {
+          "passed": true,
+          "checks": [
+            {
+              "name": "pytest",
+              "passed": true
+            },
+            {
+              "name": "backend",
+              "passed": true
+            },
+            {
+              "name": "react dashboard",
+              "passed": true
+            }
+          ],
+          "duration_seconds": 2.2969999999986612,
+          "stdout": "............................                                             [100%]\n============================== warnings summary ===============================\n..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1\n  C:\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n28 passed, 1 warning in 1.45s\n",
+          "stderr": ""
+        },
+        "uap": {
+          "passed": true,
+          "checks": [
+            {
+              "name": "pytest",
+              "passed": true
+            },
+            {
+              "name": "backend",
+              "passed": true
+            },
+            {
+              "name": "react dashboard",
+              "passed": true
+            }
+          ],
+          "duration_seconds": 2.2810000000008586,
+          "stdout": "............................                                             [100%]\n============================== warnings summary ===============================\n..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1\n  C:\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n28 passed, 1 warning in 1.41s\n",
+          "stderr": ""
+        }
+      },
+      "reuse_hits": 0,
+      "rediscovery": 0,
+      "cold_or_warm": "revalidation",
+      "comparison_valid": true,
+      "paired_source_files": 9,
+      "canonical_source": "uap (legacy evaluator recovery)"
+    }
+  ],
+  "interrupted": {
+    "task_number": 3,
+    "stage": "baseline",
+    "status": "blocked",
+    "error": null,
+    "summary": "Task 3 baseline returned blocked after modifying and testing the project; the original ephemeral provider summary was unavailable.",
+    "findings": [],
+    "uncertainty_reason": "Original ephemeral provider diagnostic was not persisted by the pre-fix harness.",
+    "message": "Provider execution stopped early; resolve the provider or task blocker before resuming."
+  },
+  "cumulative": {
+    "baseline_tokens": 629488,
+    "uap_tokens": 190686,
+    "break_even_task": "NOT_CLAIMABLE",
+    "observed_break_even_task": 1,
+    "savings_claimable": false,
+    "comparison_valid_tasks": 2
+  },
+  "intelligence": {
+    "schema_version": 1,
+    "level": 0,
+    "level_name": "unknown",
+    "items": 8,
+    "current": 5,
+    "counts": {
+      "knowledge": 0,
+      "decision": 0,
+      "skill": 0,
+      "agent": 0,
+      "command": 0,
+      "evaluation": 0,
+      "artifact": 1,
+      "known_issue": 0,
+      "task_history": 2,
+      "receipt": 2
+    },
+    "runs": 2,
+    "reuse_hits": 0,
+    "reusable_intelligence_hits": 0,
+    "validated_reusable_hits": 0,
+    "historical": {
+      "receipt": 2,
+      "task_history": 2
+    },
+    "typed_reuse_hits": {
+      "evaluation": 0,
+      "agent": 0,
+      "knowledge": 0,
+      "command": 0,
+      "skill": 0,
+      "decision": 0,
+      "known_issue": 0
+    },
+    "selected_only": 0,
+    "selected_reuse_hits": 0,
+    "validated_reuse": 0,
+    "knowledge_created": 0,
+    "skill_reuse_hits": 0,
+    "agent_reuse_hits": 0,
+    "rediscovery_count": 1,
+    "context_chars": 0,
+    "estimated_context_tokens": 0,
+    "cold_runs": 1,
+    "warm_runs": 0,
+    "revalidation_runs": 1
+  }
+}
