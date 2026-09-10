@@ -46,8 +46,9 @@ adaptive_agent = [
     "resources/templates/*.md",
     "resources/skills/*/*.json",
     "resources/skills/*/*.md",
+    "resources/skills/*/references/*.md",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "."]

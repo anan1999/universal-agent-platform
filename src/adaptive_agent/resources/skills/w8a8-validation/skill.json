@@ -8,8 +8,11 @@
   "dependencies": [],
   "tools": [],
   "entrypoint": "SKILL.md",
-  "references": {},
-  "evaluation": ["accuracy_check"],
+  "references": {
+    "metadata-contract": "references/metadata-contract.md",
+    "hardware-boundaries": "references/hardware-boundaries.md"
+  },
+  "evaluation": ["accuracy_check", "unit_tests"],
   "security": {"scripts": false, "network": false, "filesystem_writes": false},
   "provenance": {"source": "UAP built-in"},
   "trust": "built_in",

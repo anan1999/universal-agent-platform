@@ -80,6 +80,18 @@ def test_known_w8a8_work_reuses_skills_without_specialist(monkeypatch, tmp_path)
     assert not any(member["origin"] == "temporary_specialist" for member in plan["team"]["members"])
 
 
+def test_packaged_w8a8_skill_progressively_loads_one_reference():
+    from adaptive_agent.runtime import RESOURCE_ROOT
+
+    registry = SkillRegistry()
+    registry.discover_directory(RESOURCE_ROOT / "skills", SkillTrust.BUILT_IN)
+    loaded = registry.load_selected("w8a8-validation", ["metadata-contract"])
+    assert loaded.manifest.version == "1.0.0"
+    assert set(loaded.manifest.references) == {"metadata-contract", "hardware-boundaries"}
+    assert list(loaded.references) == ["metadata-contract"]
+    assert "Hardware evidence boundaries" not in loaded.to_context()
+
+
 def test_unknown_compound_capability_proposes_temporary_skill_not_agent(tmp_path):
     from adaptive_agent.core.capabilities import Complexity, Risk
     from adaptive_agent.core.execution_planner import ExecutionPlanner

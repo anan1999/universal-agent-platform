@@ -49,6 +49,7 @@ class CodexCapabilities:
     supports_usage_reporting: bool = False
     supports_working_directory: bool = False
     supports_jsonl: bool = False
+    supports_auto_approval: bool = False
     probe_error: str | None = None
 
     @classmethod
@@ -72,6 +73,7 @@ class CodexCapabilities:
             result.supports_structured_output = "--output-schema" in help_text
             result.supports_working_directory = "--cd" in help_text
             result.supports_jsonl = "--json" in help_text
+            result.supports_auto_approval = "--approve-for-me" in help_text
             # A real JSONL execution must confirm usage events before this becomes true.
             result.supports_usage_reporting = False
         except (OSError, subprocess.SubprocessError) as error:
@@ -181,8 +183,14 @@ class CodexProvider(AIProvider):
         packet = packet or self.packet_builder.build(task, working_directory, working_directory.name, "unknown")
         schema_path = self._write_schema(working_directory)
         model = task.metadata.get("model")
-        args = [*self.command_prefix, "exec", "--ephemeral", "--ignore-user-config", "--json", "--color", "never", "--sandbox",
-                "read-only" if packet.read_only else "workspace-write", "-C", str(packet.working_directory)]
+        args = [*self.command_prefix, "exec", "--ephemeral", "--ignore-user-config", "--json",
+                "--color", "never", "-C", str(packet.working_directory)]
+        # Codex 0.153+ makes --approve-for-me mutually exclusive with an
+        # explicit --sandbox; the flag itself uses the workspace-write sandbox.
+        if not packet.read_only and probed.supports_auto_approval:
+            args.append("--approve-for-me")
+        else:
+            args.extend(["--sandbox", "read-only" if packet.read_only else "workspace-write"])
         if model and probed.supports_model_selection:
             args.extend(["--model", str(model)])
         if task.reasoning and probed.supports_reasoning_selection:
@@ -206,7 +214,7 @@ class CodexProvider(AIProvider):
             return self._failure(task, self.classify_failure(stderr_text or stdout_text),
                                  self._bounded_error(stderr_text or stdout_text), started, model=model)
         try:
-            result, usage = self._parse_jsonl(stdout_text)
+            result, usage, execution_id = self._parse_jsonl(stdout_text)
         except (ValueError, json.JSONDecodeError) as error:
             return self._failure(task, CodexErrorCode.OUTPUT_PARSE_FAILED, str(error), started, model=model)
         if progress:
@@ -215,18 +223,32 @@ class CodexProvider(AIProvider):
         token_usage: dict[str, int | bool | str] = {
             "input": int(usage.get("input_tokens", 0)), "output": int(usage.get("output_tokens", 0)),
             "cached": int(usage.get("cached_input_tokens", 0)), "source": source, "estimated": source != "measured",
+            "invocation_count": 1,
         }
+        if execution_id:
+            token_usage["execution_id"] = execution_id
         if source == "estimated":
             token_usage["input"] = max(1, len(packet.render()) // 4)
             token_usage["output"] = max(1, len(json.dumps(result)) // 4)
         self._accumulate(token_usage)
-        return Receipt(task_id=task.id, agent=task.owner, status=result["status"], summary=result["summary"],
+        status = result["status"]
+        error_code = None
+        needs_escalation = bool(result.get("needs_escalation", False))
+        environment_text = " ".join([
+            str(result.get("summary", "")), str(result.get("uncertainty_reason", "")),
+            *[str(item) for item in result.get("findings", [])],
+        ]).lower()
+        if status == "blocked" and any(marker in environment_text for marker in (
+                "sandbox", "execution policy", "workspace is read-only", "workspace is mounted read-only",
+                "filesystem access", "shell access", "command execution was rejected")):
+            error_code = CodexErrorCode.CAPABILITY_UNAVAILABLE.value
+            needs_escalation = False
+        return Receipt(task_id=task.id, agent=task.owner, status=status, summary=result["summary"],
                        files=result.get("files", []), findings=result.get("findings", []), token_usage=token_usage,
                        confidence=result.get("confidence", "unknown"), uncertainty_reason=result.get("uncertainty_reason", ""),
-                       needs_escalation=bool(result.get("needs_escalation", False)), provider=self.id,
+                       needs_escalation=needs_escalation, error_code=error_code, provider=self.id,
                        model=str(model) if model else None,
                        duration_seconds=time.monotonic() - started)
-
     async def _communicate(self, args: list[str], prompt: str, working_directory: Path) -> tuple[int, bytes, bytes]:
         child_environment = self.child_environment()
         process = await asyncio.create_subprocess_exec(
@@ -260,14 +282,19 @@ class CodexProvider(AIProvider):
         lower = message.lower()
         if any(value in lower for value in ("not logged in", "unauthorized", "authentication", "401")):
             return CodexErrorCode.AUTH_ERROR
-        if any(value in lower for value in ("unexpected argument", "invalid argument", "unrecognized option", "unknown option")):
+        if any(value in lower for value in (
+                "unexpected argument", "invalid argument", "unrecognized option", "unknown option",
+                "cannot be used with",
+                "model_not_found", "model not found", "unknown model", "unsupported model",
+                "does not exist or you do not have access")):
             return CodexErrorCode.INVALID_ARGUMENT
         return CodexErrorCode.EXECUTION_FAILED
 
     @staticmethod
-    def _parse_jsonl(output: str) -> tuple[dict[str, Any], dict[str, int]]:
+    def _parse_jsonl(output: str) -> tuple[dict[str, Any], dict[str, int], str | None]:
         final_text: str | dict[str, Any] | None = None
         usage: dict[str, int] = {}
+        execution_id: str | None = None
         for line in output.splitlines():
             if not line.strip():
                 continue
@@ -275,6 +302,8 @@ class CodexProvider(AIProvider):
             candidate = event.get("usage")
             if isinstance(candidate, dict):
                 usage.update({key: int(value) for key, value in candidate.items() if isinstance(value, (int, float))})
+            if event.get("type") == "thread.started" and event.get("thread_id"):
+                execution_id = str(event["thread_id"])
             item = event.get("item")
             if isinstance(item, dict) and item.get("type") == "agent_message":
                 final_text = item.get("text") or item.get("content")
@@ -285,7 +314,7 @@ class CodexProvider(AIProvider):
         result = json.loads(final_text) if isinstance(final_text, str) else final_text
         if not isinstance(result, dict) or "status" not in result or "summary" not in result:
             raise ValueError("Codex final message did not match the receipt contract")
-        return result, usage
+        return result, usage, execution_id
 
     @staticmethod
     def _bounded_error(message: str, limit: int = 1200) -> str:
@@ -311,6 +340,3 @@ class CodexProvider(AIProvider):
                        needs_escalation=not environment and code != CodexErrorCode.TIMEOUT,
                        error_code=code.value, provider=CodexProvider.id, model=str(model) if model else None,
                        duration_seconds=time.monotonic() - started)
-
-    def describe(self) -> str:
-        return json.dumps(self.capabilities.to_dict())
