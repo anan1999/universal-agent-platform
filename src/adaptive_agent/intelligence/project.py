@@ -179,7 +179,8 @@ class ProjectIntelligenceStore:
                                          else PersistenceDecision.CURRENT.value)
         item.why_persisted = item.why_persisted or "explicit evidence-backed project value"
         if item.kind in {IntelligenceKind.SKILL.value, IntelligenceKind.AGENT.value}:
-            if item.expected_reuse < 2 or item.validation not in {"validated", "measured"}:
+            candidate_role = item.kind == IntelligenceKind.AGENT.value and item.persistence_decision == PersistenceDecision.NEEDS_REVIEW.value
+            if (not candidate_role and item.expected_reuse < 2) or (not candidate_role and item.validation not in {"validated", "measured"}):
                 raise ValueError("reusable skills and agents require validation and expected reuse >= 2")
         item.related_paths = sorted(set(item.related_paths))
         item.source_hashes = item.source_hashes or self.hash_paths(item.related_paths)
@@ -463,12 +464,16 @@ class ProjectIntelligenceStore:
             validation = str(candidate.get("validation", "evidence_backed"))
             if normalized in {"skill", "agent"} and (expected < 2 or validation not in {"validated", "measured"}):
                 continue
+            is_role_candidate = normalized == "agent" and not bool(candidate.get("validated_reuse"))
             item = IntelligenceItem(id=str(candidate.get("id") or hashlib.sha1(summary.encode()).hexdigest()[:12]),
                                     kind=normalized, summary=summary, capabilities=list(candidate.get("capabilities") or []),
                                     tags=list(candidate.get("tags") or []), related_paths=list(candidate.get("related_paths") or []),
                                     evidence=evidence, validation=validation, expected_reuse=expected,
                                     first_created_task=run_id, why_persisted=str(candidate.get("why_persisted") or "structured execution evidence"),
-                                    persistence_decision=(PersistenceDecision.TEMPORARY.value if normalized in {"skill", "agent"} else PersistenceDecision.CURRENT.value))
+                                    persistence_decision=(PersistenceDecision.NEEDS_REVIEW.value if is_role_candidate else
+                                                          PersistenceDecision.TEMPORARY.value if normalized in {"skill", "agent"} else
+                                                          PersistenceDecision.CURRENT.value),
+                                    status=(IntelligenceStatus.NEEDS_REVIEW.value if is_role_candidate else IntelligenceStatus.CURRENT.value))
             learned.append(self.add(item, detail=candidate.get("detail") or candidate.get("procedure")))
         return learned
 
