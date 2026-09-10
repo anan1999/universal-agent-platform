@@ -3,7 +3,7 @@
 Decides *what reasoning responsibilities the goal needs*. It never chooses a
 provider or a model — that is the router's job, one layer down. The output is a
 `TeamPlan` with an explicit rationale and an explicit list of roles that were
-deliberately omitted, which is what the dashboard renders as "Why this team?".
+deliberately omitted, which presentation clients can render as "Why this team?".
 
 The objective is the minimum sufficient team, not the largest possible one.
 """

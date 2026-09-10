@@ -1,4 +1,4 @@
-"""Read models for the CLI and the dashboard.
+"""Read registry models for the CLI and API.
 
 This is a presentation layer. It may show provider-specific conventions (such as
 a Codex agent profile bound to a role) because a human wants to see them. The
@@ -18,11 +18,13 @@ from adaptive_agent.models.registry import ModelRegistry
 from adaptive_agent.profiles.registry import profile_registry
 from adaptive_agent.providers.registry import providers as provider_registry
 from adaptive_agent.runtime import RESOURCE_ROOT, platform_home
+from adaptive_agent.skills.manifest import SkillTrust
+from adaptive_agent.skills.quality import SkillQualityStore
 from adaptive_agent.skills.registry import SkillRegistry
 from adaptive_agent.storage.database import Database
 
 
-#: Agent kinds the dashboard must keep visually distinct (see docs/agent-model.md).
+#: Agent kinds presentation clients should keep visually distinct (see docs/agent-model.md).
 KIND_LOGICAL = "core"
 KIND_SPECIALIST = "specialist"
 KIND_TEMPORARY = "temporary"
@@ -106,19 +108,29 @@ def agents(db: Database) -> list[dict[str, Any]]:
 
 
 def skills(db: Database) -> list[dict[str, Any]]:
-    configured = SkillRegistry.from_yaml(RESOURCE_ROOT / "config" / "default_skills.yaml").all()
+    from adaptive_agent.runtime import platform_home
+
+    registry = SkillRegistry.from_yaml(RESOURCE_ROOT / "config" / "default_skills.yaml")
+    registry.discover_directory(RESOURCE_ROOT / "skills", SkillTrust.BUILT_IN)
+    registry.discover_directory(platform_home() / "skills", SkillTrust.TRUSTED)
+    registry.discover_directory(Path.cwd() / ".agent" / "skills", SkillTrust.PROJECT_LOCAL)
+    configured = registry.all()
     overrides = {row["name"]: row for row in db.query("SELECT * FROM skills")}
     associations = db.query("SELECT * FROM agent_skills ORDER BY loaded_at DESC")
     agent_specs = {item["id"]: item for item in agents(db)}
     result = []
     for name, spec in configured.items():
+        manifest = registry.manifest(name)
         override = overrides.get(name)
         if override:
             spec.update(json.loads(override["data_json"]))
         history = [row for row in associations if row["skill_id"] == name]
         used_by = sorted({agent["id"] for agent in agent_specs.values() if name in agent["skills"]} |
                          {row["agent_id"] for row in history})
+        quality = SkillQualityStore(db).get(name, manifest.version)
         result.append({"id": name, "name": _title(name), "description": spec.get("description", ""),
+                       "version": manifest.version, "trust": manifest.trust.value,
+                       "status": manifest.status.value,
                        "scope": spec.get("scope", "built-in"), "source": str(RESOURCE_ROOT / "config" / "default_skills.yaml"),
                        "capabilities": spec.get("capabilities", []),
                        "enabled": bool(override["enabled"]) if override else spec.get("enabled", True),
@@ -127,7 +139,14 @@ def skills(db: Database) -> list[dict[str, Any]]:
                        "used_by_agents": used_by, "load_count": len(history),
                        "last_loaded": history[0]["loaded_at"] if history else None,
                        "recent_tasks": [row["task_id"] for row in history[:8]],
-                       "token_attribution": "unavailable"})
+                       "token_attribution": (
+                           "measured" if quality.measured_tokens is not None else
+                           "estimated_context" if quality.estimated_context_tokens is not None else
+                           "unavailable"
+                       ),
+                       "estimated_context_tokens": manifest.estimated_context_tokens,
+                       "quality": quality.to_dict(),
+                       "promotion_candidate": quality.promotion_candidate})
     return sorted(result, key=lambda item: item["name"])
 
 
@@ -183,7 +202,11 @@ def model_registry() -> ModelRegistry:
 
 
 def profiles() -> list[dict[str, Any]]:
-    installed_skills = set(SkillRegistry.from_yaml(RESOURCE_ROOT / "config" / "default_skills.yaml").all())
+    registry = SkillRegistry.from_yaml(RESOURCE_ROOT / "config" / "default_skills.yaml")
+    registry.discover_directory(RESOURCE_ROOT / "skills", SkillTrust.BUILT_IN)
+    registry.discover_directory(platform_home() / "skills", SkillTrust.TRUSTED)
+    registry.discover_directory(Path.cwd() / ".agent" / "skills", SkillTrust.PROJECT_LOCAL)
+    installed_skills = set(registry.all())
     tools = {tool.id for tool in ToolRegistry.default().all()}
     evaluations = EvaluationRegistry()
     result = []

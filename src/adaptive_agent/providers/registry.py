@@ -1,7 +1,7 @@
 """Provider plugin registry.
 
 Adding a provider means registering one `ProviderDescriptor`. No orchestration,
-planning, routing, or dashboard code changes.
+planning, routing, or presentation-layer code changes.
 """
 
 from __future__ import annotations

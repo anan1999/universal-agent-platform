@@ -5,15 +5,14 @@ import json
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import FileResponse, StreamingResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import StreamingResponse
 
 from adaptive_agent.observability.event_bus import EventBus
 from adaptive_agent.observability.performance import PerformanceTracker
 from adaptive_agent import __version__
 from adaptive_agent.bootstrap import consumption_mode
 from adaptive_agent.core.consumption import consumption_policy
-from adaptive_agent.runtime import RESOURCE_ROOT, database
+from adaptive_agent.runtime import RESOURCE_ROOT, database, platform_home
 from adaptive_agent.registry_view import (
     agents as registry_agents, model_registry, profiles as registry_profiles,
     providers as registry_providers, skills as registry_skills, tools as registry_tools,
@@ -25,6 +24,10 @@ from adaptive_agent.project.adapter import (
     project_profiles,
 )
 from adaptive_agent.storage.database import Database
+from adaptive_agent.skills.manifest import SkillTrust
+from adaptive_agent.skills.quality import SkillQualityStore
+from adaptive_agent.skills.registry import SkillRegistry
+from adaptive_agent.skills.resolver import SkillResolver
 
 
 def create_app(db: Database | None = None, events: EventBus | None = None) -> FastAPI:
@@ -40,6 +43,13 @@ def create_app(db: Database | None = None, events: EventBus | None = None) -> Fa
                 row["data"] = json.loads(row.pop(field))
         return rows
 
+    def skill_registry() -> SkillRegistry:
+        registry = SkillRegistry.from_yaml(RESOURCE_ROOT / "config" / "default_skills.yaml")
+        registry.discover_directory(RESOURCE_ROOT / "skills", SkillTrust.BUILT_IN)
+        registry.discover_directory(platform_home() / "skills", SkillTrust.TRUSTED)
+        registry.discover_directory(Path.cwd() / ".agent" / "skills", SkillTrust.PROJECT_LOCAL)
+        return registry
+
     @app.get("/api/health")
     def health():
         return {"status": "ok", "version": __version__}
@@ -48,8 +58,7 @@ def create_app(db: Database | None = None, events: EventBus | None = None) -> Fa
     def bootstrap_status():
         project = Path.cwd()
         installed = all((RESOURCE_ROOT / relative).exists() for relative in (
-            "config/models.yaml", "config/profiles/general.yaml",
-            "templates/capabilities.yaml", "dashboard/index.html"))
+            "config/models.yaml", "config/profiles/general.yaml", "templates/capabilities.yaml"))
         agents_path = project / "AGENTS.md"
         marker = agents_path.is_file() and UAP_START in agents_path.read_text(encoding="utf-8")
         initialized = ((project / ".agent" / "project.yaml").is_file() and marker and
@@ -85,6 +94,17 @@ def create_app(db: Database | None = None, events: EventBus | None = None) -> Fa
         result["tasks"] = decoded(db.query("SELECT * FROM tasks WHERE run_id=? ORDER BY priority DESC", (run_id,)))
         result["events"] = decoded(db.query("SELECT * FROM events WHERE run_id=? ORDER BY timestamp", (run_id,)), "metadata_json")
         return result
+
+    @app.get("/api/runs/{run_id}/skills")
+    def run_skills(run_id: str):
+        if not db.query("SELECT id FROM runs WHERE id=?", (run_id,)):
+            raise HTTPException(404, "run not found")
+        rows = db.query(
+            "SELECT run_id,task_id,skill_id,version,loaded_references_json,context_tokens,created_at "
+            "FROM run_skills WHERE run_id=? ORDER BY created_at,task_id,skill_id", (run_id,))
+        for row in rows:
+            row["loaded_references"] = json.loads(row.pop("loaded_references_json"))
+        return rows
 
     @app.get("/api/tasks")
     def tasks(run_id: str | None = None):
@@ -143,7 +163,13 @@ def create_app(db: Database | None = None, events: EventBus | None = None) -> Fa
         matches = [item for item in registry_skills(db) if item["id"] == skill_id]
         if not matches:
             raise HTTPException(404, "skill not found")
-        return matches[0]
+        registry = skill_registry()
+        manifest = registry.manifest(skill_id)
+        loaded = registry.load_selected(skill_id)
+        return {**matches[0], "manifest": manifest.to_dict(),
+                "instructions": loaded.instructions,
+                "available_references": manifest.references,
+                "loaded_references": [], "context_tokens": loaded.estimated_context_tokens}
 
     @app.get("/api/skills/{skill_id}/agents")
     def skill_agents(skill_id: str):
@@ -155,7 +181,30 @@ def create_app(db: Database | None = None, events: EventBus | None = None) -> Fa
     @app.get("/api/skills/{skill_id}/usage")
     def skill_usage(skill_id: str):
         return {"history": db.query("SELECT * FROM agent_skills WHERE skill_id=? ORDER BY loaded_at DESC", (skill_id,)),
-                "token_attribution": "unavailable"}
+                "runs": db.query("SELECT * FROM skill_runs WHERE skill_id=? ORDER BY created_at DESC", (skill_id,)),
+                "quality": SkillQualityStore(db).get(skill_id).to_dict(),
+                "token_attribution": "measured only when the provider reports measured usage"}
+
+    @app.get("/api/skill-candidates")
+    def skill_candidates(capability: str, minimize_cost: bool = False):
+        return [item.to_dict() for item in SkillResolver(skill_registry().manifests()).candidates(
+            [capability], minimize_cost=minimize_cost)]
+
+    @app.get("/api/skill-intelligence/temporary")
+    def temporary_skills():
+        return [item for item in registry_skills(db) if item.get("status") == "temporary"]
+
+    @app.get("/api/skill-intelligence/promotion-candidates")
+    def skill_promotion_candidates():
+        return [item for item in registry_skills(db) if item.get("promotion_candidate")]
+
+    @app.get("/api/artifact-evaluations")
+    def artifact_evaluations(run_id: str | None = None):
+        rows = (db.query("SELECT * FROM artifact_evaluations WHERE run_id=? ORDER BY id", (run_id,))
+                if run_id else db.query("SELECT * FROM artifact_evaluations ORDER BY id DESC LIMIT 200"))
+        for row in rows:
+            row["quality"] = json.loads(row.pop("quality_json"))
+        return rows
 
     @app.patch("/api/skills/{skill_id}")
     def update_skill(skill_id: str, payload: dict):
@@ -238,6 +287,7 @@ def create_app(db: Database | None = None, events: EventBus | None = None) -> Fa
                 "work_profiles": [item for item in str(rows[0].get("work_profiles", "")).split(",") if item],
                 "analysis": stored.get("analysis", {}), "team": stored.get("team", {}),
                 "consumption": stored.get("consumption", {}),
+                "execution_plan": stored.get("execution_plan", {}),
                 "routing": routing}
 
     @app.get("/api/orchestration")
@@ -303,19 +353,4 @@ def create_app(db: Database | None = None, events: EventBus | None = None) -> Fa
                     yield ": keepalive\n\n"
         return StreamingResponse(stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache"})
 
-    dashboard = RESOURCE_ROOT / "dashboard"
-    if dashboard.exists():
-        app.mount("/assets", StaticFiles(directory=dashboard), name="assets")
-
-        @app.get("/")
-        def index():
-            return FileResponse(dashboard / "index.html")
-
-        @app.get("/agents")
-        @app.get("/skills")
-        @app.get("/tools")
-        @app.get("/providers")
-        @app.get("/profiles")
-        def registry_index():
-            return FileResponse(dashboard / "index.html")
     return app

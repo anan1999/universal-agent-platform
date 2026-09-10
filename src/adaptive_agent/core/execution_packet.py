@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Iterable
 
 from adaptive_agent.core.models import Receipt, Task
+from adaptive_agent.skills.manifest import LoadedSkill
 
 
 @dataclass(slots=True)
@@ -17,6 +18,8 @@ class ExecutionPacket:
     dependency_receipts: list[str] = field(default_factory=list)
     allowed_files: list[str] = field(default_factory=list)
     required_skills: list[str] = field(default_factory=list)
+    skill_context: list[str] = field(default_factory=list)
+    loaded_references: list[str] = field(default_factory=list)
     constraints: list[str] = field(default_factory=list)
     max_output_words: int = 500
     read_only: bool = False
@@ -49,6 +52,8 @@ class ExecutionPacket:
             section("DEPENDENCY RECEIPTS", self.dependency_receipts),
             section("ALLOWED SCOPE", self.allowed_files, "Minimize the workspace scope required by the task."),
             section("REQUIRED SKILLS", self.required_skills),
+            section("SELECTED SKILL PROCEDURES", self.skill_context),
+            section("LOADED SKILL REFERENCES", self.loaded_references),
             section("CONSTRAINTS", constraints),
             "EXPECTED OUTPUT:\nReturn one JSON object matching the supplied schema. Confidence is a workflow signal: high, medium, low, or unknown.",
         ]
@@ -63,7 +68,8 @@ class ExecutionPacketBuilder:
     def build(self, task: Task, working_directory: Path, project_name: str, project_type: str,
               receipts: Iterable[Receipt] = (), allowed_files: list[str] | None = None,
               required_skills: list[str] | None = None, constraints: list[str] | None = None,
-              read_only: bool | None = None) -> ExecutionPacket:
+              read_only: bool | None = None,
+              loaded_skills: list[LoadedSkill] | None = None) -> ExecutionPacket:
         summarized = [self._summarize(receipt) for receipt in list(receipts)[:self.max_receipts]]
         # Write intent comes from the task itself, not from the role's name.
         inferred_read_only = bool(task.metadata.get("read_only")) or "do not modify" in task.title.lower()
@@ -74,6 +80,9 @@ class ExecutionPacketBuilder:
             working_directory=Path(working_directory).resolve(), dependency_receipts=summarized,
             allowed_files=allowed_files or list(task.metadata.get("allowed_files", [])),
             required_skills=required_skills or list(task.metadata.get("required_skills", task.required_capabilities)),
+            skill_context=[item.to_context() for item in (loaded_skills or [])],
+            loaded_references=[f"{item.manifest.id}:{name}"
+                               for item in (loaded_skills or []) for name in item.references],
             constraints=constraints or list(task.metadata.get("constraints", [])),
             read_only=inferred_read_only if read_only is None else read_only,
             artifact_type=getattr(task, "artifact_type", "unknown"),

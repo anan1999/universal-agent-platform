@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "universal-agent-platform"
-version = "2.1.0"
+version = "2.2.0"
 description = "Universal Agent Platform: bring your goal, bring your AI, the platform builds the team"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -19,7 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
 ]
-dependencies = ["fastapi>=0.110", "uvicorn>=0.27", "pydantic>=2.6", "PyYAML>=6"]
+dependencies = ["fastapi>=0.110", "pydantic>=2.6", "PyYAML>=6"]
 
 [project.urls]
 Homepage = "https://github.com/anan1999/universal-agent-platform"
@@ -44,9 +44,8 @@ adaptive_agent = [
     "resources/config/profiles/*.yaml",
     "resources/templates/*.yaml",
     "resources/templates/*.md",
-    "resources/dashboard/*.html",
-    "resources/dashboard/*.css",
-    "resources/dashboard/*.js",
+    "resources/skills/*/*.json",
+    "resources/skills/*/*.md",
 ]
 
 [tool.pytest.ini_options]

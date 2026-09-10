@@ -1,0 +1,19 @@
+{
+  "id": "w8a8-validation",
+  "version": "1.0.0",
+  "description": "Validate W8A8 model tensor, quantization, runtime, and evidence contracts.",
+  "capabilities": ["quantization", "inference", "evaluation"],
+  "inputs": {"model": "path", "runtime": "description"},
+  "outputs": {"validation_report": "markdown"},
+  "dependencies": [],
+  "tools": [],
+  "entrypoint": "SKILL.md",
+  "references": {},
+  "evaluation": ["accuracy_check"],
+  "security": {"scripts": false, "network": false, "filesystem_writes": false},
+  "provenance": {"source": "UAP built-in"},
+  "trust": "built_in",
+  "status": "active",
+  "estimated_context_tokens": 180,
+  "portability": 0.8
+}

@@ -13,10 +13,10 @@ If you prefer structured input, read that file instead and use this one as the r
 
 The Universal Agent Platform turns a plain-language goal into an executed plan.
 
-Given a goal, it analyzes which **capabilities** the work needs, composes the **minimum
-sufficient team** of reasoning roles, routes each role to an available **provider and model**,
-builds a dependency-ordered **task DAG**, executes it, and records receipts, artifacts and
-performance history that a local dashboard renders.
+Given a goal, it analyzes which **capabilities** the work needs, chooses the **minimum sufficient
+execution strategy**, reuses deterministic tools and versioned **Skills** before adding Agents,
+routes required reasoning roles to an available **provider and model**, executes the plan, and
+records receipts, artifacts and performance history exposed through the CLI and API.
 
 It is not tied to any AI vendor and not tied to software engineering. Codex, a deterministic
 mock, and an environment-configured OpenAI-compatible endpoint are implemented today; other
@@ -158,7 +158,7 @@ appears in the list, and never present detected credentials as a working integra
 Credentials are never printed. Do not try to read them and do not echo them anywhere.
 
 `doctor` runs the full health check: Python version, database schema, registries, provider
-readiness, and dashboard binding. Run it before reporting success to the user, and run it
+readiness, and installed resources. Run it before reporting success to the user, and run it
 first whenever something behaves unexpectedly.
 
 ## 9. Choose a consumption policy
@@ -187,20 +187,34 @@ Pass the goal and the constraints that matter. Do **not** pass agent names, mode
 provider names, role assignments, or a task breakdown. Choosing those is the platform's job,
 and overriding them is how you get a worse plan than the one it would have built.
 
+The execution planner starts with the smallest strategy that can satisfy the goal: tool-only,
+one Agent, one Agent with deterministic tools, multiple parallel Agents, a dependency DAG, a
+human approval gate, or artifact-only execution. Treat a Skill as reusable procedure/context,
+not as a reasoning role. Do not create a specialist merely to hold reusable knowledge.
+
 To see the plan without executing:
 
 ```bash
 agentctl run "<goal>" --dry-run --json
 ```
 
-The JSON response includes the capability analysis, the composed team with the reason each
-role was selected *and* each role was omitted, the routing decision per task with its
-justification, and the resulting DAG. After a run:
+The JSON response includes `execution_plan`, capability analysis, selected Skills, the composed
+team (when needed), routing decisions with rejection reasons, and the resulting DAG. Skill
+discovery is metadata-only; the executor loads only selected instructions and references. After
+a run:
 
 ```bash
 agentctl explain <run-id> --json     # why this team, why this provider
 agentctl replay <run-id>             # event timeline
-agentctl dashboard                   # http://127.0.0.1:8787
+```
+
+Inspect Skill decisions when needed:
+
+```bash
+agentctl skill candidates "<capability>"
+agentctl skill explain <skill-id>
+agentctl skill validate <skill-id>
+agentctl skill history <skill-id>
 ```
 
 Report the outcome to the user in terms of what was produced and what was checked. If the run
@@ -211,7 +225,6 @@ failed, give them the root cause from `explain`, not a wall of log output.
 These constraints are enforced by the platform. Do not attempt to work around them; if one
 blocks you, that is the answer, and you should tell the user rather than route around it.
 
-- The dashboard binds to `127.0.0.1` only, and the browser cannot execute arbitrary shell.
 - Only commands listed in `.agent/commands.yaml` are executed. Adding to that allowlist is the
   user's decision, not yours.
 - Destructive actions, deployments, publishing, and external side effects pass through human
@@ -277,7 +290,7 @@ If the user says *"use this repository for agent orchestration and then build X"
 5. `agentctl doctor` — confirm health before doing real work.
 6. `agentctl orchestrate "<their goal>" --json` — the goal and its real constraints, nothing else.
 7. Report what was built, what was checked, and what the platform decided. Point them at
-   `agentctl dashboard` and `agentctl explain <run-id>`.
+   `agentctl explain <run-id>` and the read-only API views.
 
 **Do not** hand-assign agents, models, or providers. **Do not** invent a task breakdown and
 feed it in as the goal. **Do not** claim a provider works when it reports `UNSUPPORTED`. **Do

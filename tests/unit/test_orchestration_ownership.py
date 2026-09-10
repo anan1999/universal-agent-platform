@@ -58,7 +58,7 @@ def test_orchestrate_json_persists_parent_entry(monkeypatch, tmp_path, capsys):
     payload = json.loads(capsys.readouterr().out)
     assert payload["orchestration_owner"] == "universal-agent-platform"
     assert payload["entry_source"] == "codex_parent"
-    assert payload["dashboard_url"].startswith("http://127.0.0.1:")
+    assert "dashboard_url" not in payload
 
 
 def test_v2_database_migrates_without_data_loss(tmp_path):

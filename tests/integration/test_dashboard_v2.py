@@ -1,8 +1,4 @@
-"""V2 dashboard API: providers, profiles, tools, and the explainability payload.
-
-The dashboard is the only place a user sees *why* the platform did what it did,
-so these routes are part of the product surface rather than debug output.
-"""
+"""V2 read-only API: providers, profiles, tools, and explainability."""
 
 import asyncio
 
@@ -15,12 +11,10 @@ from adaptive_agent.observability.event_bus import EventBus
 from adaptive_agent.providers.mock import MockProvider
 from adaptive_agent.storage.database import Database
 
-
 @pytest.fixture
 def client(tmp_path):
     db = Database(tmp_path / "dashboard.db")
     return TestClient(create_app(db, EventBus(db)))
-
 
 @pytest.fixture
 def run(tmp_path):
@@ -30,7 +24,6 @@ def run(tmp_path):
     run_id = asyncio.run(orchestrator.run_goal("Redesign the settings page for better usability",
                                                working_directory=str(tmp_path)))
     return TestClient(create_app(db, bus)), run_id
-
 
 # -- Providers ---------------------------------------------------------------
 
@@ -47,7 +40,6 @@ def test_providers_report_state_without_exposing_secrets(client):
         serialized = str(item).lower()
         assert "api_key" not in serialized and "secret" not in serialized
 
-
 def test_unimplemented_providers_are_not_presented_as_working(client):
     payload = {item["id"]: item for item in client.get("/api/providers").json()}
     assert payload["mock"]["implemented"] is True
@@ -56,24 +48,20 @@ def test_unimplemented_providers_are_not_presented_as_working(client):
         assert provider["implemented"] is False
         assert provider["ready"] is False, f"{provider_id} must never claim readiness"
 
-
 def test_provider_detail_lists_its_models(client):
     payload = client.get("/api/providers/mock").json()
     assert payload["id"] == "mock"
     assert payload["models"], "the mock provider has a catalogued model set"
     assert all(model["provider"] == "mock" for model in payload["models"])
 
-
 def test_unknown_provider_is_a_404(client):
     assert client.get("/api/providers/nonexistent").status_code == 404
-
 
 def test_provider_native_profiles_are_scoped_to_their_provider(client):
     """Codex profiles are a provider convention, never universal Agents."""
     assert client.get("/api/providers/openai/profiles").json() == []
     assert client.get("/api/providers/codex/profiles").status_code == 200
     assert client.get("/api/codex/profiles").status_code == 404
-
 
 # -- Models ------------------------------------------------------------------
 
@@ -83,7 +71,6 @@ def test_models_can_be_filtered_by_provider(client):
     assert every and mock_only
     assert len(mock_only) < len(every)
     assert {item["provider"] for item in mock_only} == {"mock"}
-
 
 # -- Work profiles -----------------------------------------------------------
 
@@ -95,11 +82,9 @@ def test_profiles_expose_roles_skills_and_evaluation(client):
     assert software["evaluation_strategies"]
     assert software["source"], "a profile must say where it came from, so it can be edited"
 
-
 def test_profile_detail_and_unknown_profile(client):
     assert client.get("/api/profiles/uiux").json()["id"] == "uiux"
     assert client.get("/api/profiles/interior-design").status_code == 404
-
 
 # -- Tools -------------------------------------------------------------------
 
@@ -110,12 +95,10 @@ def test_tools_declare_risk_and_execution_type(client):
         assert tool["risk"] in {"safe", "low", "moderate", "high", "destructive"}
         assert tool["execution"] in {"project_command", "builtin_command", "internal", "manual"}
 
-
 # -- Plugins -----------------------------------------------------------------
 
 def test_plugins_route_lists_nothing_when_none_are_installed(client):
     assert client.get("/api/plugins").json() == []
-
 
 # -- Explainability ----------------------------------------------------------
 
@@ -131,7 +114,6 @@ def test_composition_answers_why_this_team(run):
     assert payload["consumption"]["mode"] == "balanced"
     assert payload["consumption"]["max_parallel_agents"] == 3
 
-
 def test_composition_answers_why_this_provider(run):
     client, run_id = run
     payload = client.get(f"/api/runs/{run_id}/composition").json()
@@ -142,17 +124,14 @@ def test_composition_answers_why_this_provider(run):
         assert decision["provider"] and decision["reason"]
         assert "always uses" not in decision["reason"].lower()
 
-
 def test_composition_records_omissions_not_just_selections(run):
     client, run_id = run
     team = client.get(f"/api/runs/{run_id}/composition").json()["team"]
     assert team["omitted"], "roles left out must be explained, not silently dropped"
     assert all(item["role"] and item["reason"] for item in team["omitted"])
 
-
 def test_composition_of_unknown_run_is_a_404(client):
     assert client.get("/api/runs/RUN-NOPE/composition").status_code == 404
-
 
 def test_token_usage_attributes_provider_source_and_invocations(run):
     client, run_id = run
@@ -161,7 +140,6 @@ def test_token_usage_attributes_provider_source_and_invocations(run):
     assert all(item["provider"] == "mock" for item in payload)
     assert all(item["token_source"] in {"measured", "estimated", "unavailable"} for item in payload)
     assert sum(item["invocations"] for item in payload) > 0
-
 
 def test_bootstrap_status_exposes_effective_consumption(monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
@@ -172,10 +150,6 @@ def test_bootstrap_status_exposes_effective_consumption(monkeypatch, tmp_path):
     assert payload["consumption"]["mode"] == "economy"
     assert payload["consumption"]["limits"]["max_parallel_agents"] == 1
     assert payload["consumption"]["limits"]["max_context_receipts"] == 2
-
-
-# -- Routing -----------------------------------------------------------------
-
-def test_dashboard_pages_are_served(client):
-    for path in ("/", "/agents", "/skills", "/tools", "/providers", "/profiles"):
-        assert client.get(path).status_code == 200, f"{path} should serve the dashboard"
+    client = TestClient(create_app(Database(tmp_path / "no-dashboard.db")))
+    assert client.get("/").status_code == 404
+    assert client.get("/assets/app.js").status_code == 404

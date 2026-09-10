@@ -21,7 +21,7 @@ Its bounded execution packet explicitly forbids invoking `agentctl` or another r
 The `orchestrate` command rejects calls carrying the child marker.
 
 Run provenance stores both `orchestration_owner` and `entry_source` in SQLite. Supported entry
-sources include `codex_parent`, `cli`, `dashboard`, and `api`. UAP does not claim to detect arbitrary
+sources include `codex_parent`, `cli`, and `api`. UAP does not claim to detect arbitrary
 manual activity outside its process boundary.
 
 The Agent and Skill views preserve four separate concepts: logical Agent, Codex native profile,

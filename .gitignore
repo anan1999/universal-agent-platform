@@ -2,9 +2,11 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.pytest-*/
 .coverage
 htmlcov/
 dist/
+dist-*/
 build/
 *.egg-info/
 .env
@@ -14,3 +16,6 @@ build/
 *.db-wal
 runtime/
 work/
+.release-venv/
+.wheel-venv/
+.uap-*/

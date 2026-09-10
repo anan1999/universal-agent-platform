@@ -25,8 +25,6 @@ PLATFORM_CONFIG = "platform.yaml"
 
 DEFAULT_PLATFORM_CONFIG: dict[str, Any] = {
     "platform": {
-        "dashboard_host": "127.0.0.1",
-        "dashboard_port": 8787,
         "command_execution": "allowlist_only",
         "specialist_promotion": "explicit_approval_only",
         "plugin_execution": "trusted_only",
@@ -151,8 +149,6 @@ def setup(auto: bool = False, non_interactive: bool = False) -> SetupResult:
     ready = [item for item in result.providers if item["ready"]]
     result.checks.append(("Providers", "PASS" if ready else "WARN",
                           f"{len(ready)} ready of {len(result.providers)} registered"))
-    result.checks.append(("Dashboard", "PASS", "binds to 127.0.0.1 only"))
-
     if not ready:
         message = ("No provider is ready. Install a provider CLI, configure credentials, "
                    "or run with --provider mock.")

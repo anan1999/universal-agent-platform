@@ -53,7 +53,7 @@ class Candidate:
 
 @dataclass(slots=True)
 class RoutingDecision:
-    """Why this provider and this model. Renderable verbatim in the dashboard."""
+    """Why this provider and this model. Renderable verbatim by presentation clients."""
 
     provider: str
     model: str | None

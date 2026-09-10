@@ -2,6 +2,20 @@
 
 All notable changes follow semantic versioning.
 
+## 2.2.0
+
+- Added a minimum-sufficient Execution Planner with tool-only, single-agent, multi-agent,
+  approval, and artifact-only strategies.
+- Added versioned Skill manifests, provider-independent discovery, deterministic resolution,
+  progressive context loading, dependency validation, and trust/lifecycle states.
+- Added specification-first temporary Skill synthesis with static safety checks and explicit
+  approval for unverified executable content.
+- Added artifact evaluation as an authoritative completion gate plus Skill quality history and
+  conservative promotion candidates.
+- Added Skill intelligence CLI/API views and a packaged W8A8 validation Skill.
+- Removed the bundled Dashboard and its server command; history remains available through CLI/API.
+- Added deterministic offline V2.2 tests and context-efficiency benchmark evidence.
+
 ## 2.1.0
 
 - Added source-checkout-independent packaged runtime resources.

@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Sequence
 
 from adaptive_agent.core.capability_router import CapabilityRouter
+from adaptive_agent.core.artifact_evaluator import DeclaredArtifactEvaluator
 from adaptive_agent.core.escalation import EscalationManager
 from adaptive_agent.core.execution_packet import ExecutionPacketBuilder
 from adaptive_agent.core.models import Event, Receipt, Task, TaskKind, TaskStatus
@@ -16,6 +17,10 @@ from adaptive_agent.observability.event_bus import EventBus
 from adaptive_agent.observability.performance import PerformanceTracker
 from adaptive_agent.providers.base import AIProvider
 from adaptive_agent.providers.registry import ProviderRegistry
+from adaptive_agent.runtime import RESOURCE_ROOT, platform_home
+from adaptive_agent.skills.manifest import SkillTrust
+from adaptive_agent.skills.registry import SkillRegistry
+from adaptive_agent.skills.quality import SkillQualityStore
 from adaptive_agent.storage.database import Database
 from adaptive_agent.tasks.graph import TaskGraph
 from adaptive_agent.tasks.receipt import ReceiptStore
@@ -28,7 +33,8 @@ class Scheduler:
                  max_escalations: int = 2, capability_router: CapabilityRouter | None = None,
                  tools: ToolRegistry | None = None, approvals: Sequence[str] = (),
                  provider_registry: ProviderRegistry | None = None,
-                 receipt_word_limit: int = 160, max_context_receipts: int = 4):
+                 receipt_word_limit: int = 160, max_context_receipts: int = 4,
+                 skill_registry: SkillRegistry | None = None):
         self.database = database
         self.events = events
         self.provider = provider
@@ -46,6 +52,9 @@ class Scheduler:
         self.completed_receipts: dict[str, Receipt] = {}
         self._provider_cache: dict[str, AIProvider] = {provider_name: provider}
         self.packet_builder = ExecutionPacketBuilder(receipt_word_limit, max_context_receipts)
+        self.skill_registry = skill_registry or SkillRegistry.from_yaml(
+            RESOURCE_ROOT / "config" / "default_skills.yaml")
+        self.skill_quality = SkillQualityStore(database)
 
     async def run(self, graph: TaskGraph) -> bool:
         graph.validate()
@@ -67,7 +76,21 @@ class Scheduler:
             return self._execute_tool(task)
         if task.kind is TaskKind.APPROVAL:
             return self._execute_approval(task)
+        if task.kind is TaskKind.ARTIFACT:
+            return self._execute_artifact(task)
         return await self._execute_agent(task)
+
+    def _execute_artifact(self, task: Task) -> bool:
+        task.status = TaskStatus.COMPLETED
+        receipt = Receipt(task.id, task.owner, "completed", "Artifact recorded without an AI invocation.",
+                          token_usage={"input": 0, "output": 0, "cached": 0,
+                                       "source": "unavailable", "estimated": False,
+                                       "invocation_count": 0})
+        self._record_attempt(task, receipt)
+        self.completed_receipts[task.id] = receipt
+        self._persist(task)
+        self.events.emit(Event("artifact_recorded", task.run_id, task.owner, task.id))
+        return True
 
     def _execute_tool(self, task: Task) -> bool:
         """Deterministic execution. Consumes no AI quota and reports no tokens."""
@@ -149,12 +172,26 @@ class Scheduler:
 
                 context_ids = task.metadata.get("context_receipts", task.dependencies)
                 dependency_receipts = [self.completed_receipts[item] for item in context_ids if item in self.completed_receipts]
+                try:
+                    loaded_skills = self._load_skills(task)
+                except (KeyError, ValueError, PermissionError) as error:
+                    receipt = Receipt(task.id, task.owner, "failed", str(error),
+                                      token_usage={"input": 0, "output": 0, "cached": 0,
+                                                   "source": "unavailable", "estimated": False,
+                                                   "invocation_count": 0},
+                                      error_code="SKILL_VALIDATION_FAILED", needs_escalation=False)
+                    self._record_attempt(task, receipt)
+                    task.status = TaskStatus.FAILED
+                    self._persist(task)
+                    self._set_skill_activity(task, False)
+                    return False
                 packet = self.packet_builder.build(
                     task,
                     task.metadata.get("working_directory", "."),
                     task.metadata.get("project_name", "project"),
                     task.metadata.get("project_type", "unknown"),
                     dependency_receipts,
+                    loaded_skills=loaded_skills,
                 )
                 try:
                     async with self._model_slot(task.model_class):
@@ -166,7 +203,9 @@ class Scheduler:
                     raise
                 receipt.retry_count = attempts
                 receipt.escalated = attempts > 0
+                self._evaluate_artifact(task, receipt)
                 self._record_attempt(task, receipt)
+                self._record_skill_quality(task, receipt, loaded_skills)
                 decision = self.escalation.decide(task, receipt, attempts)
                 if decision.escalate:
                     attempts += 1
@@ -194,6 +233,75 @@ class Scheduler:
                                        task.run_id, task.owner, task.id,
                                        {"confidence": receipt.confidence, "error_code": receipt.error_code}))
                 return task.status == TaskStatus.COMPLETED
+
+    def _evaluate_artifact(self, task: Task, receipt: Receipt) -> None:
+        if receipt.status != "completed":
+            return
+        if not task.metadata.get("required_artifacts") and not task.metadata.get("required_sections"):
+            return
+        workspace = Path(task.metadata.get("working_directory", ".")).resolve()
+        evaluator = DeclaredArtifactEvaluator()
+        quality = evaluator.evaluate(task, receipt, workspace)
+        task.metadata["artifact_quality"] = quality.to_dict()
+        self.database.execute(
+            "INSERT INTO artifact_evaluations(run_id,task_id,evaluator,passed,quality_json) "
+            "VALUES(?,?,?,?,?)",
+            (task.run_id, task.id, evaluator.id, int(quality.passed),
+             self.database.json(quality.to_dict())))
+        self.events.emit(Event("artifact_evaluated", task.run_id, task.owner, task.id,
+                               {"evaluator": evaluator.id, "passed": quality.passed,
+                                "failures": quality.failures}))
+        if not quality.passed:
+            receipt.status = "failed"
+            receipt.error_code = "ARTIFACT_VALIDATION_FAILED"
+            receipt.confidence = "low"
+            receipt.needs_escalation = True
+            receipt.uncertainty_reason = "; ".join(quality.failures)
+            receipt.findings.extend(quality.failures)
+
+    def _load_skills(self, task: Task):
+        workspace = Path(task.metadata.get("working_directory", ".")).resolve()
+        self.skill_registry.discover_directory(RESOURCE_ROOT / "skills", SkillTrust.BUILT_IN)
+        self.skill_registry.discover_directory(platform_home() / "skills", SkillTrust.TRUSTED)
+        self.skill_registry.discover_directory(workspace / ".agent" / "skills", SkillTrust.PROJECT_LOCAL)
+        reference_map = task.metadata.get("skill_references", {})
+        loaded = []
+        for skill_id in task.metadata.get("required_skills", []):
+            validation = self.skill_registry.validate(skill_id)
+            if not validation["valid"]:
+                raise ValueError("; ".join(validation["errors"]))
+            if validation["approval_required"] and f"skill:{skill_id}" not in self.approvals:
+                raise PermissionError(f"Skill '{skill_id}' requires explicit approval before execution.")
+            item = self.skill_registry.load_selected(skill_id, list(reference_map.get(skill_id, [])))
+            loaded.append(item)
+            self.database.execute(
+                "INSERT INTO run_skills(run_id,task_id,skill_id,version,loaded_references_json,context_tokens) "
+                "VALUES(?,?,?,?,?,?)",
+                (task.run_id, task.id, skill_id, item.manifest.version,
+                 self.database.json(list(item.references)), item.estimated_context_tokens))
+        return loaded
+
+    def _record_skill_quality(self, task: Task, receipt: Receipt, loaded_skills) -> None:
+        usage = receipt.token_usage
+        tokens = int(usage.get("input", 0)) + int(usage.get("output", 0))
+        for item in loaded_skills:
+            self.skill_quality.record(
+                item.manifest.id, item.manifest.version, task.run_id, task.id,
+                receipt.status == "completed",
+                (task.metadata.get("artifact_quality") or {}).get("correctness"),
+                int(usage.get("invocation_count", 1)),
+                tokens if usage.get("source") == "measured" else None,
+                str(usage.get("source", "unavailable")), item.estimated_context_tokens,
+                receipt.provider or str(task.metadata.get("provider", "")),
+                receipt.model or str(task.metadata.get("model", "")),
+                safety_failure=receipt.error_code == "SKILL_VALIDATION_FAILED")
+            quality = self.skill_quality.get(item.manifest.id, item.manifest.version)
+            if quality.promotion_candidate and quality.runs == 3:
+                self.events.emit(Event(
+                    "skill_promotion_candidate", task.run_id, task.owner, task.id,
+                    {"skill": item.manifest.id, "version": item.manifest.version,
+                     "runs": quality.runs, "reliability": quality.reliability},
+                ))
 
     def _reroute(self, task: Task) -> None:
         """Pick the next model after an escalation.

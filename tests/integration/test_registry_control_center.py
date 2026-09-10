@@ -30,14 +30,22 @@ def test_runtime_skill_associations_are_history_not_permanent_loads(tmp_path):
     bus = EventBus(db)
     asyncio.run(Orchestrator(db, MockProvider(delay=0), bus,
                              active_profiles=["software-engineering"]).run_goal(
-        "Inspect repository files and report relevant code. Do not modify anything."))
+        "Search the repository and report relevant files. Do not modify anything."))
     client = TestClient(create_app(db, bus))
-    git_skill = client.get("/api/skills/git").json()
-    assert git_skill["load_count"] == 1
-    assert git_skill["loaded"] is False
-    assert "developer" in git_skill["used_by_agents"]
-    usage = client.get("/api/skills/git/usage").json()
+    selected_skill = client.get("/api/skills/repository_search").json()
+    assert selected_skill["load_count"] == 1
+    assert selected_skill["loaded"] is False
+    assert selected_skill["used_by_agents"]
+    assert client.get("/api/skills/git").json()["load_count"] == 0, \
+        "progressive loading must not inherit every Skill declared by a role"
+    usage = client.get("/api/skills/repository_search/usage").json()
     assert usage["history"][0]["source"] == "runtime"
+    run_id = db.query("SELECT id FROM runs ORDER BY created_at DESC LIMIT 1")[0]["id"]
+    run_skills = client.get(f"/api/runs/{run_id}/skills").json()
+    assert run_skills[0]["skill_id"] == "repository_search"
+    assert run_skills[0]["version"]
+    assert run_skills[0]["loaded_references"] == []
+    assert client.get("/api/runs/DOES-NOT-EXIST/skills").status_code == 404
 
 
 def test_agent_disable_safety_and_temporary_promotion_data(tmp_path):
@@ -52,3 +60,15 @@ def test_agent_disable_safety_and_temporary_promotion_data(tmp_path):
     assert client.patch("/api/agents/explorer", json={"enabled": False}).status_code == 409
     assert client.patch("/api/agents/tester", json={"enabled": False}).json()["enabled"] is False
     assert client.patch("/api/skills/qnn", json={"enabled": False}).json()["enabled"] is False
+
+
+def test_skill_intelligence_api_exposes_candidates_and_artifact_results(tmp_path):
+    db = Database(tmp_path / "skill-api.db")
+    client = TestClient(create_app(db, EventBus(db)))
+    candidates = client.get("/api/skill-candidates", params={"capability": "w8a8 validation"}).json()
+    assert candidates[0]["skill"] == "w8a8-validation"
+    db.execute("INSERT INTO artifact_evaluations(run_id,task_id,evaluator,passed,quality_json) "
+               "VALUES('RUN-A','TASK-A','declared_artifacts',1,?)",
+               (db.json({"passed": True, "correctness": 1.0}),))
+    evaluations = client.get("/api/artifact-evaluations", params={"run_id": "RUN-A"}).json()
+    assert evaluations[0]["quality"]["correctness"] == 1.0

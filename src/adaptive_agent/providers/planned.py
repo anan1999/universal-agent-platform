@@ -1,6 +1,6 @@
 """Plugin-ready adapters that are not implemented yet.
 
-These exist so the architecture, the CLI, and the dashboard can talk about
+These exist so the architecture, CLI, and API can talk about
 OpenAI / Anthropic / Gemini / Ollama / OpenAI-compatible endpoints without
 pretending they work. A `PlannedProvider` detects whether the runtime or
 credentials are present, reports that honestly, and refuses to execute.
@@ -36,7 +36,7 @@ NOT_IMPLEMENTED = "PROVIDER_NOT_IMPLEMENTED"
 class PlannedProvider(AIProvider):
     implemented = False
     #: Environment variables that would configure this provider. Only presence
-    #: is ever reported; values are never read into telemetry or the dashboard.
+    #: is ever reported; values are never read into telemetry or API output.
     credential_variables: ClassVar[Sequence[str]] = ()
     #: Local executables that indicate the runtime is installed.
     executables: ClassVar[Sequence[str]] = ()

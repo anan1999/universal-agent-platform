@@ -79,8 +79,7 @@ def test_manifest_documentation_targets_exist(manifest):
 
 def test_manifest_records_the_safety_posture(manifest):
     safety = manifest["safety"]
-    assert safety["dashboard_bind"] == "127.0.0.1"
-    assert safety["shell_execution_from_browser"] is False
+    assert safety["bundled_dashboard"] is False
     assert safety["untrusted_plugin_execution"] is False
     assert manifest["testing"]["real_ai_quota_consumed"] is False
 

@@ -4,15 +4,11 @@ import argparse
 import asyncio
 import json
 import os
-import socket
 import subprocess
 import sys
 from pathlib import Path
 
-import uvicorn
-
 from adaptive_agent import __version__
-from adaptive_agent.api.app import create_app
 from adaptive_agent.bootstrap import (
     analyze_project,
     consumption_mode,
@@ -102,10 +98,6 @@ def parser() -> argparse.ArgumentParser:
     orchestrate.add_argument("--consumption", choices=("economy", "balanced", "maximum"),
                              help="override the project consumption policy for this run")
 
-    dashboard = commands.add_parser("dashboard", help="serve the local dashboard")
-    dashboard.add_argument("--host", default="127.0.0.1")
-    dashboard.add_argument("--port", type=int, default=8787)
-
     status_command = commands.add_parser("status")
     status_command.add_argument("--json", action="store_true")
     agents_command = commands.add_parser("agents")
@@ -122,6 +114,14 @@ def parser() -> argparse.ArgumentParser:
     skill_subcommands = skill_command.add_subparsers(dest="skill_command", required=True)
     skill_show = skill_subcommands.add_parser("show")
     skill_show.add_argument("name")
+    skill_explain = skill_subcommands.add_parser("explain")
+    skill_explain.add_argument("name")
+    skill_validate = skill_subcommands.add_parser("validate")
+    skill_validate.add_argument("name")
+    skill_history = skill_subcommands.add_parser("history")
+    skill_history.add_argument("name")
+    skill_candidates = skill_subcommands.add_parser("candidates")
+    skill_candidates.add_argument("capability")
 
     tools_command = commands.add_parser("tools", help="list deterministic tools")
     tools_command.add_argument("--json", action="store_true")
@@ -303,6 +303,7 @@ def _dry_run(goal: str, provider_name: str, profiles: list[str] | None = None,
         "project": {"name": info.name, "type": info.type, "path": str(Path.cwd()),
                     "recommended_profiles": info.recommended_profiles},
         "analysis": composition.analysis.to_dict(),
+        "execution_plan": composition.execution_plan.to_dict() if composition.execution_plan else {},
         "team": composition.team.to_dict(),
         "required_capabilities": sorted({capability for task in graph.tasks.values()
                                          for capability in task.required_capabilities}),
@@ -366,7 +367,7 @@ def _run_summary(db, run_id: str, worktree: str | None = None) -> dict:
             "worktrees": [item["location"] for item in artifacts if item["kind"] == "git_worktree"],
             "artifacts": [{"path": item["location"], "kind": item["kind"], "type": item["type"],
                            "name": item["name"]} for item in artifacts],
-            "token_usage": usage, "dashboard_url": "http://127.0.0.1:8787/"}
+            "token_usage": usage}
 
 
 def _project_status(db, path: Path) -> str:
@@ -398,15 +399,6 @@ def _table(headers: list[str], values: list[list[object]]) -> str:
              "  ".join("-" * width for width in widths)]
     lines.extend("  ".join(value.ljust(widths[index]) for index, value in enumerate(row)) for row in rows)
     return "\n".join(lines)
-
-
-def _port_available(port: int) -> bool:
-    with socket.socket() as probe:
-        try:
-            probe.bind(("127.0.0.1", port))
-            return True
-        except OSError:
-            return False
 
 
 def _doctor(db) -> str:
@@ -448,10 +440,7 @@ def _doctor(db) -> str:
               f"Approval gates     {', '.join(project_constraints(Path.cwd())) or 'none configured'}",
               "Recursion protection PASS",
               f"Router authority   {'platform' if config['owner'] == 'universal-agent-platform' else config['owner']}",
-              "", "Dashboard", "---------",
-              "FastAPI            PASS",
-              f"Bind address       127.0.0.1 (localhost only)",
-              f"Port 8787          {'AVAILABLE' if _port_available(8787) else 'IN USE'}"]
+              "", "API", "---", "FastAPI            PASS (library interface; no bundled web UI)"]
     return "\n".join(lines)
 
 
@@ -463,10 +452,18 @@ def _explain(db, run_id: str) -> dict:
                            "AND event='task_escalating' ORDER BY timestamp", (run_id,))
     team = composition.get("team", {})
     analysis = composition.get("analysis", {})
+    execution_plan = composition.get("execution_plan", {})
+    run_skills = db.query(
+        "SELECT task_id,skill_id,version,loaded_references_json,context_tokens "
+        "FROM run_skills WHERE run_id=? ORDER BY created_at", (run_id,))
+    for item in run_skills:
+        item["loaded_references"] = json.loads(item.pop("loaded_references_json"))
     return {
         "run_id": run_id,
         "mode": composition.get("mode", "unknown"),
         "consumption": composition.get("consumption", {}),
+        "execution_strategy": execution_plan,
+        "skills_used": run_skills,
         "why_this_team": {
             "goal_requires": analysis.get("capabilities", []),
             "complexity": analysis.get("complexity"),
@@ -568,8 +565,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.json:
             print(json.dumps(summary, indent=2))
         else:
-            print(f"Adaptive Agent run {summary['status']}: {run_id}\n{summary['result_summary']}\n"
-                  f"Dashboard: {summary['dashboard_url']}")
+            print(f"Adaptive Agent run {summary['status']}: {run_id}\n{summary['result_summary']}")
         return 0 if status == "completed" else 1
 
     if args.command == "run":
@@ -589,13 +585,6 @@ def main(argv: list[str] | None = None) -> int:
             return 130
         print(json.dumps(_run_summary(db, run_id, worktree), indent=2))
         return 0 if status == "completed" else 1
-
-    if args.command == "dashboard":
-        if args.host not in {"127.0.0.1", "localhost", "::1"}:
-            print("Refusing non-local dashboard binding.", file=sys.stderr)
-            return 2
-        uvicorn.run(create_app(db, event_bus(db)), host=args.host, port=args.port)
-        return 0
 
     if args.command == "status":
         if args.json:
@@ -629,12 +618,46 @@ def main(argv: list[str] | None = None) -> int:
                      [[item["name"], item["scope"].upper(), "yes" if item["loaded"] else "no",
                        ", ".join(item["used_by_agents"]) or "none"] for item in values]))
     elif args.command == "skill":
-        item = next((value for value in registry_skills(db)
-                     if value["id"] == args.name or value["name"].lower() == args.name.lower()), None)
-        if not item:
-            print(f"Skill not found: {args.name}", file=sys.stderr)
+        from adaptive_agent.skills.manifest import SkillTrust
+        from adaptive_agent.skills.quality import SkillQualityStore
+        from adaptive_agent.skills.registry import SkillRegistry
+        from adaptive_agent.skills.resolver import SkillResolver
+
+        skill_registry = SkillRegistry.from_yaml(RESOURCE_ROOT / "config" / "default_skills.yaml")
+        skill_registry.discover_directory(RESOURCE_ROOT / "skills", SkillTrust.BUILT_IN)
+        skill_registry.discover_directory(platform_home() / "skills", SkillTrust.TRUSTED)
+        skill_registry.discover_directory(Path.cwd() / ".agent" / "skills", SkillTrust.PROJECT_LOCAL)
+        if args.skill_command == "candidates":
+            candidates = SkillResolver(skill_registry.manifests()).candidates(
+                [args.capability], minimize_cost=(project_consumption_mode(Path.cwd())
+                                                  or consumption_mode()) == "economy")
+            print(json.dumps([item.to_dict() for item in candidates], indent=2))
+            return 0
+        name = args.name
+        if name not in {item.id for item in skill_registry.manifests()}:
+            print(f"Skill not found: {name}", file=sys.stderr)
             return 2
-        print(json.dumps(item, indent=2))
+        if args.skill_command == "show":
+            manifest = skill_registry.manifest(name)
+            loaded = skill_registry.load_selected(name)
+            payload = {"manifest": manifest.to_dict(), "instructions": loaded.instructions,
+                       "available_references": manifest.references,
+                       "loaded_references": [], "context_tokens": loaded.estimated_context_tokens}
+        elif args.skill_command == "validate":
+            payload = skill_registry.validate(name)
+        elif args.skill_command == "history":
+            payload = {"quality": SkillQualityStore(db).get(name).to_dict(),
+                       "runs": db.query("SELECT * FROM skill_runs WHERE skill_id=? ORDER BY created_at DESC",
+                                        (name,))}
+        else:
+            manifest = skill_registry.manifest(name)
+            candidates = SkillResolver(skill_registry.manifests()).candidates(manifest.capabilities)
+            payload = {"skill": name, "capabilities": manifest.capabilities,
+                       "selection": next((item.to_dict() for item in candidates
+                                          if item.manifest.id == name), None),
+                       "ranked_alternatives": [item.to_dict() for item in candidates
+                                               if item.manifest.id != name]}
+        print(json.dumps(payload, indent=2))
     elif args.command == "tools":
         values = registry_tools()
         if args.json:

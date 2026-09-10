@@ -1,9 +1,9 @@
 """Generic capability resolution.
 
     Required capability
-        -> an existing agent already capable?      reuse
-        -> an existing skill provides it?          attach the skill
         -> a deterministic tool provides it?       use the tool, no agent
+        -> an existing skill provides it?          attach the skill
+        -> an existing agent can load it?           reuse agent + skill
         -> a skill can be created?                 create the skill
         -> otherwise                               temporary specialist
 
@@ -83,20 +83,20 @@ class CapabilityResolver:
     def resolve(self, capability: str, run_id: str = "") -> Resolution:
         name = normalize(capability)
 
-        agent = self._agent_for(name)
-        if agent:
-            return Resolution(name, Strategy.EXISTING_AGENT, agent,
-                              f"{agent} already declares {name}.")
+        tool = self._tool_for(name)
+        if tool:
+            return Resolution(name, Strategy.DETERMINISTIC_TOOL, tool,
+                              f"Tool '{tool}' provides {name} deterministically; no AI invocation needed.")
 
         skill = self._skill_for(name)
         if skill:
             return Resolution(name, Strategy.ATTACH_SKILL, skill,
                               f"Skill '{skill}' provides {name}; attaching it avoids creating an agent.")
 
-        tool = self._tool_for(name)
-        if tool:
-            return Resolution(name, Strategy.DETERMINISTIC_TOOL, tool,
-                              f"Tool '{tool}' provides {name} deterministically; no AI invocation needed.")
+        agent = self._agent_for(name)
+        if agent:
+            return Resolution(name, Strategy.EXISTING_AGENT, agent,
+                              f"{agent} already declares {name}; no new specialist is needed.")
 
         if self._skill_creatable(name):
             self.skills.register(name, {"description": f"Auto-created skill for {name}.",

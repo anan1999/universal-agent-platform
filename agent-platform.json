@@ -1,7 +1,7 @@
 {
   "schema_version": "1",
   "name": "Universal Agent Platform",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "type": "agent-orchestration-framework",
   "summary": "Bring your goal. Bring your AI. The platform builds the team.",
   "cli": "agentctl",
@@ -57,9 +57,25 @@
     "execute": "agentctl run \"<goal>\" --json",
     "explain": "agentctl explain <run-id> --json",
     "replay": "agentctl replay <run-id>",
-    "dashboard": "agentctl dashboard",
     "recursion_guard_env": "UAP_CHILD_EXECUTION",
-    "recursion_guard_note": "A process started with UAP_CHILD_EXECUTION=1 is a bounded executor and must never invoke the orchestrator again."
+    "recursion_guard_note": "A process started with UAP_CHILD_EXECUTION=1 is a bounded executor and must never invoke the orchestrator again.",
+    "execution_strategies": ["tool_only", "single_agent", "single_agent_with_tools", "multi_agent_parallel", "multi_agent_dag", "human_approval", "artifact_only"],
+    "minimum_sufficient_rule": "Use deterministic tools before AI, reusable Skills before new specialists, and add reasoning roles only when independent responsibilities require them."
+  },
+
+  "skill_intelligence": {
+    "manifest_schema": "src/adaptive_agent/skills/manifest.py::SkillManifest",
+    "discovery_order": ["built_in", "global_trusted", "project_local"],
+    "progressive_loading": "Metadata is indexed first; instructions and explicitly selected references are loaded only for the executing task.",
+    "trust_states": ["built_in", "trusted", "project_local", "unverified", "review_required", "blocked"],
+    "lifecycle_states": ["active", "temporary", "experimental", "deprecated", "retired"],
+    "commands": {
+      "explain": "agentctl skill explain <skill-id>",
+      "validate": "agentctl skill validate <skill-id>",
+      "history": "agentctl skill history <skill-id>",
+      "candidates": "agentctl skill candidates \"<capability>\""
+    },
+    "temporary_skill_safety": "Generated packages are specification-first, temporary, review-required, statically validated, and never silently overwrite an existing version."
   },
 
   "consumption_policies": {
@@ -132,8 +148,7 @@
   },
 
   "safety": {
-    "dashboard_bind": "127.0.0.1",
-    "shell_execution_from_browser": false,
+    "bundled_dashboard": false,
     "project_commands": "allowlist only, from .agent/commands.yaml",
     "destructive_git_recovery": "never automatic",
     "secrets": "never stored in plaintext; credentials are never printed",

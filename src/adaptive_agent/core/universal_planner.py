@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from adaptive_agent.core.capabilities import Complexity
 from adaptive_agent.core.evaluation import EvaluationKind
+from adaptive_agent.core.execution_planner import ExecutionPlan, ExecutionStrategy
 from adaptive_agent.core.goal_analyzer import GoalAnalysis
 from adaptive_agent.core.models import Task, TaskKind
 from adaptive_agent.core.team_composer import TeamPlan
@@ -16,7 +17,8 @@ from adaptive_agent.tasks.graph import TaskGraph
 
 
 class UniversalPlanner:
-    def plan(self, run_id: str, goal: str, analysis: GoalAnalysis, team: TeamPlan) -> TaskGraph:
+    def plan(self, run_id: str, goal: str, analysis: GoalAnalysis, team: TeamPlan,
+             execution: ExecutionPlan | None = None) -> TaskGraph:
         prefix = run_id.replace("RUN-", "")[:6]
         sequence = 0
         tasks: list[Task] = []
@@ -40,6 +42,24 @@ class UniversalPlanner:
             tasks.append(task)
             return task
 
+        if execution and execution.strategy is ExecutionStrategy.TOOL_ONLY:
+            for tool in execution.tools:
+                task = add(f"Run deterministic tool: {tool}", tool, analysis.capabilities,
+                           TaskKind.TOOL, [], 90, tool=tool, required_skills=[],
+                           execution_strategy=execution.strategy.value)
+                task.artifact_type = "test_result"
+            return TaskGraph(tasks)
+        if execution and execution.strategy is ExecutionStrategy.HUMAN_APPROVAL:
+            for gate in team.approval_gates or analysis.approval_gates:
+                add(f"Human approval required: {gate.replace('_', ' ')}", "human", ["approval"],
+                    TaskKind.APPROVAL, [], 90, approval_gate=gate, required_skills=[],
+                    execution_strategy=execution.strategy.value)
+            return TaskGraph(tasks)
+        if execution and execution.strategy is ExecutionStrategy.ARTIFACT_ONLY:
+            add(goal, "artifact", analysis.capabilities, TaskKind.ARTIFACT, [], 90,
+                execution_strategy=execution.strategy.value)
+            return TaskGraph(tasks)
+
         # 1. Agent tasks, ordered by the stage each role declares.
         agent_tasks: list[Task] = []
         previous: list[str] = []
@@ -48,6 +68,7 @@ class UniversalPlanner:
             task = add(self._title(member, goal), member.role_id, member.capabilities,
                        TaskKind.AGENT, previous, 90 - member.stage // 2,
                        required_skills=list(member.skills), work_profile=member.profile,
+                       execution_strategy=(execution.strategy.value if execution else "multi_agent_dag"),
                        role_origin=member.origin, responsibility=member.responsibility,
                        read_only=analysis.read_only or member.read_only)
             task.artifact_type = self._artifact_for(analysis, member.capabilities)

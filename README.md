@@ -2,13 +2,13 @@
 
 **Bring your goal. Bring your AI. The platform builds the team.**
 
-Give it a goal in plain language. It works out which capabilities the work needs, composes the
-minimum sufficient team of reasoning roles, routes each role to a provider and model that can
-actually do the job, builds a dependency-ordered task DAG, executes it, and records receipts,
-artifacts and performance history that a local dashboard renders.
+Give it a goal in plain language. It works out which capabilities the work needs, chooses the
+minimum sufficient execution strategy, reuses deterministic tools and Skills before adding
+reasoning roles, routes required roles to a provider and model that can actually do the job,
+executes the plan, and records receipts, artifacts and performance history.
 
 It is provider-agnostic, capability-first, work-profile-driven, local-first, inspectable,
-auditable, and extensible. It is not tied to software engineering. Version **2.1.0**.
+auditable, and extensible. It is not tied to software engineering. Version **2.2.0**.
 
 ---
 
@@ -62,7 +62,7 @@ Then use your preferred AI normally, or preview a plan with
 
 ## Control subscription usage
 
-UAP has three quota-conscious orchestration policies. `balanced` preserves the normal V2.1
+UAP has three quota-conscious orchestration policies. `balanced` preserves the normal V2.2
 behavior. `economy` runs agents sequentially, prefers lower-cost compatible models and lower
 reasoning for non-high-risk work, carries fewer and shorter receipts, caps team growth, and
 allows only one escalation per task. `maximum` provides wider concurrency, context and
@@ -89,8 +89,8 @@ https://github.com/anan1999/universal-agent-platform
 Read AI-BOOTSTRAP.md and agent-platform.json. If the platform is not installed,
 install it using the documented GitHub installation method. Set it up once for
 this machine, initialize the current project, run health checks, then use the
-platform to determine capabilities, compose the minimum sufficient team, select
-providers and models, load skills and tools, plan the task DAG, and execute the
+platform to determine capabilities, select the minimum sufficient execution strategy,
+reuse tools and Skills before adding Agents, select providers and models, plan the task DAG, and execute the
 work. Do not manually assign agents, models, or providers unless the framework
 explicitly requires a user decision. After initialization succeeds, proceed
 directly with the requested work.
@@ -114,12 +114,12 @@ Editable installation is for contributors; it is not required for normal use.
 cd my-project
 agentctl init --auto
 agentctl run "Build the model upload API"
-agentctl dashboard
+agentctl explain <run-id>
 ```
 
 `init --auto` reads the repository, recommends work profiles with the evidence behind each
 recommendation, and writes `.agent/`. Run it with `--dry-run` first if you want to see the plan
-before anything is written. Then open `http://127.0.0.1:8787`.
+before anything is written. Inspect completed runs with `agentctl explain` and `agentctl replay`.
 
 ### Example prompts to your AI assistant
 
@@ -132,8 +132,7 @@ before anything is written. Then open `http://127.0.0.1:8787`.
 > I want to benchmark an edge AI model. Use `<repo URL>` as the orchestration framework.
 
 > I want to plan an interior design project. Use `<repo URL>` for agent orchestration. Infer
-> the required capabilities and create temporary specialists if no existing profile covers the
-> work.
+> the required capabilities and reuse or propose Skills before creating any temporary specialist.
 
 The last one is the point: a domain with no predefined profile still produces a valid
 capability-driven plan.
@@ -141,21 +140,24 @@ capability-driven plan.
 ## How a goal becomes work
 
 ```text
-Goal -> Goal Analyzer -> Capability Resolver -> Work Profiles -> Team Composer
+Goal -> Goal Analyzer -> Capability Resolver -> Skill Resolver -> Execution Planner
+     -> Team Composer (only when multiple reasoning roles are required)
      -> Task Planner -> Task DAG (agent | tool | approval | artifact)
      -> Provider Router -> Execution -> Receipts / Artifacts / Evaluation
-     -> Performance History -> Dashboard
+     -> Performance History -> CLI / API
 ```
 
 The **Goal Analyzer** derives capabilities, complexity and risk from the goal text
-deterministically, with no AI call. The **Capability Resolver** prefers, in order, an existing
-agent, an existing skill, a deterministic tool, a creatable skill, and only then a temporary
-specialist. The **Team Composer** picks reasoning roles — never models — and records why each
+deterministically, with no AI call. The **Capability Resolver** prefers, in order, a deterministic
+tool, an existing Skill, an existing reasoning role, a creatable temporary Skill, and only then a
+temporary specialist. The **Execution Planner** chooses the smallest sufficient strategy. The
+**Team Composer** runs only when multiple independent reasoning roles are justified and records why each
 role was chosen and why each candidate was left out. The **Provider Router** then maps required
 capabilities plus risk, history and availability onto a concrete `(provider, model)` pair.
 
-Team size scales with the work: trivial goals get one agent, critical goals get specialists,
-evaluation and an approval gate.
+Execution scales with the work: deterministic requests can be tool-only, ordinary work starts
+with one Agent plus reusable Skills, and high-risk or genuinely separable work can use a parallel
+team or dependency DAG with evaluation and approval gates.
 
 ### The layers stay independent
 
@@ -181,6 +183,27 @@ Add your own by dropping a YAML file into `$UNIVERSAL_AGENT_HOME/profiles/`. No 
 agentctl profiles
 agentctl profile show uiux
 ```
+
+## Skill intelligence
+
+A Skill is a versioned reusable procedure with a machine-readable `skill.json`, instructions in
+`SKILL.md`, and optional references or examples. Discovery indexes metadata only. Instructions
+and explicitly selected references enter context only for the task that uses them, and every run
+records the exact Skill version and context attribution.
+
+```bash
+agentctl skill explain w8a8-validation
+agentctl skill validate w8a8-validation
+agentctl skill candidates "w8a8 validation"
+agentctl skill history w8a8-validation
+```
+
+Unknown reusable procedures may produce a specification-first temporary Skill. Generated Skills
+are `temporary` and `review_required`; executable unverified content cannot run without explicit
+approval. Three successful validated uses create only a promotion candidate—promotion is never
+automatic. See [Skill architecture](docs/skill-architecture.md),
+[authoring](docs/skill-authoring.md), [security](docs/skill-security.md), and
+[quality](docs/skill-quality.md).
 
 ## Providers
 
@@ -249,8 +272,7 @@ Sol".
 
 ## Safety
 
-The dashboard binds to `127.0.0.1` and the browser cannot execute arbitrary shell. Only
-commands named in `.agent/commands.yaml` run. Destructive actions, deployments and publishing
+Only commands named in `.agent/commands.yaml` run. Destructive actions, deployments and publishing
 pass through human approval gates. Git recovery is never automatic and dirty trees are reported
 rather than discarded. Secrets are never stored in plaintext. Community profiles and plugins
 are `untrusted` until you say otherwise, and untrusted plugins never execute automatically —
@@ -260,8 +282,8 @@ treat anything you download as untrusted input.
 
 ```bash
 agentctl setup | init | attach | doctor | status
-agentctl run | orchestrate | explain | replay | dashboard
-agentctl agents | skills | tools | profiles | providers | models
+agentctl run | orchestrate | explain | replay
+agentctl agents | skills | skill | tools | profiles | providers | models
 ```
 
 `agentctl orchestrate "<goal>" --json` is the canonical entry point for an AI assistant.
@@ -273,12 +295,13 @@ agentctl agents | skills | tools | profiles | providers | models
 python -m pip install -e ".[dev]"
 pytest -q
 python scripts/domain_matrix.py    # cross-domain composition, offline
+python scripts/skill_context_benchmark.py --json
 ```
 
 Tests consume **zero real AI quota** — the mock provider is deterministic and in-process. On a
 restricted Windows host, pass a writable `--basetemp` to pytest. Design and operational detail
 is in `docs/`. The release evidence, including the bounded real-provider run, is recorded in
-[`docs/v2-validation.md`](docs/v2-validation.md).
+[`docs/v2.2-validation.md`](docs/v2.2-validation.md).
 
 ## Known limitations
 
@@ -293,4 +316,6 @@ is in `docs/`. The release evidence, including the bounded real-provider run, is
 - Codex CLI base instructions can dominate input tokens even when the platform packet is small.
 - Provenance is authoritative only for runs entering through the platform; work done outside it
   is invisible.
+- Temporary Skill repair, promotion, and publication require human review; V2.2 records the
+  evidence and candidate state but does not mutate trusted packages autonomously.
 - Authentication, distributed execution, Kubernetes and multi-user tenancy are out of scope.

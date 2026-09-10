@@ -33,9 +33,10 @@ agentctl doctor                    -> platform/project/provider checks passed
 
 The help contracts for `setup`, `init`, and `attach` were also exercised.
 
-## Dashboard
+## Historical Dashboard validation
 
-The dashboard was served on localhost and returned HTTP 200 for the six main
+This records V2.0 behavior only; the bundled Dashboard was removed in V2.2. At the time of this
+validation, the dashboard was served on localhost and returned HTTP 200 for the six main
 views (`/`, `/agents`, `/skills`, `/tools`, `/providers`, `/profiles`) and for
 the provider, profile, tool, and run-composition APIs. The run composition API
 rendered the real-provider validation run described below.

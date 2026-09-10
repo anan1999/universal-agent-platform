@@ -9,7 +9,9 @@ from adaptive_agent.runtime import PACKAGE_ROOT, RESOURCE_ROOT
 
 def test_version_and_install_contract_are_consistent():
     manifest = json.loads((PACKAGE_ROOT / "agent-platform.json").read_text(encoding="utf-8"))
-    assert __version__ == "2.1.0" == manifest["version"]
+    project = (PACKAGE_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    assert __version__ == "2.2.0" == manifest["version"]
+    assert 'version = "2.2.0"' in project
     assert manifest["install"]["recommended"] == (
         "pip install git+https://github.com/anan1999/universal-agent-platform.git"
     )
@@ -21,10 +23,11 @@ def test_runtime_resources_are_inside_the_importable_package():
         RESOURCE_ROOT / "config" / "models.yaml",
         RESOURCE_ROOT / "config" / "profiles" / "general.yaml",
         RESOURCE_ROOT / "templates" / "capabilities.yaml",
-        RESOURCE_ROOT / "dashboard" / "index.html",
+        RESOURCE_ROOT / "skills" / "w8a8-validation" / "skill.json",
+        RESOURCE_ROOT / "skills" / "w8a8-validation" / "SKILL.md",
     ]
     assert all(path.is_file() for path in required)
-    for directory in ("config", "templates", "dashboard"):
+    for directory in ("config", "templates"):
         public = PACKAGE_ROOT / directory
         packaged = RESOURCE_ROOT / directory
         for path in public.rglob("*"):

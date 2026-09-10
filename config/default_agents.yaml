@@ -4,7 +4,7 @@
 # provider-native profiles are optional conventions (see provider bindings).
 #
 # `profile` records which Work Profile contributed the role. Team composition
-# reads config/profiles/*.yaml; this file is the installed roster the dashboard
+# reads config/profiles/*.yaml; this file is the installed roster the CLI/API
 # shows and the capability resolver searches before creating anything new.
 agents:
   orchestrator: {type: permanent, profile: general, description: Goal ownership and orchestration, reasoning: medium, cost_class: medium, capabilities: [orchestration, task_planning, planning]}

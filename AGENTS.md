@@ -15,7 +15,6 @@
 
 ## Security constraints
 
-- Bind the dashboard to localhost by default.
 - Never expose arbitrary shell execution through the browser.
 - Execute project commands only from `.agent/commands.yaml`.
 - Never store plaintext secrets or perform automatic destructive Git recovery.

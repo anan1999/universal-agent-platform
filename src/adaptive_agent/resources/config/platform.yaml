@@ -1,6 +1,4 @@
 platform:
-  dashboard_host: 127.0.0.1
-  dashboard_port: 8787
   provider: mock
   specialist_promotion_threshold: 3
   max_agent_assignments_before_rotation: 3
