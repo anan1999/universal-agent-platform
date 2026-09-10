@@ -157,9 +157,17 @@ class OpenAICompatibleProvider(AIProvider):
             self._accumulate(token_usage)
             if progress:
                 progress(100, f"Compatible endpoint completed {task.title}")
+            learning_evidence: list[dict[str, Any]] = []
+            try:
+                structured = json.loads(output)
+                if isinstance(structured, dict) and isinstance(structured.get("learning_evidence"), list):
+                    learning_evidence = [item for item in structured["learning_evidence"] if isinstance(item, dict)]
+            except (TypeError, ValueError, json.JSONDecodeError):
+                pass
             return Receipt(task_id=task.id, agent=task.owner, status="completed", summary=output,
                            findings=["API-only reasoning completed; no project filesystem was exposed."],
                            token_usage=token_usage, confidence="medium", provider=self.id, model=model,
+                           learning_evidence=learning_evidence,
                            duration_seconds=time.monotonic() - started)
         except asyncio.CancelledError:
             raise

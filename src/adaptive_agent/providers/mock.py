@@ -70,4 +70,5 @@ class MockProvider(AIProvider):
             error_code="TASK_FAILURE" if failed else None,
             provider=self.id,
             model=task.metadata.get("model", "mock-standard"),
+            learning_evidence=list(task.metadata.get("learning_evidence", [])) if not failed else [],
         )

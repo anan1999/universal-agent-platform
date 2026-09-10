@@ -368,10 +368,15 @@ class Orchestrator:
             if composition.project_intelligence["temperature"] == "cold":
                 intelligence_store.learn_discovery(discover(Path(intelligence_root)), run_id)
             reported_files: list[str] = []
+            structured_evidence: list[dict[str, Any]] = []
             for row in self.database.query(
                     "SELECT data_json FROM receipts WHERE task_id IN "
                     "(SELECT id FROM tasks WHERE run_id=?)", (run_id,)):
-                reported_files.extend(json.loads(row["data_json"]).get("files", []))
+                receipt_data = json.loads(row["data_json"])
+                reported_files.extend(receipt_data.get("files", []))
+                values = receipt_data.get("learning_evidence", [])
+                if isinstance(values, list):
+                    structured_evidence.extend(value for value in values if isinstance(value, dict))
             evaluations = self.database.query(
                 "SELECT passed FROM artifact_evaluations WHERE run_id=?", (run_id,))
             evaluated = (all(bool(item["passed"]) for item in evaluations) if evaluations else None)
@@ -385,6 +390,7 @@ class Orchestrator:
             # invokes a provider just to manufacture a summary.
             distillation = IntelligenceDistiller().distill(
                 run_id=run_id, status=status, goal=goal, task_count=len(graph.tasks),
+                structured_evidence=structured_evidence,
                 reported_files=reported_files, evaluation_passed=evaluated)
             intelligence_store.learn_candidates(distillation.candidates, run_id=run_id)
         return run_id

@@ -77,6 +77,9 @@ class Receipt:
     duration_seconds: float = 0.0
     retry_count: int = 0
     escalated: bool = False
+    # Compact, externalized facts/procedures explicitly emitted by a worker.
+    # Never use this field for hidden reasoning or transcripts.
+    learning_evidence: list[dict[str, Any]] = field(default_factory=list)
     created_at: str = field(default_factory=now_iso)
 
     def to_dict(self) -> dict[str, Any]:

@@ -46,6 +46,7 @@ class ExecutionPacket:
             "Use only this packet and the workspace content the task actually needs.",
             "Do not inspect unrelated directories or include full logs in the response.",
             f"Keep the final structured response within {self.max_output_words} words.",
+            "If you discover a stable project fact, explicit decision, validated command, concrete project-specific procedure, recurring role, evaluation rule, or evidence-backed issue that future tasks are likely to need, you may include it in learning_evidence. Do not include temporary debugging notes, generic advice, hidden reasoning, or transcripts.",
         ])
         if self.read_only:
             constraints.append("Do not modify anything in the workspace.")

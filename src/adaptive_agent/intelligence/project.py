@@ -36,6 +36,9 @@ class IntelligenceKind(StrEnum):
 
 class IntelligenceStatus(StrEnum):
     CURRENT = "current"
+    TEMPORARY = "temporary"
+    VALIDATED = "validated"
+    PROMOTION_CANDIDATE = "promotion_candidate"
     NEEDS_REVALIDATION = "needs_revalidation"
     SUPERSEDED = "superseded"
     INACTIVE = "inactive"
@@ -111,6 +114,8 @@ class ContextSelection:
     reuse_miss_reason: str | None = None
     typed_reuse_hits: dict[str, int] = field(default_factory=dict)
     stale_count: int = 0
+    historical_items: list[dict[str, Any]] = field(default_factory=list)
+    skipped_items: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -174,13 +179,13 @@ class ProjectIntelligenceStore:
         if item.kind == IntelligenceKind.SKILL.value and self._is_generic_procedure(item.summary, detail):
             raise ValueError("generic procedures are not project-specific reusable intelligence")
         if item.persistence_decision is None:
-            item.persistence_decision = (PersistenceDecision.TEMPORARY.value
-                                         if item.kind in {"skill", "agent"}
+            item.persistence_decision = (None if item.kind in {"skill", "agent"}
                                          else PersistenceDecision.CURRENT.value)
         item.why_persisted = item.why_persisted or "explicit evidence-backed project value"
         if item.kind in {IntelligenceKind.SKILL.value, IntelligenceKind.AGENT.value}:
             candidate_role = item.kind == IntelligenceKind.AGENT.value and item.persistence_decision == PersistenceDecision.NEEDS_REVIEW.value
-            if (not candidate_role and item.expected_reuse < 2) or (not candidate_role and item.validation not in {"validated", "measured"}):
+            candidate_skill = item.kind == IntelligenceKind.SKILL.value and item.persistence_decision == PersistenceDecision.TEMPORARY.value
+            if (not candidate_role and not candidate_skill and item.expected_reuse < 2) or (not candidate_role and not candidate_skill and item.validation not in {"validated", "measured"}):
                 raise ValueError("reusable skills and agents require validation and expected reuse >= 2")
         item.related_paths = sorted(set(item.related_paths))
         item.source_hashes = item.source_hashes or self.hash_paths(item.related_paths)
@@ -189,6 +194,10 @@ class ProjectIntelligenceStore:
         data = self._read()
         existing = [IntelligenceItem.from_dict(value) for value in data["items"]]
         for old in existing:
+            if (old.kind == item.kind and old.status != IntelligenceStatus.SUPERSEDED.value
+                    and old.summary.strip().lower() == item.summary.strip().lower()
+                    and item.kind in {IntelligenceKind.SKILL.value, IntelligenceKind.AGENT.value}):
+                return old
             if old.id == item.id and old.status != IntelligenceStatus.SUPERSEDED.value:
                 if old.summary == item.summary and old.source_hashes == item.source_hashes:
                     return old
@@ -200,6 +209,8 @@ class ProjectIntelligenceStore:
             detail_path.parent.mkdir(parents=True, exist_ok=True)
             detail_path.write_text(detail.rstrip() + "\n", encoding="utf-8")
             item.detail_path = detail_path.relative_to(self.root).as_posix()
+        if item.kind == IntelligenceKind.SKILL.value:
+            self._materialize_skill(item, detail or item.summary)
         data["items"] = [value.to_dict() for value in existing] + [item.to_dict()]
         self._write(data)
         return item
@@ -210,10 +221,13 @@ class ProjectIntelligenceStore:
         result: list[dict[str, Any]] = []
         for raw in data["items"]:
             item = IntelligenceItem.from_dict(raw)
-            if item.status == IntelligenceStatus.CURRENT.value and item.source_hashes:
+            if item.status in {IntelligenceStatus.CURRENT.value, IntelligenceStatus.TEMPORARY.value,
+                                IntelligenceStatus.VALIDATED.value, IntelligenceStatus.PROMOTION_CANDIDATE.value} and item.source_hashes:
                 current = self.hash_paths(item.source_hashes.keys())
                 if current != item.source_hashes:
                     item.status = IntelligenceStatus.NEEDS_REVALIDATION.value
+                    if item.kind == IntelligenceKind.SKILL.value:
+                        self._mark_skill_stale(item)
                     changed.append(item.id)
             elif item.status == IntelligenceStatus.NEEDS_REVALIDATION.value:
                 changed.append(item.id)
@@ -221,6 +235,19 @@ class ProjectIntelligenceStore:
         data["items"] = result
         self._write(data)
         return sorted(set(changed))
+
+    def _mark_skill_stale(self, item: IntelligenceItem) -> None:
+        skill_id = re.sub(r"[^a-z0-9_-]+", "-", item.id.lower()).strip("-") or "project-skill"
+        manifest_path = self.agent_dir / "skills" / skill_id / "skill.json"
+        if not manifest_path.exists():
+            return
+        try:
+            value = json.loads(manifest_path.read_text(encoding="utf-8"))
+            value["status"] = "deprecated"
+            value.setdefault("provenance", {})["intelligence_status"] = IntelligenceStatus.NEEDS_REVALIDATION.value
+            manifest_path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        except (OSError, ValueError):
+            return
 
     def revalidate(self, item_id: str, evidence: Iterable[str] = ()) -> IntelligenceItem:
         data = self._read()
@@ -245,7 +272,11 @@ class ProjectIntelligenceStore:
     def select(self, goal: str, capabilities: Iterable[str] = (), max_items: int = 8,
                max_chars: int = 6000, record_reuse: bool = False) -> ContextSelection:
         stale = self.invalidate_changed()
-        active = [item for item in self.items() if item.status == IntelligenceStatus.CURRENT.value]
+        active = [item for item in self.items() if item.status in {IntelligenceStatus.CURRENT.value,
+                                                                    IntelligenceStatus.TEMPORARY.value,
+                                                                    IntelligenceStatus.VALIDATED.value,
+                                                                    IntelligenceStatus.PROMOTION_CANDIDATE.value}]
+        historical = [item for item in active if item.kind in HISTORICAL_KINDS]
         if not active:
             temperature = RunTemperature.REVALIDATION.value if stale else RunTemperature.COLD.value
             reason = "related project intelligence changed and must be revalidated" if stale else "no reusable project intelligence exists"
@@ -255,7 +286,13 @@ class ProjectIntelligenceStore:
                                     stale_count=len(stale))
         wanted = self._terms(goal) | {str(value).lower() for value in capabilities}
         scored: list[tuple[int, IntelligenceItem]] = []
+        skipped: list[dict[str, Any]] = []
         for item in active:
+            if item.kind in HISTORICAL_KINDS:
+                continue
+            if item.kind == IntelligenceKind.SKILL.value and self.skill_benefit_gate(item, goal=goal) == "SKIP":
+                skipped.append({"id": item.id, "reason": "skill benefit gate rejected low marginal value"})
+                continue
             haystack = self._terms(" ".join([item.summary, *item.capabilities, *item.tags]))
             score = len(wanted & haystack) * 10 + min(item.reuse_count, 5)
             if item.kind == IntelligenceKind.KNOWLEDGE.value:
@@ -289,7 +326,10 @@ class ProjectIntelligenceStore:
             ids = {item["id"] for item in loaded}
             data = self._read()
             for raw in data["items"]:
-                if raw.get("id") in ids and raw.get("status") == IntelligenceStatus.CURRENT.value:
+                if raw.get("id") in ids and raw.get("status") in {IntelligenceStatus.CURRENT.value,
+                                                                      IntelligenceStatus.TEMPORARY.value,
+                                                                      IntelligenceStatus.VALIDATED.value,
+                                                                      IntelligenceStatus.PROMOTION_CANDIDATE.value}:
                     raw["reuse_count"] = int(raw.get("reuse_count", 0)) + 1
                     raw["selected_count"] = int(raw.get("selected_count", 0)) + 1
                     raw["last_used"] = _now()
@@ -301,7 +341,9 @@ class ProjectIntelligenceStore:
         return ContextSelection(temperature, reason, loaded, stale, len(loaded), 0,
                                 chars, (chars + 3) // 4, paths,
                                 selected_only_count=len(loaded) if not record_reuse else 0,
-                                typed_reuse_hits=typed, stale_count=len(stale))
+                                typed_reuse_hits=typed, stale_count=len(stale),
+                                historical_items=[item.to_dict() for item in historical],
+                                skipped_items=skipped)
 
     def record_run(self, run_id: str, selection: ContextSelection, *, success: bool = True,
                    evaluation_passed: bool | None = True, learning_investment: dict[str, Any] | None = None) -> None:
@@ -318,31 +360,47 @@ class ProjectIntelligenceStore:
             for raw in data["items"]:
                 if raw.get("id") in selected_ids and raw.get("kind") in REUSABLE_KINDS:
                     raw["validated_reuse_count"] = int(raw.get("validated_reuse_count", 0)) + 1
+                    if raw.get("kind") == IntelligenceKind.SKILL.value:
+                        count = raw["validated_reuse_count"]
+                        raw["status"] = (IntelligenceStatus.PROMOTION_CANDIDATE.value if count >= 2
+                                          else IntelligenceStatus.VALIDATED.value)
         self._write(data)
 
     def status(self) -> dict[str, Any]:
         data = self._read()
         items = [IntelligenceItem.from_dict(value) for value in data["items"]]
-        current = [item for item in items if item.status == IntelligenceStatus.CURRENT.value]
-        counts = {kind.value: sum(item.kind == kind.value and item.status == IntelligenceStatus.CURRENT.value
+        current = [item for item in items if item.status in {IntelligenceStatus.CURRENT.value,
+                                                              IntelligenceStatus.TEMPORARY.value,
+                                                              IntelligenceStatus.VALIDATED.value}]
+        counts = {kind.value: sum(item.kind == kind.value and item.status in {IntelligenceStatus.CURRENT.value,
+                                                                                IntelligenceStatus.TEMPORARY.value,
+                                                                                IntelligenceStatus.VALIDATED.value,
+                                                                                IntelligenceStatus.PROMOTION_CANDIDATE.value}
                                   for item in items) for kind in IntelligenceKind}
+        historical_counts = {kind: sum(item.kind == kind for item in items) for kind in HISTORICAL_KINDS}
         runs = data["runs"]
         reusable = [item for item in current if item.kind in REUSABLE_KINDS]
-        typed = {kind: sum(int(item.get("typed_reuse_hits", {}).get(kind, 0)) for item in runs)
+        typed_selected = {kind: sum(int(item.get("typed_reuse_hits", {}).get(kind, 0)) for item in runs)
+                          for kind in REUSABLE_KINDS}
+        typed = {kind: sum(int(item.get("typed_reuse_hits", {}).get(kind, 0)) for item in runs
+                           if item.get("success") is True and item.get("evaluation_passed") is True)
                  for kind in REUSABLE_KINDS}
         validated = sum(int(item.get("reuse_hits", 0)) for item in runs
-                        if item.get("success", True) and item.get("evaluation_passed", True))
+                        if item.get("success") is True and item.get("evaluation_passed") is True)
         reuse = sum(int(item.get("reuse_hits", 0)) for item in runs)
         successful_warm = sum(1 for item in runs if item.get("temperature") == "warm"
-                              and item.get("success", True) and item.get("evaluation_passed", True))
+                              and item.get("success") is True and item.get("evaluation_passed") is True)
         maturity = self._maturity(len(reusable), successful_warm, validated)
         return {"schema_version": INDEX_SCHEMA_VERSION, "level": maturity,
                 "level_name": ("unknown", "discovered", "learned", "optimized")[maturity],
                 "items": len(items), "current": len(current), "counts": counts,
                 "runs": len(runs), "reuse_hits": reuse,
                 "reusable_intelligence_hits": sum(typed.values()),
+                "validated_reusable_hits": sum(typed.values()) if validated else 0,
+                "historical": historical_counts,
                 "typed_reuse_hits": typed,
                 "selected_only": sum(int(item.get("selected_only_count", 0)) for item in runs),
+                "selected_reuse_hits": sum(typed_selected.values()),
                 "validated_reuse": validated,
                 "knowledge_created": counts[IntelligenceKind.KNOWLEDGE.value],
                 "skill_reuse_hits": sum(item.reuse_count for item in items
@@ -451,18 +509,22 @@ class ProjectIntelligenceStore:
         learned: list[IntelligenceItem] = []
         for candidate in candidates:
             kind = str(candidate.get("kind", "")).lower()
-            if kind not in REUSABLE_KINDS | {"skill_candidate", "agent_role_candidate", "task_local", "receipt_only"}:
+            if kind not in REUSABLE_KINDS | {"skill_candidate", "agent_role_candidate", "task_local", "receipt_only", "procedure", "evaluation_rule"}:
                 continue
             if kind in {"task_local", "receipt_only"}:
                 continue
-            normalized = "skill" if kind == "skill_candidate" else "agent" if kind == "agent_role_candidate" else kind
+            normalized = ("skill" if kind in {"skill_candidate", "procedure"} else
+                          "agent" if kind == "agent_role_candidate" else
+                          "evaluation" if kind == "evaluation_rule" else kind)
             evidence = list(candidate.get("evidence") or [])
             summary = str(candidate.get("summary") or candidate.get("decision") or candidate.get("procedure") or "").strip()
             if not summary or not evidence:
                 continue
             expected = int(candidate.get("expected_reuse", 1))
             validation = str(candidate.get("validation", "evidence_backed"))
-            if normalized in {"skill", "agent"} and (expected < 2 or validation not in {"validated", "measured"}):
+            if normalized == "skill" and expected < 2:
+                continue
+            if normalized == "agent" and expected < 1:
                 continue
             is_role_candidate = normalized == "agent" and not bool(candidate.get("validated_reuse"))
             item = IntelligenceItem(id=str(candidate.get("id") or hashlib.sha1(summary.encode()).hexdigest()[:12]),
@@ -471,11 +533,33 @@ class ProjectIntelligenceStore:
                                     evidence=evidence, validation=validation, expected_reuse=expected,
                                     first_created_task=run_id, why_persisted=str(candidate.get("why_persisted") or "structured execution evidence"),
                                     persistence_decision=(PersistenceDecision.NEEDS_REVIEW.value if is_role_candidate else
-                                                          PersistenceDecision.TEMPORARY.value if normalized in {"skill", "agent"} else
+                                                          PersistenceDecision.TEMPORARY.value if normalized == "skill" else
                                                           PersistenceDecision.CURRENT.value),
-                                    status=(IntelligenceStatus.NEEDS_REVIEW.value if is_role_candidate else IntelligenceStatus.CURRENT.value))
+                                    status=(IntelligenceStatus.NEEDS_REVIEW.value if is_role_candidate else
+                                            IntelligenceStatus.TEMPORARY.value if normalized == "skill" else
+                                            IntelligenceStatus.CURRENT.value))
             learned.append(self.add(item, detail=candidate.get("detail") or candidate.get("procedure")))
         return learned
+
+    def _materialize_skill(self, item: IntelligenceItem, detail: str) -> None:
+        """Write the existing V2.2 project-local Skill package format."""
+        skill_id = re.sub(r"[^a-z0-9_-]+", "-", item.id.lower()).strip("-") or "project-skill"
+        directory = self.agent_dir / "skills" / skill_id
+        directory.mkdir(parents=True, exist_ok=True)
+        manifest = {
+            "id": skill_id, "version": "0.1.0", "description": item.summary,
+            "capabilities": item.capabilities or ["project-specific-procedure"],
+            "scope": "project", "entrypoint": "SKILL.md", "trust": "review_required",
+            "status": "temporary", "evaluation": [item.validation],
+            "provenance": {"source": "project_intelligence", "creation_task": item.first_created_task,
+                           "evidence": item.evidence, "related_paths": item.related_paths},
+        }
+        (directory / "skill.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        (directory / "SKILL.md").write_text(
+            f"# {skill_id}\n\n## Purpose\n{item.summary}\n\n## When to use\n"
+            f"Use when the task matches: {', '.join(item.capabilities) or 'this project procedure'}.\n\n"
+            f"## Procedure\n{detail}\n\n## Validation\n{item.validation}\n\n"
+            "## Boundaries\nThis temporary Skill is project-local and review-required.\n", encoding="utf-8")
 
     def explain(self) -> dict[str, Any]:
         return {"items": [{**item.to_dict(), "reusable": item.kind in REUSABLE_KINDS,
@@ -486,10 +570,14 @@ class ProjectIntelligenceStore:
         item = next((value for value in self.items(include_inactive=True) if value.id == item_id), None)
         if not item or item.kind != "skill":
             return "NOT_APPLICABLE"
-        if item.validated_reuse_count >= 2:
+        if any("benchmark" in value.lower() and "comparable" in value.lower() for value in item.evidence):
             return "PAYBACK_MEASURED"
+        if item.validated_reuse_count >= 2:
+            return "REPEATED_VALIDATED_REUSE"
+        if item.validated_reuse_count:
+            return "VALIDATED_REUSE"
         if item.selected_count:
-            return "PAYBACK_POSSIBLE"
+            return "SELECTED"
         return "NOT_REUSED"
 
     def skill_benefit_gate(self, item: IntelligenceItem, *, goal: str = "",
@@ -500,7 +588,9 @@ class ProjectIntelligenceStore:
         if self._is_generic_procedure(item.summary, None):
             return "SKIP"
         match = len(self._terms(goal) & self._terms(" ".join([item.summary, *item.tags, *item.capabilities])))
-        if item.status != IntelligenceStatus.CURRENT.value:
+        if item.status not in {IntelligenceStatus.CURRENT.value, IntelligenceStatus.TEMPORARY.value,
+                               IntelligenceStatus.VALIDATED.value,
+                               IntelligenceStatus.PROMOTION_CANDIDATE.value}:
             return "SKIP"
         if item.validated_reuse_count or (match and task_complexity in {"normal", "high"}):
             return "LOAD"
@@ -601,11 +691,48 @@ class IntelligenceDistiller:
     def distill(self, *, run_id: str, status: str, goal: str, task_count: int,
                 structured_evidence: Iterable[dict[str, Any]] = (), reported_files: Iterable[str] = (),
                 evaluation_passed: bool | None = None) -> "DistillationResult":
-        candidates = [dict(value) for value in structured_evidence
-                      if value.get("kind") not in {"task_local", "receipt_only"}]
+        mapping = {"knowledge": "knowledge", "decision": "decision", "command": "command",
+                   "evaluation_rule": "evaluation", "known_issue": "known_issue",
+                   "procedure": "skill_candidate", "skill": "skill_candidate",
+                   "agent_role": "agent_role_candidate", "agent": "agent_role_candidate"}
+        candidates: list[dict[str, Any]] = []
+        seen: set[tuple[str, str]] = set()
+        for raw in structured_evidence:
+            if not isinstance(raw, dict):
+                continue
+            source_type = str(raw.get("type", raw.get("kind", ""))).lower()
+            kind = mapping.get(source_type)
+            summary = str(raw.get("summary", "")).strip()
+            evidence = raw.get("evidence")
+            if not kind or not summary or not isinstance(evidence, list) or not evidence:
+                continue
+            if kind == "decision" and not (raw.get("rationale") or raw.get("decision") or raw.get("choice")):
+                continue
+            if kind == "skill_candidate":
+                procedure = raw.get("procedure") or raw.get("procedure_steps") or raw.get("detail")
+                if not procedure or self._generic(summary):
+                    continue
+                raw = {**raw, "detail": procedure, "expected_reuse": max(2, int(raw.get("expected_reuse", 1)))}
+            if kind == "agent_role_candidate" and self._generic_agent(summary):
+                continue
+            key = (kind, summary.lower())
+            if key in seen:
+                continue
+            seen.add(key)
+            candidates.append({**raw, "kind": kind, "summary": summary, "evidence": evidence})
         return DistillationResult(run_id=run_id, status=status, goal=goal, task_count=task_count,
                                   candidates=candidates, reported_files=list(reported_files),
                                   evaluation_passed=evaluation_passed, ai_invocations=0)
+
+    @staticmethod
+    def _generic(summary: str) -> bool:
+        value = summary.lower()
+        return any(marker in value for marker in ("debug python", "coding best practices", "react expert", "generic debugging"))
+
+    @staticmethod
+    def _generic_agent(summary: str) -> bool:
+        value = summary.lower()
+        return any(marker in value for marker in ("react agent", "python agent", "senior developer", "tester agent"))
 
 
 @dataclass(slots=True)

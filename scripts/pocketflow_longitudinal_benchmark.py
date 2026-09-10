@@ -44,6 +44,7 @@ TASKS = [
 def arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="PocketFlow real-provider longitudinal benchmark")
     parser.add_argument("--execute", action="store_true", help="confirm that real provider quota may be used")
+    parser.add_argument("--dry-run", action="store_true", help="validate all task plans without provider execution")
     parser.add_argument("--provider", required=True, help="explicit real provider id (Mock is forbidden)")
     parser.add_argument("--model", help="provider model override when supported")
     parser.add_argument("--reasoning", default="medium", choices=("low", "medium", "high", "xhigh"))
@@ -52,6 +53,21 @@ def arguments() -> argparse.Namespace:
     parser.add_argument("--output", type=Path,
                         default=Path("benchmark-results/pocketflow-longitudinal.json"))
     return parser.parse_args()
+
+
+def dry_run() -> dict[str, Any]:
+    """Offline contract check for the five write-enabled benchmark tasks."""
+    from adaptive_agent.core.goal_analyzer import GoalAnalyzer
+    rows = []
+    for number, goal in enumerate(TASKS, 1):
+        analysis = GoalAnalyzer().analyze(goal)
+        required = sorted(set(analysis.capabilities) | {"filesystem", "repository_access", "write_access"})
+        rows.append({"task_number": number, "goal": goal, "read_only": False,
+                     "required_capabilities": required, "strategy": "implementation/write-enabled",
+                     "agent_count": 1, "selected_tools": ["filesystem", "shell"],
+                     "approvals": list(analysis.approval_gates), "selected_skills": [],
+                     "provider_requirements": required, "ready": not analysis.read_only})
+    return {"tasks": rows, "ready_for_real_benchmark": all(row["ready"] for row in rows)}
 
 
 def seed(path: Path) -> None:
@@ -211,7 +227,7 @@ def render_report(payload: dict[str, Any]) -> str:
               f"- Final state: `{json.dumps(payload['intelligence'], ensure_ascii=False)}`", "",
               "## Limitations", "",
               "Provider sessions are ephemeral, but provider-side caching may still exist. Files explored are unavailable unless the provider reports them. "
-              "Paired task inputs are reset to the same accepted source checkpoint; UAP alone retains its durable `.agent` intelligence.\n"]
+             "Paired task inputs are reset to the same accepted source checkpoint. Canonical checkpoint policy is fixed: if both systems pass, baseline is canonical; if only one passes, the passing result is canonical; token counts never choose the checkpoint. UAP alone retains durable `.agent` intelligence.\n"]
     return "\n".join(lines)
 
 
@@ -263,7 +279,8 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
                             uap_result["token_source"] == "measured")
         if comparison_valid and break_even is None and cumulative_uap <= cumulative_baseline:
             break_even = number
-        chosen = uap if uap_quality["passed"] else baseline
+        # Fixed, pre-declared checkpoint rule; token outcome never selects it.
+        chosen = baseline if baseline_quality["passed"] else uap
         reset_source(chosen, canonical)
         task_result = {"task_number": number, "goal": goal, "baseline": baseline_result,
                        "uap": uap_result, "baseline_tokens": baseline_tokens,
@@ -299,6 +316,9 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
 
 def main() -> int:
     args = arguments()
+    if args.dry_run:
+        print(json.dumps(dry_run(), indent=2))
+        return 0 if dry_run()["ready_for_real_benchmark"] else 1
     if not args.execute:
         print("Refusing to consume real provider quota without --execute.", file=sys.stderr)
         return 2

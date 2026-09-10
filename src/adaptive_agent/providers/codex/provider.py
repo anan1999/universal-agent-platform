@@ -96,6 +96,7 @@ RESULT_SCHEMA = {
         "confidence": {"type": "string", "enum": ["high", "medium", "low", "unknown"]},
         "uncertainty_reason": {"type": "string"},
         "needs_escalation": {"type": "boolean"},
+        "learning_evidence": {"type": "array", "items": {"type": "object"}},
     },
 }
 
@@ -248,6 +249,8 @@ class CodexProvider(AIProvider):
                        confidence=result.get("confidence", "unknown"), uncertainty_reason=result.get("uncertainty_reason", ""),
                        needs_escalation=needs_escalation, error_code=error_code, provider=self.id,
                        model=str(model) if model else None,
+                       learning_evidence=(result.get("learning_evidence", [])
+                                          if isinstance(result.get("learning_evidence", []), list) else []),
                        duration_seconds=time.monotonic() - started)
     async def _communicate(self, args: list[str], prompt: str, working_directory: Path) -> tuple[int, bytes, bytes]:
         child_environment = self.child_environment()
