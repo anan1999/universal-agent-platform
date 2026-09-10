@@ -2,6 +2,15 @@
 
 All notable changes follow semantic versioning.
 
+## 2.3.0
+
+- Added evidence-backed, Git-friendly Project Intelligence with progressive detail loading.
+- Added cold, warm, and revalidation lifecycle states with source-hash invalidation.
+- Added reuse, rediscovery, context-size, maturity, and cumulative amortization metrics.
+- Added `warm-start`, `resume`, and `context explain` CLI flows plus API inspection endpoints.
+- Added additive SQLite lifecycle history and project initialization integration.
+- Added an explicit real-provider PocketFlow longitudinal benchmark harness; normal tests remain offline.
+
 ## 2.2.0
 
 - Added a minimum-sufficient Execution Planner with tool-only, single-agent, multi-agent,

@@ -22,6 +22,7 @@ from adaptive_agent.core.artifacts import Artifact, ArtifactStore, ArtifactType
 from adaptive_agent.core.models import Task, new_id
 from adaptive_agent.core.orchestrator import Orchestrator
 from adaptive_agent.git.worktree import WorktreeManager
+from adaptive_agent.intelligence.project import ProjectIntelligenceStore
 from adaptive_agent.project.adapter import (
     UAP_END,
     UAP_START,
@@ -100,6 +101,15 @@ def parser() -> argparse.ArgumentParser:
 
     status_command = commands.add_parser("status")
     status_command.add_argument("--json", action="store_true")
+    for name in ("warm-start", "resume"):
+        warm = commands.add_parser(name, help="inspect reusable project intelligence before a run")
+        warm.add_argument("goal", nargs="?", default="continue the current project work")
+        warm.add_argument("--json", action="store_true")
+    context = commands.add_parser("context", help="inspect layered project context")
+    context_subcommands = context.add_subparsers(dest="context_command", required=True)
+    context_explain = context_subcommands.add_parser("explain")
+    context_explain.add_argument("goal", nargs="?", default="continue the current project work")
+    context_explain.add_argument("--json", action="store_true")
     agents_command = commands.add_parser("agents")
     agents_command.add_argument("--verbose", action="store_true")
     agents_command.add_argument("--json", action="store_true")
@@ -304,6 +314,7 @@ def _dry_run(goal: str, provider_name: str, profiles: list[str] | None = None,
                     "recommended_profiles": info.recommended_profiles},
         "analysis": composition.analysis.to_dict(),
         "execution_plan": composition.execution_plan.to_dict() if composition.execution_plan else {},
+        "project_intelligence": composition.project_intelligence,
         "team": composition.team.to_dict(),
         "required_capabilities": sorted({capability for task in graph.tasks.values()
                                          for capability in task.required_capabilities}),
@@ -367,6 +378,7 @@ def _run_summary(db, run_id: str, worktree: str | None = None) -> dict:
             "worktrees": [item["location"] for item in artifacts if item["kind"] == "git_worktree"],
             "artifacts": [{"path": item["location"], "kind": item["kind"], "type": item["type"],
                            "name": item["name"]} for item in artifacts],
+            "project_intelligence": composition.get("project_intelligence", {}),
             "token_usage": usage}
 
 
@@ -378,6 +390,7 @@ def _project_status(db, path: Path) -> str:
     latest = db.query("SELECT id,status,entry_source,work_profiles FROM runs ORDER BY created_at DESC LIMIT 1")
     active = project_profiles(path) or ["(inferred from each goal)"]
     ready = [item["name"] for item in registry_providers(db) if item["ready"]]
+    intelligence = ProjectIntelligenceStore(path).status() if (path / ".agent").is_dir() else None
     return "\n".join([
         f"Project: {path.name}",
         f"Orchestration owner: {'Universal Agent Platform' if config['owner'] == 'universal-agent-platform' else config['owner']}",
@@ -385,6 +398,9 @@ def _project_status(db, path: Path) -> str:
         f"Active work profiles: {', '.join(active)}",
         f"Consumption policy: {project_consumption_mode(path) or consumption_mode()}",
         f"Ready providers: {', '.join(ready) or 'none'}",
+        (f"Project intelligence: L{intelligence['level']} {intelligence['level_name']} "
+         f"({intelligence['current']} current, {intelligence['reuse_hits']} reuse hits)"
+         if intelligence else "Project intelligence: unavailable"),
         "Child execution guard: READY",
         f"Router authority: {'platform' if config['owner'] == 'universal-agent-platform' else config['owner']}",
         f"Latest run: {latest[0]['id']} ({latest[0]['status']}, {latest[0]['entry_source']})" if latest else "Latest run: none",
@@ -464,6 +480,7 @@ def _explain(db, run_id: str) -> dict:
         "consumption": composition.get("consumption", {}),
         "execution_strategy": execution_plan,
         "skills_used": run_skills,
+        "project_intelligence": composition.get("project_intelligence", {}),
         "why_this_team": {
             "goal_requires": analysis.get("capabilities", []),
             "complexity": analysis.get("complexity"),
@@ -587,13 +604,38 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if status == "completed" else 1
 
     if args.command == "status":
+        intelligence = (ProjectIntelligenceStore(Path.cwd()).status()
+                        if (Path.cwd() / ".agent").is_dir() else None)
         if args.json:
             print(json.dumps({"project": orchestration_config(Path.cwd()),
                               "profiles": project_profiles(Path.cwd()),
                               "consumption": project_consumption_mode(Path.cwd()) or consumption_mode(),
-                              "providers_ready": provider_registry().ready_ids()}, indent=2))
+                              "providers_ready": provider_registry().ready_ids(),
+                              "project_intelligence": intelligence}, indent=2))
         else:
             print(_project_status(db, Path.cwd()))
+    elif args.command in {"warm-start", "resume"}:
+        from adaptive_agent.core.goal_analyzer import GoalAnalyzer
+
+        capabilities = GoalAnalyzer().analyze(args.goal).capabilities
+        selection = ProjectIntelligenceStore(Path.cwd()).select(
+            args.goal, capabilities, record_reuse=False)
+        payload = {"goal": args.goal, **selection.to_dict(),
+                   "maturity": ProjectIntelligenceStore(Path.cwd()).status()}
+        print(json.dumps(payload, indent=2) if args.json else
+              f"{selection.temperature.upper()} START\nReason: {selection.reason}\n"
+              f"Reusable items: {selection.reuse_hits}\nStale items: {len(selection.stale_items)}\n"
+              f"Estimated context: {selection.estimated_tokens} tokens")
+    elif args.command == "context":
+        from adaptive_agent.core.goal_analyzer import GoalAnalyzer
+
+        capabilities = GoalAnalyzer().analyze(args.goal).capabilities
+        selection = ProjectIntelligenceStore(Path.cwd()).select(
+            args.goal, capabilities, record_reuse=False)
+        payload = selection.to_dict()
+        print(json.dumps(payload, indent=2) if args.json else
+              f"Context mode: {selection.temperature}\nWhy: {selection.reason}\n" +
+              "\n".join(f"- {item['id']}: {item['summary']}" for item in selection.items))
     elif args.command == "agents":
         values = registry_agents(db)
         if args.verbose or args.json:

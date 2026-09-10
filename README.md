@@ -8,7 +8,11 @@ reasoning roles, routes required roles to a provider and model that can actually
 executes the plan, and records receipts, artifacts and performance history.
 
 It is provider-agnostic, capability-first, work-profile-driven, local-first, inspectable,
-auditable, and extensible. It is not tied to software engineering. Version **2.2.0**.
+auditable, and extensible. It is not tied to software engineering. Version **2.3.0**.
+
+**Spend context once. Reuse project intelligence many times.** V2.3 retrieves verified,
+task-relevant project knowledge before asking a provider to rediscover it. It reports cold,
+warm, and revalidation starts honestly; no token saving is claimed without measured evidence.
 
 ---
 
@@ -62,7 +66,7 @@ Then use your preferred AI normally, or preview a plan with
 
 ## Control subscription usage
 
-UAP has three quota-conscious orchestration policies. `balanced` preserves the normal V2.2
+UAP has three quota-conscious orchestration policies. `balanced` preserves the normal V2.3
 behavior. `economy` runs agents sequentially, prefers lower-cost compatible models and lower
 reasoning for non-high-risk work, carries fewer and shorter receipts, caps team growth, and
 allows only one escalation per task. `maximum` provides wider concurrency, context and
@@ -77,6 +81,24 @@ agentctl run "<your goal>" --consumption economy --dry-run
 
 Set `consumption.mode` in `.agent/project.yaml` for a project default. A per-run flag takes
 precedence over the project setting, which takes precedence over the global setting.
+
+## Reuse project intelligence
+
+Project initialization creates a compact `.agent/intelligence.json` index. A first task is a
+**cold start**. Evidence-backed discoveries are distilled after the run, then future tasks use
+a **warm start** and load only relevant detail. If a related source file changes, the affected
+item becomes `needs_revalidation` and is not silently reused.
+
+```bash
+agentctl warm-start "<your next goal>" --json
+agentctl context explain "<your next goal>" --json
+agentctl status --json
+```
+
+The index stores knowledge, decisions, commands, evaluations, artifacts, issues, task history,
+compact receipts, and validated reusable Skills/Agent roles. It never stores conversations or
+hidden reasoning. See [Project intelligence](docs/project-intelligence.md) and
+[amortized context](docs/amortized-context.md).
 
 ## Copy this into any AI assistant
 

@@ -10,8 +10,8 @@ from adaptive_agent.runtime import PACKAGE_ROOT, RESOURCE_ROOT
 def test_version_and_install_contract_are_consistent():
     manifest = json.loads((PACKAGE_ROOT / "agent-platform.json").read_text(encoding="utf-8"))
     project = (PACKAGE_ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    assert __version__ == "2.2.0" == manifest["version"]
-    assert 'version = "2.2.0"' in project
+    assert __version__ == manifest["version"]
+    assert f'version = "{__version__}"' in project
     assert manifest["install"]["recommended"] == (
         "pip install git+https://github.com/anan1999/universal-agent-platform.git"
     )

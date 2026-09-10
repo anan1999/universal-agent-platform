@@ -208,6 +208,17 @@ agentctl explain <run-id> --json     # why this team, why this provider
 agentctl replay <run-id>             # event timeline
 ```
 
+Before a follow-up task, inspect the reusable context without spending provider quota:
+
+```bash
+agentctl warm-start "<goal>" --json
+agentctl context explain "<goal>" --json
+```
+
+`cold` means no reusable evidence exists, `warm` means verified project intelligence will be
+loaded, and `revalidation` means related source changed. Stale intelligence is withheld until it
+is revalidated. Never replace this durable evidence with remembered chat history.
+
 Inspect Skill decisions when needed:
 
 ```bash

@@ -1,7 +1,7 @@
 {
   "schema_version": "1",
   "name": "Universal Agent Platform",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "type": "agent-orchestration-framework",
   "summary": "Bring your goal. Bring your AI. The platform builds the team.",
   "cli": "agentctl",
@@ -11,6 +11,9 @@
     "readme": "README.md",
     "manifest": "agent-platform.json",
     "orchestration_ownership": "docs/orchestration-ownership.md",
+    "project_intelligence": "docs/project-intelligence.md",
+    "amortized_context": "docs/amortized-context.md",
+    "cold_warm_start": "docs/cold-warm-start.md",
     "read_first_if_you_are_an_ai": "AI-BOOTSTRAP.md"
   },
 
@@ -49,6 +52,16 @@
     "skills": "agentctl skills --json",
     "tools": "agentctl tools --json",
     "project_status": "agentctl status --json"
+  },
+
+  "project_intelligence": {
+    "index": ".agent/intelligence.json",
+    "policy": "reuse_before_relearn",
+    "states": ["cold", "warm", "revalidation"],
+    "item_statuses": ["current", "needs_revalidation", "superseded", "inactive", "needs_review"],
+    "inspect": "agentctl warm-start \"<goal>\" --json",
+    "explain": "agentctl context explain \"<goal>\" --json",
+    "privacy": "Stores evidence-backed project facts and compact receipts; never conversations or hidden reasoning."
   },
 
   "orchestration": {
@@ -135,6 +148,7 @@
 
   "project_initialization": {
     "manifest": ".agent/project.yaml",
+    "intelligence_index": ".agent/intelligence.json",
     "command_allowlist": ".agent/commands.yaml",
     "capabilities": ".agent/capabilities.yaml",
     "auto_detect": true,
@@ -162,6 +176,7 @@
     "real_ai_quota_consumed": false,
     "offline_provider": "mock",
     "cross_provider_demo": "agentctl demo --delay 0",
-    "domain_matrix": "python scripts/domain_matrix.py"
+    "domain_matrix": "python scripts/domain_matrix.py",
+    "real_longitudinal_benchmark": "python scripts/pocketflow_longitudinal_benchmark.py --execute --provider codex"
   }
 }

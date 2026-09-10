@@ -6,6 +6,7 @@ from typing import Any, Sequence
 import yaml
 
 from adaptive_agent.project.discovery import ProjectInfo, discover
+from adaptive_agent.intelligence.project import ProjectIntelligenceStore
 
 
 UAP_START = "<!-- UAP:START -->"
@@ -84,6 +85,7 @@ def initialize_project(path: Path, templates: Path, force: bool = False, upgrade
     info = discover(path)
     agent_dir.mkdir(parents=True, exist_ok=True)
     (agent_dir / "knowledge").mkdir(exist_ok=True)
+    ProjectIntelligenceStore(path).initialize()
 
     project_path = agent_dir / "project.yaml"
     project = yaml.safe_load(project_path.read_text(encoding="utf-8")) if project_path.exists() else {}
@@ -97,6 +99,8 @@ def initialize_project(path: Path, templates: Path, force: bool = False, upgrade
                                 "owner": "universal-agent-platform"}
     project["providers"] = project.get("providers") or {"preference": ["auto"]}
     project["consumption"] = project.get("consumption") or {"mode": "balanced"}
+    project["intelligence"] = project.get("intelligence") or {
+        "index": ".agent/intelligence.json", "policy": "reuse_before_relearn"}
     project["constraints"] = project.get("constraints") or {
         "require_human_approval_for": ["destructive_actions", "deployment", "publishing"]}
     project_path.write_text(yaml.safe_dump(project, sort_keys=False), encoding="utf-8")

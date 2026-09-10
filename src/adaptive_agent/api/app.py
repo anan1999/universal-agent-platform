@@ -9,6 +9,7 @@ from fastapi.responses import StreamingResponse
 
 from adaptive_agent.observability.event_bus import EventBus
 from adaptive_agent.observability.performance import PerformanceTracker
+from adaptive_agent.intelligence.project import ProjectIntelligenceStore
 from adaptive_agent import __version__
 from adaptive_agent.bootstrap import consumption_mode
 from adaptive_agent.core.consumption import consumption_policy
@@ -74,7 +75,19 @@ def create_app(db: Database | None = None, events: EventBus | None = None) -> Fa
             "profiles_active": len(active),
             "health": "pass" if installed else "fail",
             "consumption": {"mode": selected_consumption, "limits": limits},
+            "project_intelligence": (ProjectIntelligenceStore(project).status()
+                                     if (project / ".agent").is_dir() else None),
         }
+
+    @app.get("/api/project-intelligence")
+    def project_intelligence():
+        store = ProjectIntelligenceStore(Path.cwd())
+        return {"status": store.status(),
+                "items": [item.to_dict() for item in store.items(include_inactive=True)]}
+
+    @app.get("/api/context/explain")
+    def context_explain(goal: str):
+        return ProjectIntelligenceStore(Path.cwd()).select(goal).to_dict()
 
     @app.get("/api/projects")
     def projects():
@@ -288,6 +301,7 @@ def create_app(db: Database | None = None, events: EventBus | None = None) -> Fa
                 "analysis": stored.get("analysis", {}), "team": stored.get("team", {}),
                 "consumption": stored.get("consumption", {}),
                 "execution_plan": stored.get("execution_plan", {}),
+                "project_intelligence": stored.get("project_intelligence", {}),
                 "routing": routing}
 
     @app.get("/api/orchestration")

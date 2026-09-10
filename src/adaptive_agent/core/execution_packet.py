@@ -27,6 +27,12 @@ class ExecutionPacket:
     artifact_type: str = "unknown"
     #: The reasoning responsibility this role carries, from the work profile.
     responsibility: str = ""
+    project_knowledge: list[str] = field(default_factory=list)
+    active_decisions: list[str] = field(default_factory=list)
+    known_issues: list[str] = field(default_factory=list)
+    project_skills: list[str] = field(default_factory=list)
+    agent_role_context: list[str] = field(default_factory=list)
+    context_attribution: list[str] = field(default_factory=list)
 
     def render(self) -> str:
         def section(name: str, values: list[str], fallback: str = "None") -> str:
@@ -54,6 +60,12 @@ class ExecutionPacket:
             section("REQUIRED SKILLS", self.required_skills),
             section("SELECTED SKILL PROCEDURES", self.skill_context),
             section("LOADED SKILL REFERENCES", self.loaded_references),
+            section("REUSED PROJECT KNOWLEDGE", self.project_knowledge),
+            section("ACTIVE PROJECT DECISIONS", self.active_decisions),
+            section("RELEVANT KNOWN ISSUES", self.known_issues),
+            section("REUSED PROJECT SKILLS", self.project_skills),
+            section("REUSED AGENT ROLE CONTEXT", self.agent_role_context),
+            section("PROJECT CONTEXT ATTRIBUTION", self.context_attribution),
             section("CONSTRAINTS", constraints),
             "EXPECTED OUTPUT:\nReturn one JSON object matching the supplied schema. Confidence is a workflow signal: high, medium, low, or unknown.",
         ]
@@ -73,6 +85,12 @@ class ExecutionPacketBuilder:
         summarized = [self._summarize(receipt) for receipt in list(receipts)[:self.max_receipts]]
         # Write intent comes from the task itself, not from the role's name.
         inferred_read_only = bool(task.metadata.get("read_only")) or "do not modify" in task.title.lower()
+        intelligence = task.metadata.get("project_intelligence", {})
+        intelligence_items = list(intelligence.get("items", []))
+        def summaries(kind: str) -> list[str]:
+            return [f"{item['id']}: {item['summary']}" +
+                    (f"\n{item['detail']}" if item.get("detail") else "")
+                    for item in intelligence_items if item.get("kind") == kind]
         return ExecutionPacket(
             role=task.owner.replace("_", " ").title(),
             task=f"{task.title}\nOverall goal: {task.metadata.get('goal', task.title)}",
@@ -87,6 +105,13 @@ class ExecutionPacketBuilder:
             read_only=inferred_read_only if read_only is None else read_only,
             artifact_type=getattr(task, "artifact_type", "unknown"),
             responsibility=str(task.metadata.get("responsibility", "")),
+            project_knowledge=summaries("knowledge"),
+            active_decisions=summaries("decision"),
+            known_issues=summaries("known_issue"),
+            project_skills=summaries("skill"),
+            agent_role_context=summaries("agent"),
+            context_attribution=[f"{item.get('id')}: {', '.join(item.get('evidence', []))}"
+                                 for item in intelligence_items],
         )
 
     def _summarize(self, receipt: Receipt) -> str:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Sequence
@@ -20,6 +21,7 @@ from adaptive_agent.core.team_manager import TeamManager
 from adaptive_agent.core.tools import ToolRegistry
 from adaptive_agent.core.universal_planner import UniversalPlanner
 from adaptive_agent.models.registry import ModelRegistry
+from adaptive_agent.intelligence.project import ContextSelection, ProjectIntelligenceStore
 from adaptive_agent.observability.event_bus import EventBus
 from adaptive_agent.profiles.registry import WorkProfileRegistry, profile_registry
 from adaptive_agent.providers.base import AIProvider
@@ -43,12 +45,14 @@ class Composition:
     mode: str = "universal"
     consumption: dict[str, Any] = field(default_factory=dict)
     execution_plan: ExecutionPlan | None = None
+    project_intelligence: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {"mode": self.mode, "analysis": self.analysis.to_dict(),
                 "team": self.team.to_dict(), "provider_rationale": list(self.provider_rationale),
                 "consumption": dict(self.consumption),
-                "execution_plan": self.execution_plan.to_dict() if self.execution_plan else {}}
+                "execution_plan": self.execution_plan.to_dict() if self.execution_plan else {},
+                "project_intelligence": dict(self.project_intelligence)}
 
 
 class Orchestrator:
@@ -86,8 +90,14 @@ class Orchestrator:
     def compose(self, run_id: str, goal: str, working_directory: str | None = None,
                 project_name: str = "project", project_type: str = "unknown",
                 project_signals: Sequence[str] = (), constraints: Sequence[str] = (),
-        approvals: Sequence[str] = ()) -> Composition:
+        approvals: Sequence[str] = (), record_intelligence: bool = False,
+        intelligence_directory: str | None = None) -> Composition:
         analysis = self.analyzer.analyze(goal, self.active_profiles, project_signals)
+        intelligence = ContextSelection("cold", "project adapter unavailable")
+        intelligence_root = intelligence_directory or working_directory
+        if intelligence_root and (Path(intelligence_root) / ".agent").is_dir():
+            intelligence = ProjectIntelligenceStore(Path(intelligence_root)).select(
+                goal, analysis.capabilities, record_reuse=record_intelligence)
         self.skills.discover_directory(RESOURCE_ROOT / "skills", SkillTrust.BUILT_IN)
         self.skills.discover_directory(platform_home() / "skills", SkillTrust.TRUSTED)
         if working_directory:
@@ -108,13 +118,36 @@ class Orchestrator:
             self._assign_selected_skills(team, execution)
         else:
             team = self._minimum_team(analysis, execution, constraints)
+        self._reuse_project_roles(team, intelligence)
         execution.ai_agents = len(team.members)
         execution.expected_handoffs = max(0, len(team.members) - 1)
         graph = self.universal_planner.plan(run_id, goal, analysis, team, execution)
         rationale = self._route(graph, analysis, team, working_directory, project_name,
                                 project_type, approvals)
+        for task in graph.tasks.values():
+            task.metadata["project_intelligence"] = intelligence.to_dict()
         return Composition(analysis, team, graph, rationale,
-                           consumption=self.consumption_policy.to_dict(), execution_plan=execution)
+                           consumption=self.consumption_policy.to_dict(), execution_plan=execution,
+                           project_intelligence=intelligence.to_dict())
+
+    @staticmethod
+    def _reuse_project_roles(team: TeamPlan, intelligence: ContextSelection) -> None:
+        """Reuse a validated thin project role when it covers an already-needed responsibility."""
+        reusable = [item for item in intelligence.items if item.get("kind") == "agent"
+                    and item.get("validation") in {"validated", "measured"}]
+        for item in reusable:
+            wanted = set(item.get("capabilities", []))
+            candidates = [(len(wanted & set(member.capabilities)), member) for member in team.members]
+            overlap, member = max(candidates, default=(0, None), key=lambda value: value[0])
+            if not member or overlap == 0:
+                continue
+            previous = member.role_id
+            member.role_id = str(item["id"])
+            member.name = str(item["id"]).replace("-", " ").replace("_", " ").title()
+            member.responsibility = str(item["summary"])
+            member.origin = "project_intelligence"
+            member.reason = f"Reused validated project role for {overlap} required capabilities; replaced {previous}."
+            team.rationale.append(f"Reused project role {member.role_id}; no equivalent role was regenerated.")
 
     def _minimum_team(self, analysis: GoalAnalysis, execution: ExecutionPlan,
                       constraints: Sequence[str]) -> TeamPlan:
@@ -259,8 +292,27 @@ class Orchestrator:
             (run_id, project_id, goal, orchestration_owner, entry_source))
         self.events.emit(Event("run_created", run_id, metadata={"goal": goal,
                          "orchestration_owner": orchestration_owner, "entry_source": entry_source}))
-        composition = self.plan(run_id, goal, working_directory, project_name, project_type,
-                                project_signals, constraints, approvals)
+        intelligence_directory = None
+        if project_id:
+            rows = self.database.query("SELECT path FROM projects WHERE id=?", (project_id,))
+            intelligence_directory = rows[0]["path"] if rows else None
+        composition = self.compose(run_id, goal, working_directory, project_name, project_type,
+                                   project_signals, constraints, approvals, record_intelligence=True,
+                                   intelligence_directory=intelligence_directory)
+        intelligence_store = None
+        intelligence_root = intelligence_directory or working_directory
+        if intelligence_root and (Path(intelligence_root) / ".agent").is_dir():
+            intelligence_store = ProjectIntelligenceStore(Path(intelligence_root))
+            intelligence_store.record_run(run_id, ContextSelection(**composition.project_intelligence))
+            self.database.execute(
+                "INSERT INTO project_intelligence_runs(run_id,temperature,reason,reuse_hits,rediscovery_count,"
+                "context_chars,estimated_tokens,data_json) VALUES(?,?,?,?,?,?,?,?)",
+                (run_id, composition.project_intelligence["temperature"],
+                 composition.project_intelligence["reason"], composition.project_intelligence["reuse_hits"],
+                 composition.project_intelligence["rediscovery_count"],
+                 composition.project_intelligence["context_chars"],
+                 composition.project_intelligence["estimated_tokens"],
+                 self.database.json(composition.project_intelligence)))
         graph = composition.graph
         if composition.execution_plan:
             for manifest in composition.execution_plan.temporary_skills:
@@ -309,4 +361,19 @@ class Orchestrator:
         status = "completed" if success else "failed"
         self.database.execute("UPDATE runs SET status=?,completed_at=? WHERE id=?", (status, now_iso(), run_id))
         self.events.emit(Event(f"run_{status}", run_id))
+        if intelligence_store:
+            from adaptive_agent.project.discovery import discover
+
+            if composition.project_intelligence["temperature"] == "cold":
+                intelligence_store.learn_discovery(discover(Path(intelligence_root)), run_id)
+            reported_files: list[str] = []
+            for row in self.database.query(
+                    "SELECT data_json FROM receipts WHERE task_id IN "
+                    "(SELECT id FROM tasks WHERE run_id=?)", (run_id,)):
+                reported_files.extend(json.loads(row["data_json"]).get("files", []))
+            evaluations = self.database.query(
+                "SELECT passed FROM artifact_evaluations WHERE run_id=?", (run_id,))
+            evaluated = (all(bool(item["passed"]) for item in evaluations) if evaluations else None)
+            intelligence_store.distill_run(run_id, status, goal, len(graph.tasks),
+                                           reported_files, evaluated)
         return run_id

@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Iterator
 
 
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 
 #: Additive columns introduced after a schema was first created. Every entry is
 #: `(table, column, definition)` and is applied only when the column is missing.
@@ -69,6 +69,7 @@ class Database:
             CREATE TABLE IF NOT EXISTS skill_runs(id INTEGER PRIMARY KEY AUTOINCREMENT, skill_id TEXT NOT NULL, version TEXT NOT NULL, run_id TEXT, task_id TEXT, success INTEGER NOT NULL, artifact_quality REAL, invocations INTEGER NOT NULL DEFAULT 0, tokens INTEGER, token_source TEXT NOT NULL DEFAULT 'unavailable', context_tokens INTEGER, provider TEXT NOT NULL DEFAULT '', model TEXT NOT NULL DEFAULT '', safety_failure INTEGER NOT NULL DEFAULT 0, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
             CREATE TABLE IF NOT EXISTS run_skills(id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT NOT NULL, task_id TEXT NOT NULL, skill_id TEXT NOT NULL, version TEXT NOT NULL, loaded_references_json TEXT NOT NULL DEFAULT '[]', context_tokens INTEGER, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
             CREATE TABLE IF NOT EXISTS artifact_evaluations(id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT NOT NULL, task_id TEXT NOT NULL, evaluator TEXT NOT NULL, passed INTEGER NOT NULL, quality_json TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
+            CREATE TABLE IF NOT EXISTS project_intelligence_runs(id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT NOT NULL UNIQUE, temperature TEXT NOT NULL, reason TEXT NOT NULL, reuse_hits INTEGER NOT NULL DEFAULT 0, rediscovery_count INTEGER NOT NULL DEFAULT 0, context_chars INTEGER NOT NULL DEFAULT 0, estimated_tokens INTEGER NOT NULL DEFAULT 0, data_json TEXT NOT NULL DEFAULT '{}', created_at TEXT DEFAULT CURRENT_TIMESTAMP);
             """)
             existing: dict[str, set[str]] = {}
             for table, column, definition in ADDITIVE_COLUMNS:
@@ -81,6 +82,7 @@ class Database:
             db.execute("CREATE INDEX IF NOT EXISTS ix_performance_signature ON agent_performance(capability_signature)")
             db.execute("CREATE INDEX IF NOT EXISTS ix_skill_runs_identity ON skill_runs(skill_id,version)")
             db.execute("CREATE INDEX IF NOT EXISTS ix_run_skills_run ON run_skills(run_id,task_id)")
+            db.execute("CREATE INDEX IF NOT EXISTS ix_intelligence_temperature ON project_intelligence_runs(temperature)")
             db.execute("INSERT OR IGNORE INTO schema_migrations(version) VALUES (?)", (SCHEMA_VERSION,))
 
     def execute(self, sql: str, parameters: tuple[Any, ...] = ()) -> None:
