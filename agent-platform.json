@@ -1,7 +1,7 @@
 {
   "schema_version": "1",
   "name": "Universal Agent Platform",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "type": "agent-orchestration-framework",
   "summary": "Bring your goal. Bring your AI. The platform builds the team.",
   "cli": "agentctl",

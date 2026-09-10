@@ -13,6 +13,8 @@ from typing import Any, Iterable
 
 
 INDEX_SCHEMA_VERSION = 1
+HISTORICAL_KINDS = {"receipt", "task_history"}
+REUSABLE_KINDS = {"knowledge", "decision", "command", "evaluation", "skill", "agent", "known_issue"}
 
 
 def _now() -> str:
@@ -46,6 +48,14 @@ class RunTemperature(StrEnum):
     REVALIDATION = "revalidation"
 
 
+class PersistenceDecision(StrEnum):
+    DO_NOT_PERSIST = "do_not_persist"
+    RECEIPT_ONLY = "receipt_only"
+    TEMPORARY = "temporary"
+    CURRENT = "current"
+    NEEDS_REVIEW = "needs_review"
+
+
 @dataclass(slots=True)
 class IntelligenceItem:
     id: str
@@ -68,6 +78,14 @@ class IntelligenceItem:
     verified_commit: str | None = None
     first_created_task: str | None = None
     supersedes: str | None = None
+    why_persisted: str | None = None
+    persistence_decision: str | None = None
+    creation_cost: int = 0
+    selected_count: int = 0
+    validated_reuse_count: int = 0
+    failures: int = 0
+    repairs: int = 0
+    last_used: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -89,6 +107,10 @@ class ContextSelection:
     context_chars: int = 0
     estimated_tokens: int = 0
     loaded_detail_paths: list[str] = field(default_factory=list)
+    selected_only_count: int = 0
+    reuse_miss_reason: str | None = None
+    typed_reuse_hits: dict[str, int] = field(default_factory=dict)
+    stale_count: int = 0
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -149,6 +171,13 @@ class ProjectIntelligenceStore:
             raise ValueError(f"unsupported intelligence kind: {item.kind}")
         if not item.summary.strip() or not item.evidence:
             raise ValueError("project intelligence requires a summary and explicit evidence")
+        if item.kind == IntelligenceKind.SKILL.value and self._is_generic_procedure(item.summary, detail):
+            raise ValueError("generic procedures are not project-specific reusable intelligence")
+        if item.persistence_decision is None:
+            item.persistence_decision = (PersistenceDecision.TEMPORARY.value
+                                         if item.kind in {"skill", "agent"}
+                                         else PersistenceDecision.CURRENT.value)
+        item.why_persisted = item.why_persisted or "explicit evidence-backed project value"
         if item.kind in {IntelligenceKind.SKILL.value, IntelligenceKind.AGENT.value}:
             if item.expected_reuse < 2 or item.validation not in {"validated", "measured"}:
                 raise ValueError("reusable skills and agents require validation and expected reuse >= 2")
@@ -220,7 +249,9 @@ class ProjectIntelligenceStore:
             temperature = RunTemperature.REVALIDATION.value if stale else RunTemperature.COLD.value
             reason = "related project intelligence changed and must be revalidated" if stale else "no reusable project intelligence exists"
             return ContextSelection(temperature, reason, stale_items=stale,
-                                    rediscovery_count=1 if not stale else 0)
+                                    rediscovery_count=1 if not stale else 0,
+                                    reuse_miss_reason="STALE" if stale else "NOT_FOUND",
+                                    stale_count=len(stale))
         wanted = self._terms(goal) | {str(value).lower() for value in capabilities}
         scored: list[tuple[int, IntelligenceItem]] = []
         for item in active:
@@ -252,24 +283,40 @@ class ProjectIntelligenceStore:
                 break
             chars += size
             loaded.append(value)
+        typed = {kind.value: 0 for kind in IntelligenceKind}
         if record_reuse and selected:
             ids = {item["id"] for item in loaded}
             data = self._read()
             for raw in data["items"]:
                 if raw.get("id") in ids and raw.get("status") == IntelligenceStatus.CURRENT.value:
                     raw["reuse_count"] = int(raw.get("reuse_count", 0)) + 1
+                    raw["selected_count"] = int(raw.get("selected_count", 0)) + 1
+                    raw["last_used"] = _now()
+                    typed[raw.get("kind", "unknown")] = typed.get(raw.get("kind", "unknown"), 0) + 1
             self._write(data)
         temperature = RunTemperature.REVALIDATION.value if stale else RunTemperature.WARM.value
         reason = ("some related intelligence requires revalidation; current items were reused" if stale
                   else "relevant verified project intelligence was reused")
         return ContextSelection(temperature, reason, loaded, stale, len(loaded), 0,
-                                chars, (chars + 3) // 4, paths)
+                                chars, (chars + 3) // 4, paths,
+                                selected_only_count=len(loaded) if not record_reuse else 0,
+                                typed_reuse_hits=typed, stale_count=len(stale))
 
-    def record_run(self, run_id: str, selection: ContextSelection) -> None:
+    def record_run(self, run_id: str, selection: ContextSelection, *, success: bool = True,
+                   evaluation_passed: bool | None = True, learning_investment: dict[str, Any] | None = None) -> None:
         data = self._read()
         data["runs"] = [item for item in data["runs"] if item.get("run_id") != run_id]
-        data["runs"].append({"run_id": run_id, "created_at": _now(), **selection.to_dict()})
+        data["runs"].append({"run_id": run_id, "created_at": _now(), "success": bool(success),
+                              "evaluation_passed": evaluation_passed,
+                              "validated_reuse": bool(success and evaluation_passed and selection.reuse_hits),
+                              "learning_investment": learning_investment or {"ai_invocations": 0},
+                              **selection.to_dict()})
         data["runs"] = data["runs"][-100:]
+        if success and evaluation_passed and selection.items:
+            selected_ids = {item.get("id") for item in selection.items}
+            for raw in data["items"]:
+                if raw.get("id") in selected_ids and raw.get("kind") in REUSABLE_KINDS:
+                    raw["validated_reuse_count"] = int(raw.get("validated_reuse_count", 0)) + 1
         self._write(data)
 
     def status(self) -> dict[str, Any]:
@@ -279,12 +326,23 @@ class ProjectIntelligenceStore:
         counts = {kind.value: sum(item.kind == kind.value and item.status == IntelligenceStatus.CURRENT.value
                                   for item in items) for kind in IntelligenceKind}
         runs = data["runs"]
+        reusable = [item for item in current if item.kind in REUSABLE_KINDS]
+        typed = {kind: sum(int(item.get("typed_reuse_hits", {}).get(kind, 0)) for item in runs)
+                 for kind in REUSABLE_KINDS}
+        validated = sum(int(item.get("reuse_hits", 0)) for item in runs
+                        if item.get("success", True) and item.get("evaluation_passed", True))
         reuse = sum(int(item.get("reuse_hits", 0)) for item in runs)
-        maturity = self._maturity(len(current), len(runs), reuse)
+        successful_warm = sum(1 for item in runs if item.get("temperature") == "warm"
+                              and item.get("success", True) and item.get("evaluation_passed", True))
+        maturity = self._maturity(len(reusable), successful_warm, validated)
         return {"schema_version": INDEX_SCHEMA_VERSION, "level": maturity,
                 "level_name": ("unknown", "discovered", "learned", "optimized")[maturity],
                 "items": len(items), "current": len(current), "counts": counts,
                 "runs": len(runs), "reuse_hits": reuse,
+                "reusable_intelligence_hits": sum(typed.values()),
+                "typed_reuse_hits": typed,
+                "selected_only": sum(int(item.get("selected_only_count", 0)) for item in runs),
+                "validated_reuse": validated,
                 "knowledge_created": counts[IntelligenceKind.KNOWLEDGE.value],
                 "skill_reuse_hits": sum(item.reuse_count for item in items
                                         if item.kind == IntelligenceKind.SKILL.value),
@@ -387,8 +445,98 @@ class ProjectIntelligenceStore:
                 validation="measured", first_created_task=run_id)))
         return learned
 
+    def learn_candidates(self, candidates: Iterable[dict[str, Any]], run_id: str | None = None) -> list[IntelligenceItem]:
+        """Persist explicit structured evidence emitted by execution, without an AI summarizer."""
+        learned: list[IntelligenceItem] = []
+        for candidate in candidates:
+            kind = str(candidate.get("kind", "")).lower()
+            if kind not in REUSABLE_KINDS | {"skill_candidate", "agent_role_candidate", "task_local", "receipt_only"}:
+                continue
+            if kind in {"task_local", "receipt_only"}:
+                continue
+            normalized = "skill" if kind == "skill_candidate" else "agent" if kind == "agent_role_candidate" else kind
+            evidence = list(candidate.get("evidence") or [])
+            summary = str(candidate.get("summary") or candidate.get("decision") or candidate.get("procedure") or "").strip()
+            if not summary or not evidence:
+                continue
+            expected = int(candidate.get("expected_reuse", 1))
+            validation = str(candidate.get("validation", "evidence_backed"))
+            if normalized in {"skill", "agent"} and (expected < 2 or validation not in {"validated", "measured"}):
+                continue
+            item = IntelligenceItem(id=str(candidate.get("id") or hashlib.sha1(summary.encode()).hexdigest()[:12]),
+                                    kind=normalized, summary=summary, capabilities=list(candidate.get("capabilities") or []),
+                                    tags=list(candidate.get("tags") or []), related_paths=list(candidate.get("related_paths") or []),
+                                    evidence=evidence, validation=validation, expected_reuse=expected,
+                                    first_created_task=run_id, why_persisted=str(candidate.get("why_persisted") or "structured execution evidence"),
+                                    persistence_decision=(PersistenceDecision.TEMPORARY.value if normalized in {"skill", "agent"} else PersistenceDecision.CURRENT.value))
+            learned.append(self.add(item, detail=candidate.get("detail") or candidate.get("procedure")))
+        return learned
+
+    def explain(self) -> dict[str, Any]:
+        return {"items": [{**item.to_dict(), "reusable": item.kind in REUSABLE_KINDS,
+                            "payback_status": self.skill_payback(item.id)} for item in self.items(include_inactive=True)],
+                "maintenance": self.maintenance(), "status": self.status()}
+
+    def skill_payback(self, item_id: str) -> str:
+        item = next((value for value in self.items(include_inactive=True) if value.id == item_id), None)
+        if not item or item.kind != "skill":
+            return "NOT_APPLICABLE"
+        if item.validated_reuse_count >= 2:
+            return "PAYBACK_MEASURED"
+        if item.selected_count:
+            return "PAYBACK_POSSIBLE"
+        return "NOT_REUSED"
+
+    def skill_benefit_gate(self, item: IntelligenceItem, *, goal: str = "",
+                           task_complexity: str = "normal") -> str:
+        """Explainable marginal-value gate used before loading project Skills."""
+        if item.kind != IntelligenceKind.SKILL.value:
+            return "SKIP"
+        if self._is_generic_procedure(item.summary, None):
+            return "SKIP"
+        match = len(self._terms(goal) & self._terms(" ".join([item.summary, *item.tags, *item.capabilities])))
+        if item.status != IntelligenceStatus.CURRENT.value:
+            return "SKIP"
+        if item.validated_reuse_count or (match and task_complexity in {"normal", "high"}):
+            return "LOAD"
+        return "LOAD_METADATA_ONLY"
+
     @staticmethod
-    def amortization(cold_cost: int, warm_costs: Iterable[int]) -> dict[str, Any]:
+    def amortization(cold_cost: int | None = None, warm_costs: Iterable[int | None] = (), *,
+                     baseline_costs: Iterable[int | None] | None = None,
+                     uap_costs: Iterable[int | None] | None = None,
+                     baseline_quality: Iterable[bool] | None = None,
+                     uap_quality: Iterable[bool] | None = None) -> dict[str, Any]:
+        if baseline_costs is not None or uap_costs is not None:
+            baseline = list(baseline_costs or [])
+            actual = list(uap_costs or [])
+            bq = list(baseline_quality or [True] * len(baseline))
+            uq = list(uap_quality or [True] * len(actual))
+            cumulative_b = cumulative_u = 0
+            cumulative_baselines: list[int] = []
+            cumulative_uaps: list[int] = []
+            break_even = None
+            comparisons = []
+            for index, (b, u) in enumerate(zip(baseline, actual), 1):
+                valid = bool(b is not None and u is not None and index <= len(bq) and index <= len(uq)
+                             and bq[index-1] and uq[index-1])
+                comparisons.append({"task": index, "valid": valid, "status": "VALID" if valid else "INVALID_QUALITY_OR_UNAVAILABLE"})
+                if valid:
+                    cumulative_b += int(b); cumulative_u += int(u)
+                    cumulative_baselines.append(cumulative_b)
+                    cumulative_uaps.append(cumulative_u)
+                    if break_even is None and cumulative_u <= cumulative_b and all(c["valid"] for c in comparisons):
+                        break_even = index
+                else:
+                    break_even = "NOT_CLAIMABLE"
+                    break
+            return {"baseline_costs": baseline, "uap_costs": actual, "cumulative_baseline": cumulative_b,
+                    "cumulative_uap": cumulative_u, "cumulative_baselines": cumulative_baselines,
+                    "cumulative_uaps": cumulative_uaps, "comparisons": comparisons,
+                    "break_even_task": break_even, "break_even_run": break_even,
+                    "comparison_valid": all(c["valid"] for c in comparisons) if comparisons else False,
+                    "savings_claimable": break_even != "NOT_CLAIMABLE"}
+        assert cold_cost is not None
         warm = list(warm_costs)
         baseline = cold_cost * (len(warm) + 1)
         actual = cold_cost + sum(warm)
@@ -435,3 +583,33 @@ class ProjectIntelligenceStore:
         if runs < 5 or reuse_hits < 5:
             return 2
         return 3
+
+    @staticmethod
+    def _is_generic_procedure(summary: str, detail: str | None) -> bool:
+        text = f"{summary} {detail or ''}".lower()
+        return any(value in text for value in ("debug python by reading errors", "coding best practices", "react expert", "senior developer"))
+
+
+class IntelligenceDistiller:
+    """Pure, inspectable structured-evidence distiller; no provider call is made."""
+
+    def distill(self, *, run_id: str, status: str, goal: str, task_count: int,
+                structured_evidence: Iterable[dict[str, Any]] = (), reported_files: Iterable[str] = (),
+                evaluation_passed: bool | None = None) -> "DistillationResult":
+        candidates = [dict(value) for value in structured_evidence
+                      if value.get("kind") not in {"task_local", "receipt_only"}]
+        return DistillationResult(run_id=run_id, status=status, goal=goal, task_count=task_count,
+                                  candidates=candidates, reported_files=list(reported_files),
+                                  evaluation_passed=evaluation_passed, ai_invocations=0)
+
+
+@dataclass(slots=True)
+class DistillationResult:
+    run_id: str
+    status: str
+    goal: str
+    task_count: int
+    candidates: list[dict[str, Any]] = field(default_factory=list)
+    reported_files: list[str] = field(default_factory=list)
+    evaluation_passed: bool | None = None
+    ai_invocations: int = 0

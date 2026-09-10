@@ -110,6 +110,10 @@ def parser() -> argparse.ArgumentParser:
     context_explain = context_subcommands.add_parser("explain")
     context_explain.add_argument("goal", nargs="?", default="continue the current project work")
     context_explain.add_argument("--json", action="store_true")
+    intelligence_command = commands.add_parser("intelligence", help="inspect learned project intelligence")
+    intelligence_subcommands = intelligence_command.add_subparsers(dest="intelligence_command", required=True)
+    intelligence_explain = intelligence_subcommands.add_parser("explain")
+    intelligence_explain.add_argument("--json", action="store_true")
     agents_command = commands.add_parser("agents")
     agents_command.add_argument("--verbose", action="store_true")
     agents_command.add_argument("--json", action="store_true")
@@ -636,6 +640,17 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(payload, indent=2) if args.json else
               f"Context mode: {selection.temperature}\nWhy: {selection.reason}\n" +
               "\n".join(f"- {item['id']}: {item['summary']}" for item in selection.items))
+    elif args.command == "intelligence" and args.intelligence_command == "explain":
+        explanation = ProjectIntelligenceStore(Path.cwd()).explain()
+        if args.json:
+            print(json.dumps(explanation, indent=2))
+        else:
+            status = explanation["status"]
+            print(f"Project intelligence: LEVEL_{status['level']}_{status['level_name'].upper()}")
+            for item in explanation["items"]:
+                print(f"- {item['id']} [{item['kind']}]: {item['summary']}")
+                print(f"  persisted because: {item.get('why_persisted') or 'not recorded'}; "
+                      f"reuse: {item.get('validated_reuse_count', 0)} validated; payback: {item['payback_status']}")
     elif args.command == "agents":
         values = registry_agents(db)
         if args.verbose or args.json:

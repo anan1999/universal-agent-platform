@@ -21,7 +21,7 @@ from adaptive_agent.core.team_manager import TeamManager
 from adaptive_agent.core.tools import ToolRegistry
 from adaptive_agent.core.universal_planner import UniversalPlanner
 from adaptive_agent.models.registry import ModelRegistry
-from adaptive_agent.intelligence.project import ContextSelection, ProjectIntelligenceStore
+from adaptive_agent.intelligence.project import ContextSelection, IntelligenceDistiller, ProjectIntelligenceStore
 from adaptive_agent.observability.event_bus import EventBus
 from adaptive_agent.profiles.registry import WorkProfileRegistry, profile_registry
 from adaptive_agent.providers.base import AIProvider
@@ -303,7 +303,8 @@ class Orchestrator:
         intelligence_root = intelligence_directory or working_directory
         if intelligence_root and (Path(intelligence_root) / ".agent").is_dir():
             intelligence_store = ProjectIntelligenceStore(Path(intelligence_root))
-            intelligence_store.record_run(run_id, ContextSelection(**composition.project_intelligence))
+            intelligence_store.record_run(run_id, ContextSelection(**composition.project_intelligence),
+                                           success=False, evaluation_passed=False)
             self.database.execute(
                 "INSERT INTO project_intelligence_runs(run_id,temperature,reason,reuse_hits,rediscovery_count,"
                 "context_chars,estimated_tokens,data_json) VALUES(?,?,?,?,?,?,?,?)",
@@ -374,6 +375,16 @@ class Orchestrator:
             evaluations = self.database.query(
                 "SELECT passed FROM artifact_evaluations WHERE run_id=?", (run_id,))
             evaluated = (all(bool(item["passed"]) for item in evaluations) if evaluations else None)
+            # Replace the provisional selection record with the measured outcome.
+            intelligence_store.record_run(
+                run_id, ContextSelection(**composition.project_intelligence),
+                success=success, evaluation_passed=evaluated if evaluated is not None else success)
             intelligence_store.distill_run(run_id, status, goal, len(graph.tasks),
                                            reported_files, evaluated)
+            # The distiller consumes structured execution evidence only. It never
+            # invokes a provider just to manufacture a summary.
+            distillation = IntelligenceDistiller().distill(
+                run_id=run_id, status=status, goal=goal, task_count=len(graph.tasks),
+                reported_files=reported_files, evaluation_passed=evaluated)
+            intelligence_store.learn_candidates(distillation.candidates, run_id=run_id)
         return run_id

@@ -1,6 +1,8 @@
 # Universal Agent Platform
 
-**Bring your goal. Bring your AI. The platform builds the team.**
+**Spend context once. Reuse project intelligence many times.**
+
+Bring your goal. Bring your AI. The platform builds the team.
 
 Give it a goal in plain language. It works out which capabilities the work needs, chooses the
 minimum sufficient execution strategy, reuses deterministic tools and Skills before adding
@@ -8,10 +10,11 @@ reasoning roles, routes required roles to a provider and model that can actually
 executes the plan, and records receipts, artifacts and performance history.
 
 It is provider-agnostic, capability-first, work-profile-driven, local-first, inspectable,
-auditable, and extensible. It is not tied to software engineering. Version **2.3.0**.
+auditable, and extensible. It is not tied to software engineering. Version **2.3.1**.
 
-**Spend context once. Reuse project intelligence many times.** V2.3 retrieves verified,
-task-relevant project knowledge before asking a provider to rediscover it. It reports cold,
+UAP learns compact, evidence-backed project knowledge, decisions, commands and procedures
+during early tasks, then retrieves only what a later task needs. Cold start may be more expensive;
+the intended benefit is cumulative. It reports cold,
 warm, and revalidation starts honestly; no token saving is claimed without measured evidence.
 
 ---

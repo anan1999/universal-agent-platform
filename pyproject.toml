@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "universal-agent-platform"
-version = "2.3.0"
+version = "2.3.1"
 description = "Universal Agent Platform: bring your goal, bring your AI, the platform builds the team"
 readme = "README.md"
 requires-python = ">=3.11"

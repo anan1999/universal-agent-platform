@@ -2,6 +2,13 @@
 
 All notable changes follow semantic versioning.
 
+## 2.3.1
+
+- Added an evidence-gated project intelligence distiller and typed reuse metrics.
+- Separated historical receipts from reusable knowledge, decisions, commands, skills, and roles.
+- Gated maturity and amortization claims on successful, quality-comparable reuse.
+- Added `agentctl intelligence explain` for learning-loop inspection.
+
 ## 2.3.0
 
 - Added evidence-backed, Git-friendly Project Intelligence with progressive detail loading.

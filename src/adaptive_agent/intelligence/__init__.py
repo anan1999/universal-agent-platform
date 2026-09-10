@@ -7,6 +7,9 @@ from adaptive_agent.intelligence.project import (
     IntelligenceStatus,
     ProjectIntelligenceStore,
     RunTemperature,
+    PersistenceDecision,
+    IntelligenceDistiller,
+    DistillationResult,
 )
 
 __all__ = [
@@ -16,4 +19,7 @@ __all__ = [
     "IntelligenceStatus",
     "ProjectIntelligenceStore",
     "RunTemperature",
+    "PersistenceDecision",
+    "IntelligenceDistiller",
+    "DistillationResult",
 ]
