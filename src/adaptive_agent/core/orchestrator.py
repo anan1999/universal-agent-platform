@@ -29,7 +29,7 @@ from adaptive_agent.providers.registry import ProviderRegistry, providers as pro
 from adaptive_agent.runtime import RESOURCE_ROOT, platform_home
 from adaptive_agent.skills.manifest import SkillTrust
 from adaptive_agent.skills.registry import SkillRegistry
-from adaptive_agent.skills.resolver import SkillResolver
+from adaptive_agent.skills.resolver import SkillCandidate, SkillResolver
 from adaptive_agent.storage.database import Database
 from adaptive_agent.tasks.graph import TaskGraph
 
@@ -107,6 +107,27 @@ class Orchestrator:
         execution = ExecutionPlanner(
             self.tools, SkillResolver(self.skills.manifests()),
             minimize_cost=self.consumption_policy.mode.value == "economy").plan(goal, analysis)
+        # Project-local Skills can be relevant by their learned project summary
+        # even when the generic GoalAnalyzer only reports "coding". Keep this
+        # narrow, lexical, and benefit-gated; no embeddings or forced loading.
+        goal_terms = ProjectIntelligenceStore._terms(goal)
+        for learned in intelligence.items:
+            if learned.get("kind") != "skill" or learned.get("status") not in {
+                    "temporary", "validated", "promotion_candidate", "current"}:
+                continue
+            if not (goal_terms & ProjectIntelligenceStore._terms(
+                    " ".join([learned.get("summary", ""), *learned.get("tags", []),
+                              *learned.get("capabilities", [])]))):
+                continue
+            try:
+                manifest = self.skills.manifest(str(learned["id"]))
+            except KeyError:
+                continue
+            if any(candidate.manifest.id == manifest.id for candidate in execution.selected_skills):
+                continue
+            execution.selected_skills.append(SkillCandidate(
+                manifest, 1.0, list(manifest.capabilities), [],
+                ["selected by project-intelligence relevance and Skill benefit gate"]))
         for manifest in execution.temporary_skills:
             self.skills.register_manifest(manifest, replace=True)
         resolver = CapabilityResolver(
