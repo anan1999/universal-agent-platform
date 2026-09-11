@@ -180,7 +180,7 @@ the global default for a single task.
 This is the main entry point:
 
 ```bash
-agentctl prepare "<the user's goal in one clear sentence>" --json
+agentctl prepare "<the user's goal in one clear sentence>" --read --json
 ```
 
 Read the returned relevant context, then implement the task yourself. This command starts no AI

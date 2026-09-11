@@ -16,7 +16,7 @@ UAP_AGENTS_BLOCK = f"""{UAP_START}
 # Universal Agent Platform
 
 The current AI executes the user's task directly. Start non-trivial work with
-`agentctl prepare \"<goal>\" --json` to retrieve relevant context without provider calls.
+`agentctl prepare \"<goal>\" --read --json` to retrieve bounded relevant source and context without provider calls.
 Read actual source as needed. Batch independent reads; run relevant deterministic validation.
 Use `agentctl check project_test` for compact allowlisted test results.
 After verifying a useful fact, save it with `agentctl remember <source-path> \"<short fact>\"`.

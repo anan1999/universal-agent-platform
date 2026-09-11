@@ -6,7 +6,7 @@ from the ordinary path; it does not control the host model's private reasoning.
 
 ```bash
 agentctl init --auto --upgrade
-agentctl prepare "<task goal>" --json
+agentctl prepare "<task goal>" --read --json
 # The current AI reads relevant source, implements and validates.
 agentctl check project_test
 agentctl remember app/main.py "<short fact verified against this source>"
@@ -21,6 +21,9 @@ direct commands. Standalone delegated `run` and `orchestrate` remain opt-in.
 `prepare` returns relevant path hints, architecture, commands to verify, and up to eight
 source-linked notes. It reads no prior conversation. The current task still reads actual source
 when needed. `remember` accepts one short fact tied to one file, capped at 320 characters.
+With `--read`, bounded directory discovery adds up to six relevant source excerpts, capped at
+12,000 characters total. It examines only the selected directories and their immediate `src`
+children. Excerpts are marked when truncated. Omit this option when path hints suffice.
 It hashes that file; this proves source freshness, not factual correctness of AI-authored text.
 The executing AI is responsible for checking its fact before saving it. No useful new fact
 means no write. Commit useful `.agent` context with the corresponding source changes so later
@@ -30,6 +33,7 @@ unmerged knowledge is not automatically shared across worktrees.
 `check` uses existing allowlisted tools and returns compact JSON. Successful command logs are
 suppressed; failures retain bounded output. Missing commands or skipped checks yield a nonzero
 exit status. Check only what is relevant, and repeat checks only after new changes or failures.
+`git_status` retains successful output because the changed-file list is its useful result.
 
 ## Benchmark protocol
 

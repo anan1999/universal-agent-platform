@@ -81,7 +81,7 @@
 
   "direct_execution": {
     "default": true,
-    "prepare": "agentctl prepare \"<goal>\" --json",
+    "prepare": "agentctl prepare \"<goal>\" --read --json",
     "remember": "agentctl remember <source-path> \"<short verified fact>\"",
     "check": "agentctl check project_test",
     "executor": "current AI task",

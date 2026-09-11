@@ -74,7 +74,7 @@ async def run(args):
     setup_started = time.perf_counter()
     first_context = prepare(roots['uap'], GOAL)
     setup_ms = (time.perf_counter() - setup_started) * 1000
-    warm_context = prepare(roots['uap'], GOAL)
+    warm_context = prepare(roots['uap'], GOAL, read_sources=True)
     hashes = {name: source_hash(root) for name, root in roots.items()}
     assert len(set(hashes.values())) == 1
     contract_hash = hashlib.sha256(ACCEPTANCE.read_bytes()).hexdigest()
@@ -86,7 +86,7 @@ async def run(args):
               'warm_prepare_ms': warm_context['wall_ms'], 'pre_task_ai_calls': 0,
               'context_chars': len(json.dumps(warm_context, ensure_ascii=False)),
               'limitations': ['one ordered pair, no statistical generalization',
-                              'index reuse only; prior AI-authored knowledge is tested offline',
+                              'index reuse and bounded source batching; prior AI-authored knowledge is tested offline',
                               'tool calls are observable events, not internal reasoning rounds',
                               'subscription quota conversion is unavailable',
                               'frontend acceptance checks integration source, not browser rendering'],
@@ -102,10 +102,12 @@ async def run(args):
             packet = Packet(root, GOAL, warm_context if name == 'uap' else None)
             started = time.perf_counter()
             receipt = await provider.execute(current, packet=packet)
+            provider_seconds = time.perf_counter() - started
             quality = acceptance(root)
             report['results'][name] = {
                 'status': receipt.status, 'usage': receipt.token_usage,
                 'duration_seconds': round(time.perf_counter() - started, 3),
+                'provider_seconds': round(provider_seconds, 3),
                 'quality': quality, 'error': receipt.error_code,
                 'telemetry': getattr(provider, 'telemetry', {}),
                 'packet_chars': len(packet.render()),
@@ -122,6 +124,12 @@ async def run(args):
                   for item in (baseline, uap)]
         report['conclusion'] = ('YES' if passed and measured and totals[1] < totals[0]
                                 else 'NO' if passed and measured else 'INCONCLUSIVE')
+        report['fewer_tool_calls'] = (
+            uap['telemetry'].get('tool_calls', float('inf')) < baseline['telemetry'].get('tool_calls', 0)
+        )
+        report['fewer_messages'] = (
+            uap['telemetry'].get('assistant_messages', float('inf')) < baseline['telemetry'].get('assistant_messages', 0)
+        )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2), encoding='utf-8')
     print(json.dumps({key: value for key, value in report.items() if key != 'results'}, indent=2))

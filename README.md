@@ -40,7 +40,7 @@ cd <the user's project>
 agentctl init --auto --dry-run    # show the user before applying
 agentctl init --auto
 agentctl doctor
-agentctl prepare "<the user's goal>" --json
+agentctl prepare "<the user's goal>" --read --json
 ```
 
 Continue implementation in the current AI task. `prepare` starts no provider, team, database,
@@ -48,6 +48,8 @@ or learning pipeline. Read the suggested source paths, implement, and run releva
 `agentctl check project_test` returns compact allowlisted results. Save a useful verified fact
 with `agentctl remember app/main.py "Expense dates use the date field."` (example only).
 Notes are hash-checked on retrieval. Commit useful project notes with their source changes.
+`--read` includes up to six relevant source excerpts in one response (12,000 characters total).
+Truncated excerpts are marked; omit `--read` when path hints alone suffice.
 Delegated execution through `orchestrate` remains an explicit opt-in.
 
 ---

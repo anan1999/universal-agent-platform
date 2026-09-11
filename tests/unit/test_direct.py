@@ -33,3 +33,31 @@ def test_remember_rejects_outside_source(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     with pytest.raises(SystemExit):
         main(['remember', '../outside', 'note'])
+
+
+def test_batched_sources_are_bounded_and_exclude_unrelated_areas(tmp_path):
+    from adaptive_agent.project.direct import source_batch, SOURCE_BUDGET
+    (tmp_path / 'app').mkdir()
+    (tmp_path / 'frontend').mkdir()
+    (tmp_path / 'app/main.py').write_text('x' * 20000)
+    (tmp_path / 'app/routes.py').write_text('route = 1')
+    (tmp_path / 'frontend/App.jsx').write_text('unrelated frontend')
+    (tmp_path / 'app/.env').write_text('secret')
+    result = source_batch(tmp_path, ['app/', '../'])
+    assert sum(len(item['content']) for item in result) <= SOURCE_BUDGET
+    assert {item['path'] for item in result} == {'app/main.py', 'app/routes.py'}
+    assert result[0]['truncated']
+
+
+def test_git_status_output_is_preserved(tmp_path, monkeypatch, capsys):
+    from adaptive_agent.core.tools import ToolExecutor, ToolResult
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(ToolExecutor, 'run', lambda self, tool:
+                        ToolResult(tool, 'completed', 'ok', ' M app.py'))
+    assert main(['check', 'git_status']) == 0
+    assert 'app.py' in json.loads(capsys.readouterr().out)['checks'][0]['output']
+
+
+def test_missing_note_source_returns_failure(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    assert main(['remember', 'missing.py', 'verified fact']) == 1

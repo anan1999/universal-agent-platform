@@ -26,7 +26,7 @@ Treat context as expensive. Search before reading large files. Do not reread fil
 <!-- UAP:START -->
 # Universal Agent Platform
 
-The current AI executes work directly. Use `agentctl prepare "<goal>" --json` for
+The current AI executes work directly. Use `agentctl prepare "<goal>" --read --json` for
 compact context, then read relevant source and validate the result.
 Use `agentctl remember <source-path> "<short verified fact>"` only for useful new knowledge.
 Delegated execution through `agentctl orchestrate` requires explicit user intent.
