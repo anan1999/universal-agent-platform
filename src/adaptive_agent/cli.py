@@ -94,7 +94,7 @@ def parser() -> argparse.ArgumentParser:
     run.add_argument("--consumption", choices=("economy", "balanced", "maximum"),
                      help="override the project consumption policy for this run")
 
-    orchestrate = commands.add_parser("orchestrate", help="canonical AI-assistant orchestration entrypoint")
+    orchestrate = commands.add_parser("orchestrate", help="explicitly delegate execution to a provider")
     orchestrate.add_argument("goal")
     orchestrate.add_argument("--provider", default="auto")
     orchestrate.add_argument("--json", action="store_true", help="return bounded machine-readable output")

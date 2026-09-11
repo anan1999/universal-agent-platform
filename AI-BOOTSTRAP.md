@@ -310,4 +310,4 @@ feed it in as the goal. **Do not** claim a provider works when it reports `UNSUP
 not** disable an approval gate or extend the command allowlist without asking. **Do not**
 orchestrate when `UAP_CHILD_EXECUTION=1`.
 
-The user brings a goal. You bring the AI. The platform builds the team.
+The user brings a goal. The current AI does the work. UAP supplies relevant reusable context.

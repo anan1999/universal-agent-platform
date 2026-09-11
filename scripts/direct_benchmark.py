@@ -29,6 +29,8 @@ class Packet:
             'Return JSON matching the supplied schema, with a short factual summary. '
             'Report changed files only when actually changed. Do not start other AI agents. '
             'Do not access sibling workspaces. Preserve existing expense CRUD.\n'
+            'API response contract: {"month":"YYYY-MM","total":number,"categories":'
+            '{"category_name":number}}. Category totals must exclude other months.\n'
         )
         if context is not None:
             self.text += json.dumps(context, ensure_ascii=False) + '\n'

@@ -13,6 +13,8 @@ def test_pair_preserves_goal_and_executor_only_adds_support_context(tmp_path):
     assert supported.render().startswith(baseline.render())
     assert baseline.read_only is supported.read_only is False
     assert baseline.working_directory == supported.working_directory
+    assert '"month":"YYYY-MM"' in baseline.render()
+    assert '"categories"' in baseline.render()
 
 
 def test_observable_counts_do_not_claim_internal_reasoning(monkeypatch):

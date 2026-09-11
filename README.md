@@ -75,6 +75,8 @@ Then use your preferred AI normally, or preview a plan with
 
 ## Control subscription usage
 
+See [direct task execution](docs/direct-task-execution.md) for the default flow and benchmark limits.
+
 For direct work, `prepare` adds zero provider calls. Internal model reasoning and subscription
 quota accounting are controlled by the host; UAP cannot promise a quota saving percentage.
 The following three policies apply only to explicitly delegated execution. `balanced` preserves the V2.3

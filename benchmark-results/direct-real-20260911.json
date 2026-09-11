@@ -1,0 +1,87 @@
+{
+  "source_hashes": {
+    "baseline": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+    "uap": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+  },
+  "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+  "implementation_commit": "4587496ce4280e30afd84922627d97d3410e1b6c",
+  "model": "gpt-5.6-luna",
+  "reasoning": "low",
+  "goal": "Add a GET /reports/monthly/{month} API endpoint that returns the selected month, total spending, and totals by category, then display that monthly total and category breakdown in the existing React dashboard. Preserve existing expense behavior and validate the work.",
+  "order": [
+    "baseline",
+    "uap"
+  ],
+  "initial_index_ms": 203.573,
+  "warm_prepare_ms": 2.834,
+  "pre_task_ai_calls": 0,
+  "context_chars": 661,
+  "limitations": [
+    "one ordered pair, no statistical generalization",
+    "index reuse only; prior AI-authored knowledge is tested offline",
+    "tool calls are observable events, not internal reasoning rounds",
+    "subscription quota conversion is unavailable",
+    "frontend acceptance checks integration source, not browser rendering"
+  ],
+  "results": {
+    "baseline": {
+      "status": "completed",
+      "usage": {
+        "input": 191351,
+        "output": 4685,
+        "cached": 142336,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08f38-e2cc-73e2-bcaa-847fae7251c4"
+      },
+      "duration_seconds": 161.934,
+      "quality": {
+        "passed": true,
+        "contract": "context-cache-monthly-v1",
+        "error": null,
+        "returncode": 0
+      },
+      "error": null,
+      "telemetry": {
+        "tool_calls": 8,
+        "assistant_messages": 4,
+        "assistant_message_chars": 2391,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null
+      },
+      "packet_chars": 539,
+      "actual_source_changed": true
+    },
+    "uap": {
+      "status": "completed",
+      "usage": {
+        "input": 173359,
+        "output": 3837,
+        "cached": 147456,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08f3b-5f68-79e2-bf7c-4751d9accdae"
+      },
+      "duration_seconds": 172.976,
+      "quality": {
+        "passed": false,
+        "contract": "context-cache-monthly-v1",
+        "error": "KeyError: 'month'",
+        "returncode": 1
+      },
+      "error": null,
+      "telemetry": {
+        "tool_calls": 11,
+        "assistant_messages": 4,
+        "assistant_message_chars": 1733,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null
+      },
+      "packet_chars": 1201,
+      "actual_source_changed": true
+    }
+  },
+  "conclusion": "INCONCLUSIVE"
+}
