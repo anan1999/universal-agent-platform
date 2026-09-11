@@ -230,6 +230,55 @@ def test_resume_restores_source_after_failed_baseline_modified_files(tmp_path, m
     assert len(result["tasks"]) == 5
 
 
+def test_invalid_quality_writes_complete_json_and_report(tmp_path, monkeypatch):
+    provider = SimpleNamespace(
+        execution_mode=SimpleNamespace(value="agentic_local"),
+        probe=lambda: SimpleNamespace(ready=True, detail="offline fake"),
+        capabilities=lambda: SimpleNamespace(supports=lambda *args, **kwargs: True),
+    )
+
+    class FakeRegistry:
+        def __contains__(self, provider_id):
+            return provider_id == "fake"
+
+        def get(self, provider_id):
+            return SimpleNamespace(implemented=True)
+
+        def create(self, provider_id, **kwargs):
+            return provider
+
+    async def fake_baseline(provider, root, goal, model, reasoning):
+        return _fake_result("fake", "same-model", ["app.py"])
+
+    async def fake_uap(provider, root, goal, db, provider_id):
+        return {**_fake_result("fake", "same-model", ["app.py"]),
+                "temperature": "cold", "reuse_hits": 0, "rediscovery": 0,
+                "learning_funnel": {}, "reuse_funnel": {"validated_context_reuse": 0},
+                "stale_intelligence": []}
+
+    monkeypatch.setattr(benchmark, "providers", lambda: FakeRegistry())
+    monkeypatch.setattr(benchmark, "baseline_run", fake_baseline)
+    monkeypatch.setattr(benchmark, "uap_run", fake_uap)
+    monkeypatch.setattr(benchmark, "evaluate", lambda root, task: {
+        "passed": False, "harness_error": None,
+        "checks": [{"name": "external_contract", "passed": False, "detail": "wrong field"}],
+        "quality_source": "benchmark_owned_external_acceptance"})
+    args = SimpleNamespace(
+        provider="fake", timeout=10, workspace=tmp_path / "workspace",
+        output=tmp_path / "result.json", report=tmp_path / "report.md",
+        resume=False, mode="longitudinal-learning", model="same-model",
+        reasoning="low", canonical_source="baseline")
+
+    with pytest.raises(SystemExit, match="INVALID_QUALITY"):
+        asyncio.run(benchmark.execute(args))
+    payload = json.loads(args.output.read_text(encoding="utf-8"))
+    assert payload["tasks"][0]["result_state"] == "INVALID_QUALITY"
+    assert payload["cumulative"]["paired_measurement_claimable"] is False
+    report = args.report.read_text(encoding="utf-8")
+    assert "External acceptance failures" in report
+    assert "baseline/external_contract: wrong field" in report
+
+
 def _fake_result(provider, model, files):
     return {"status": "completed", "provider": provider, "model": model,
             "input_tokens": 10, "cached_input": 2, "non_cached_input": 8,

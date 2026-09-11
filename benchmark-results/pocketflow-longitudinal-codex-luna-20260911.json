@@ -1,0 +1,425 @@
+{
+  "environment": {
+    "uap": "2.3.1",
+    "commit": "4af9e94f1972b81e83bb9ae6b658fc7e4d9c49ee",
+    "provider": "codex",
+    "model": "gpt-5.6-luna",
+    "reasoning": "low",
+    "mode": "longitudinal-learning",
+    "hypothesis": "amortized_project_intelligence",
+    "source_policy": "independent longitudinal baseline and UAP lines",
+    "canonical_source": null,
+    "date": "2026-09-11T04:35:24Z"
+  },
+  "tasks": [
+    {
+      "task_number": 1,
+      "goal": "Implement the backend foundation for a personal expense app: FastAPI, SQLite, an Expense model, CRUD API, and backend tests.",
+      "benchmark_mode": "longitudinal-learning",
+      "result_state": "INVALID_QUALITY",
+      "quality_equivalent": false,
+      "baseline": {
+        "status": "completed",
+        "provider": "codex",
+        "model": "gpt-5.6-luna",
+        "reasoning": "low",
+        "input_tokens": 127797,
+        "cached_input": 103936,
+        "non_cached_input": 23861,
+        "output_tokens": 3011,
+        "token_source": "measured",
+        "ai_invocations": 1,
+        "handoffs": 0,
+        "deterministic_tool_calls": 0,
+        "files_explored": {
+          "value": null,
+          "source": "unavailable"
+        },
+        "skill_context_tokens": 0,
+        "knowledge_context_tokens": 0,
+        "decision_context_items": 0,
+        "duration_seconds": 88.95299999999406,
+        "retries": 0,
+        "files_modified": [
+          "app/__init__.py",
+          "app/main.py",
+          "tests/test_expenses.py"
+        ],
+        "error": null,
+        "summary": "Implemented the FastAPI and SQLite backend foundation with an Expense model, CRUD endpoints, and integration tests.",
+        "findings": [
+          "SQLite database is initialized automatically at startup.",
+          "CRUD routes are available under /expenses.",
+          "Validation enforces positive amounts, non-empty categories, and ISO dates.",
+          "Tests pass: 2 passed."
+        ],
+        "uncertainty_reason": "",
+        "needs_escalation": false,
+        "provider_learning_evidence_count": 1,
+        "provider_learning_evidence_types": [
+          "project_fact"
+        ]
+      },
+      "uap": {
+        "run_id": "RUN-1130D776FB",
+        "status": "completed",
+        "provider": "codex",
+        "model": [
+          "gpt-5.6-luna"
+        ],
+        "input_tokens": 220789,
+        "cached_input": 171776,
+        "non_cached_input": 49013,
+        "output_tokens": 4191,
+        "token_source": "measured",
+        "ai_invocations": 1,
+        "retries": 0,
+        "duration_seconds": 140.71899999999732,
+        "handoffs": 0,
+        "deterministic_tool_calls": 1,
+        "files_explored": {
+          "value": null,
+          "source": "unavailable"
+        },
+        "skill_context_tokens": 0,
+        "decision_context_items": 0,
+        "files_modified": [
+          "app/__init__.py",
+          "app/database.py",
+          "app/main.py",
+          "app/models.py",
+          "tests/test_api.py"
+        ],
+        "temperature": "cold",
+        "reuse_hits": 0,
+        "rediscovery": 1,
+        "knowledge_context_chars": 0,
+        "knowledge_context_tokens_estimated": 0,
+        "controlled_context_chars": 0,
+        "controlled_context_tokens_estimated": 0,
+        "provider_learning_evidence_count": 1,
+        "provider_learning_evidence_types": [
+          "validated_command"
+        ],
+        "learning_funnel": {
+          "provider_learning_evidence_count": 1,
+          "provider_learning_evidence_types": [
+            "validated_command"
+          ],
+          "provider_learning_evidence": [
+            {
+              "type": "validated_command",
+              "summary": "Backend tests run successfully with pytest.",
+              "evidence": [
+                "python -m pytest -q completed with 3 passed."
+              ],
+              "related_paths": [
+                "tests/test_api.py",
+                "app/main.py"
+              ],
+              "capabilities": [
+                "FastAPI CRUD testing",
+                "SQLite-backed API validation"
+              ],
+              "tags": [
+                "python",
+                "fastapi",
+                "sqlite",
+                "pytest"
+              ],
+              "expected_reuse": 3,
+              "validation": "Executed python -m pytest -q successfully.",
+              "rationale": "This is a stable project testing fact likely useful for future backend changes.",
+              "procedure_steps": [
+                "Run python -m pytest -q from the project root."
+              ]
+            }
+          ],
+          "distiller_input_count": 1,
+          "distiller_candidate_count": 0,
+          "distiller_rejected_count": 1,
+          "distiller_rejected_by_reason": {
+            "generic": 0,
+            "missing_evidence": 0,
+            "duplicate": 0,
+            "expected_reuse_too_low": 0,
+            "weak_validation": 0,
+            "stale": 0,
+            "unsupported": 1,
+            "other": 0
+          },
+          "persistence_accepted_count": 0,
+          "persistence_rejected_count": 0,
+          "accepted_by_kind": {
+            "decision": 0,
+            "skill": 0,
+            "known_issue": 0,
+            "command": 0,
+            "evaluation": 0,
+            "knowledge": 0,
+            "agent": 0
+          },
+          "rejected_by_reason": {
+            "generic": 0,
+            "missing_evidence": 0,
+            "duplicate": 0,
+            "expected_reuse_too_low": 0,
+            "weak_validation": 0,
+            "stale": 0,
+            "unsupported": 0,
+            "other": 0
+          },
+          "materialized": []
+        },
+        "reuse_funnel": {
+          "intelligence_candidates_considered": 0,
+          "intelligence_selected": 0,
+          "knowledge_selected": 0,
+          "skills_selected": 0,
+          "decisions_selected": 0,
+          "commands_selected": 0,
+          "successful_selected_items": 0,
+          "validated_context_reuse": 0,
+          "rediscovery_avoidance": "UNAVAILABLE"
+        },
+        "stale_intelligence": []
+      },
+      "baseline_tokens": 130808,
+      "uap_tokens": 224980,
+      "cumulative_baseline": 130808,
+      "cumulative_uap": 224980,
+      "quality": {
+        "contract": "pocketflow-v1",
+        "baseline": {
+          "contract": "pocketflow-v1",
+          "task_number": 1,
+          "passed": false,
+          "checks": [
+            {
+              "name": "external_backend_crud_persistence",
+              "passed": false,
+              "detail": "AssertionError: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"spent_at\"],\"msg\":\"Field required\",\"input\":{\"amount\":12.5,\"category\":\"food\",\"description\":\"benchmark expense\",\"date\":\"2026-01-31\"}}]}",
+              "duration_seconds": 0.875
+            }
+          ],
+          "quality_source": "benchmark_owned_external_acceptance",
+          "harness_error": null,
+          "duration_seconds": 3.1560000000026776,
+          "self_tests": {
+            "passed": true,
+            "stdout": "ionWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\napp\\main.py:46\n  C:\\Users\\andrew.ja.chiao\\Documents\\Codex\\2026-09-07\\files-pasted-by-the-user-codex\\outputs\\universal-agent-platform\\build\\pocketflow-longitudinal-codex-luna-20260911\\baseline\\app\\main.py:46: DeprecationWarning: \n          on_event is deprecated, use lifespan event handlers instead.\n  \n          Read more about it in the\n          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).\n          \n    @app.on_event(\"startup\")\n\n..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\Python311\\Lib\\site-packages\\fastapi\\applications.py:4681\n  C:\\Python311\\Lib\\site-packages\\fastapi\\applications.py:4681: DeprecationWarning: \n          on_event is deprecated, use lifespan event handlers instead.\n  \n          Read more about it in the\n          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).\n          \n    return self.router.on_event(event_type)  # ty: ignore[deprecated]\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n2 passed, 3 warnings in 0.87s\n",
+            "stderr": ""
+          }
+        },
+        "uap": {
+          "contract": "pocketflow-v1",
+          "task_number": 1,
+          "passed": false,
+          "checks": [
+            {
+              "name": "external_backend_crud_persistence",
+              "passed": false,
+              "detail": "AssertionError: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"expense_date\"],\"msg\":\"Field required\",\"input\":{\"amount\":12.5,\"category\":\"food\",\"description\":\"benchmark expense\",\"date\":\"2026-01-31\"}}]}",
+              "duration_seconds": 1.2339999999967404
+            }
+          ],
+          "quality_source": "benchmark_owned_external_acceptance",
+          "harness_error": null,
+          "duration_seconds": 3.312999999994645,
+          "self_tests": {
+            "passed": true,
+            "stdout": "...                                                                      [100%]\n============================== warnings summary ===============================\n..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1\n  C:\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n3 passed, 1 warning in 0.76s\n",
+            "stderr": ""
+          }
+        }
+      },
+      "reuse_hits": 0,
+      "rediscovery": 1,
+      "rediscovery_avoidance": "UNAVAILABLE",
+      "cold_or_warm": "cold",
+      "comparison_valid": false,
+      "source_lineage": {
+        "baseline": {
+          "starting_hash": "ad0874d957c5d5ea1ddd3c58fbf98ae3c8dd6c2b0a66da5830cc5c265b362900",
+          "ending_hash": "19ee537ac0e91a21a680f8ab32d405c08459002f6167c483c6b6c22d8cb00101",
+          "parent_task": null
+        },
+        "uap": {
+          "starting_hash": "f9934830d549ca1f2a2b76c5c3daa28166a449a86ced734ad8be2ebd154f186b",
+          "ending_hash": "262ab0cbbc5781b7d3d1e95f669ff96a963067506cc1d7539458b1e3a5d694b3",
+          "parent_task": null,
+          "intelligence_sources": [
+            {
+              "id": "project-discovery",
+              "source_commit": "4af9e94f1972b81e83bb9ae6b658fc7e4d9c49ee",
+              "source_hashes": {
+                "README.md": "1ed25c95ff53cbabdc730ac8c7458988a994b9b230048a2a601d9c9aa2e7bfd3",
+                "pyproject.toml": "5f6487cfc5804b453b3e84052d31f8b800196fd2e90b960dde97fb0f20844cf9"
+              }
+            },
+            {
+              "id": "command-test",
+              "source_commit": "4af9e94f1972b81e83bb9ae6b658fc7e4d9c49ee",
+              "source_hashes": {
+                "README.md": "1ed25c95ff53cbabdc730ac8c7458988a994b9b230048a2a601d9c9aa2e7bfd3",
+                "pyproject.toml": "5f6487cfc5804b453b3e84052d31f8b800196fd2e90b960dde97fb0f20844cf9"
+              }
+            }
+          ]
+        }
+      },
+      "learning_funnel": {
+        "provider_learning_evidence_count": 1,
+        "provider_learning_evidence_types": [
+          "validated_command"
+        ],
+        "provider_learning_evidence": [
+          {
+            "type": "validated_command",
+            "summary": "Backend tests run successfully with pytest.",
+            "evidence": [
+              "python -m pytest -q completed with 3 passed."
+            ],
+            "related_paths": [
+              "tests/test_api.py",
+              "app/main.py"
+            ],
+            "capabilities": [
+              "FastAPI CRUD testing",
+              "SQLite-backed API validation"
+            ],
+            "tags": [
+              "python",
+              "fastapi",
+              "sqlite",
+              "pytest"
+            ],
+            "expected_reuse": 3,
+            "validation": "Executed python -m pytest -q successfully.",
+            "rationale": "This is a stable project testing fact likely useful for future backend changes.",
+            "procedure_steps": [
+              "Run python -m pytest -q from the project root."
+            ]
+          }
+        ],
+        "distiller_input_count": 1,
+        "distiller_candidate_count": 0,
+        "distiller_rejected_count": 1,
+        "distiller_rejected_by_reason": {
+          "generic": 0,
+          "missing_evidence": 0,
+          "duplicate": 0,
+          "expected_reuse_too_low": 0,
+          "weak_validation": 0,
+          "stale": 0,
+          "unsupported": 1,
+          "other": 0
+        },
+        "persistence_accepted_count": 0,
+        "persistence_rejected_count": 0,
+        "accepted_by_kind": {
+          "decision": 0,
+          "skill": 0,
+          "known_issue": 0,
+          "command": 0,
+          "evaluation": 0,
+          "knowledge": 0,
+          "agent": 0
+        },
+        "rejected_by_reason": {
+          "generic": 0,
+          "missing_evidence": 0,
+          "duplicate": 0,
+          "expected_reuse_too_low": 0,
+          "weak_validation": 0,
+          "stale": 0,
+          "unsupported": 0,
+          "other": 0
+        },
+        "materialized": []
+      },
+      "reuse_funnel": {
+        "intelligence_candidates_considered": 0,
+        "intelligence_selected": 0,
+        "knowledge_selected": 0,
+        "skills_selected": 0,
+        "decisions_selected": 0,
+        "commands_selected": 0,
+        "successful_selected_items": 0,
+        "validated_context_reuse": 0,
+        "rediscovery_avoidance": "UNAVAILABLE"
+      },
+      "stale_intelligence": []
+    }
+  ],
+  "cumulative": {
+    "baseline_tokens": 130808,
+    "uap_tokens": 224980,
+    "break_even_task": "NOT_CLAIMABLE",
+    "paired_measurement_claimable": false,
+    "savings_claimable": false,
+    "learning_reuse_validated": false,
+    "learning_savings_claimable": false,
+    "quality_equivalent_tasks": 0,
+    "comparison_valid_tasks": 0
+  },
+  "intelligence": {
+    "schema_version": 1,
+    "level": 1,
+    "level_name": "discovered",
+    "items": 5,
+    "current": 5,
+    "counts": {
+      "knowledge": 1,
+      "decision": 0,
+      "skill": 0,
+      "agent": 0,
+      "command": 1,
+      "evaluation": 0,
+      "artifact": 1,
+      "known_issue": 0,
+      "task_history": 1,
+      "receipt": 1
+    },
+    "runs": 1,
+    "reuse_hits": 0,
+    "reusable_intelligence_hits": 0,
+    "validated_reusable_hits": 0,
+    "historical": {
+      "receipt": 1,
+      "task_history": 1
+    },
+    "typed_reuse_hits": {
+      "agent": 0,
+      "known_issue": 0,
+      "skill": 0,
+      "command": 0,
+      "evaluation": 0,
+      "decision": 0,
+      "knowledge": 0
+    },
+    "selected_only": 0,
+    "selected_reuse_hits": 0,
+    "validated_reuse": 0,
+    "validated_context_reuse": 0,
+    "knowledge_created": 1,
+    "skill_reuse_hits": 0,
+    "agent_reuse_hits": 0,
+    "rediscovery_count": 1,
+    "context_chars": 0,
+    "estimated_context_tokens": 0,
+    "cold_runs": 1,
+    "warm_runs": 0,
+    "revalidation_runs": 0,
+    "learning_yield": {
+      "tasks_run": 1,
+      "tasks_with_learning_evidence": 1,
+      "evidence_emitted": 1,
+      "candidates_created": 0,
+      "durable_items_created": 0,
+      "durable_items_reused": 0,
+      "durable_items_validated": 0
+    }
+  },
+  "learning_observation": "LEARNING_NOT_OBSERVED"
+}

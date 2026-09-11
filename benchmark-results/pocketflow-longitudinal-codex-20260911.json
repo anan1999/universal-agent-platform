@@ -1,0 +1,132 @@
+{
+  "environment": {
+    "uap": "2.3.1",
+    "commit": "bd93acb56b3b771c4c66aa2d3b33970564368031",
+    "provider": "codex",
+    "model": null,
+    "reasoning": "low",
+    "mode": "longitudinal-learning",
+    "canonical_source": null,
+    "date": "2026-09-11T04:28:35Z"
+  },
+  "tasks": [],
+  "interrupted": {
+    "task_number": 1,
+    "stage": "baseline",
+    "status": "failed",
+    "error": "CODEX_TIMEOUT",
+    "summary": "Codex exceeded 900s timeout.",
+    "findings": [],
+    "uncertainty_reason": "Codex exceeded 900s timeout.",
+    "message": "Provider execution stopped early; resolve the provider or task blocker before resuming.",
+    "result_state": "INTERRUPTED_PROVIDER"
+  },
+  "pending": {
+    "task_number": 1,
+    "goal": "Implement the backend foundation for a personal expense app: FastAPI, SQLite, an Expense model, CRUD API, and backend tests.",
+    "starting_hashes": {
+      "baseline": "ad0874d957c5d5ea1ddd3c58fbf98ae3c8dd6c2b0a66da5830cc5c265b362900",
+      "uap": "f9934830d549ca1f2a2b76c5c3daa28166a449a86ced734ad8be2ebd154f186b"
+    },
+    "baseline": {
+      "status": "failed",
+      "provider": "codex",
+      "model": null,
+      "reasoning": "low",
+      "input_tokens": 0,
+      "cached_input": 0,
+      "non_cached_input": 0,
+      "output_tokens": 0,
+      "token_source": "unavailable",
+      "ai_invocations": 1,
+      "handoffs": 0,
+      "deterministic_tool_calls": 0,
+      "files_explored": {
+        "value": null,
+        "source": "unavailable"
+      },
+      "skill_context_tokens": 0,
+      "knowledge_context_tokens": 0,
+      "decision_context_items": 0,
+      "duration_seconds": 900.1409999999887,
+      "retries": 0,
+      "files_modified": [],
+      "error": "CODEX_TIMEOUT",
+      "summary": "Codex exceeded 900s timeout.",
+      "findings": [],
+      "uncertainty_reason": "Codex exceeded 900s timeout.",
+      "needs_escalation": false,
+      "provider_learning_evidence_count": 0,
+      "provider_learning_evidence_types": []
+    }
+  },
+  "cumulative": {
+    "baseline_tokens": 0,
+    "uap_tokens": 0,
+    "break_even_task": "NOT_CLAIMABLE",
+    "observed_break_even_task": null,
+    "paired_measurement_claimable": false,
+    "savings_claimable": false,
+    "learning_reuse_validated": false,
+    "learning_savings_claimable": false,
+    "comparison_valid_tasks": 0
+  },
+  "intelligence": {
+    "schema_version": 1,
+    "level": 0,
+    "level_name": "unknown",
+    "items": 0,
+    "current": 0,
+    "counts": {
+      "knowledge": 0,
+      "decision": 0,
+      "skill": 0,
+      "agent": 0,
+      "command": 0,
+      "evaluation": 0,
+      "artifact": 0,
+      "known_issue": 0,
+      "task_history": 0,
+      "receipt": 0
+    },
+    "runs": 0,
+    "reuse_hits": 0,
+    "reusable_intelligence_hits": 0,
+    "validated_reusable_hits": 0,
+    "historical": {
+      "task_history": 0,
+      "receipt": 0
+    },
+    "typed_reuse_hits": {
+      "knowledge": 0,
+      "command": 0,
+      "agent": 0,
+      "evaluation": 0,
+      "known_issue": 0,
+      "skill": 0,
+      "decision": 0
+    },
+    "selected_only": 0,
+    "selected_reuse_hits": 0,
+    "validated_reuse": 0,
+    "validated_context_reuse": 0,
+    "knowledge_created": 0,
+    "skill_reuse_hits": 0,
+    "agent_reuse_hits": 0,
+    "rediscovery_count": 0,
+    "context_chars": 0,
+    "estimated_context_tokens": 0,
+    "cold_runs": 0,
+    "warm_runs": 0,
+    "revalidation_runs": 0,
+    "learning_yield": {
+      "tasks_run": 0,
+      "tasks_with_learning_evidence": 0,
+      "evidence_emitted": 0,
+      "candidates_created": 0,
+      "durable_items_created": 0,
+      "durable_items_reused": 0,
+      "durable_items_validated": 0
+    }
+  }
+}

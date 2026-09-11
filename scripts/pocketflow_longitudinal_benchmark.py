@@ -411,6 +411,16 @@ def render_report(payload: dict[str, Any]) -> str:
                   f"- Selected context: {task['uap'].get('controlled_context_chars', 0)} chars / "
                   f"~{task['uap'].get('controlled_context_tokens_estimated', 0)} tokens",
                   f"- Successful selected items: {reuse.get('successful_selected_items', 0)}", ""]
+        failed_checks = []
+        for side in ("baseline", "uap"):
+            quality = task.get("quality", {}).get(side, {})
+            for check in quality.get("checks", []):
+                if not check.get("passed"):
+                    failed_checks.append(
+                        f"- {side}/{check.get('name', 'unknown')}: {check.get('detail', 'no detail')}"
+                    )
+        if failed_checks:
+            lines += ["### External acceptance failures", "", *failed_checks, ""]
         if task.get("stale_intelligence"):
             lines += ["### Revalidation causes", "",
                       *[f"- {item.get('id')}: {item.get('reason')} — "
@@ -781,6 +791,39 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
         args.output.write_text(json.dumps({"environment": partial_environment, "tasks": tasks}, indent=2),
                                encoding="utf-8")
         if state != ResultState.VALID.value:
+            commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True,
+                                    text=True, check=False).stdout.strip() or "unknown"
+            stopped_payload = {
+                "environment": {
+                    "uap": __version__, "commit": commit, "provider": args.provider,
+                    "model": args.model, "reasoning": args.reasoning, "mode": args.mode,
+                    "hypothesis": ("execution_efficiency" if mode is BenchmarkMode.EXECUTION_EFFICIENCY
+                                   else "amortized_project_intelligence"),
+                    "source_policy": ("same paired checkpoint; project intelligence empty"
+                                      if mode is BenchmarkMode.EXECUTION_EFFICIENCY else
+                                      "independent longitudinal baseline and UAP lines"),
+                    "canonical_source": (args.canonical_source
+                                         if mode is BenchmarkMode.EXECUTION_EFFICIENCY else None),
+                    "date": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                },
+                "tasks": tasks,
+                "cumulative": {
+                    "baseline_tokens": cumulative_baseline,
+                    "uap_tokens": cumulative_uap,
+                    "break_even_task": "NOT_CLAIMABLE",
+                    "paired_measurement_claimable": False,
+                    "savings_claimable": False,
+                    "learning_reuse_validated": False,
+                    "learning_savings_claimable": False,
+                    "quality_equivalent_tasks": sum(bool(item["quality_equivalent"]) for item in tasks),
+                    "comparison_valid_tasks": sum(item["comparison_valid"] for item in tasks),
+                },
+                "intelligence": ProjectIntelligenceStore(uap).status(),
+                "learning_observation": "LEARNING_NOT_OBSERVED",
+            }
+            args.output.write_text(json.dumps(stopped_payload, indent=2), encoding="utf-8")
+            args.report.parent.mkdir(parents=True, exist_ok=True)
+            args.report.write_text(render_report(stopped_payload), encoding="utf-8")
             raise SystemExit(f"Benchmark stopped at task {number}: {state}.")
 
     commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True,
