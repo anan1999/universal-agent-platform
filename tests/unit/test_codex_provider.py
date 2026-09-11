@@ -34,8 +34,9 @@ def test_execution_packet_is_bounded_and_has_no_chat_history(tmp_path):
     assert "DEPENDENCY RECEIPTS" in rendered
     assert "[truncated]" in rendered
     assert "chat history" not in rendered.lower()
-    assert "explicitly evaluate whether" in rendered
-    assert "Use an empty array only" in rendered
+    assert "stable project fact" in rendered
+    assert "recurring role" not in rendered
+    assert "empty learning_evidence array" in rendered
     assert "Never invent learning evidence" in rendered
     assert "learning_evidence" in RESULT_SCHEMA["required"]
     assert RESULT_SCHEMA["properties"]["learning_evidence"]["items"]["additionalProperties"] is False

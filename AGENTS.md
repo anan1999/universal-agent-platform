@@ -28,8 +28,9 @@ Treat context as expensive. Search before reading large files. Do not reread fil
 
 This repository uses Universal Agent Platform as the primary task orchestrator.
 For non-trivial project tasks, route the concise user goal and essential constraints through
-`agentctl orchestrate "<goal>" --json`. UAP owns the task DAG, logical agents, model routing,
-skills, and escalation. AI providers are bounded execution backends beneath UAP.
+`agentctl orchestrate "<goal>" --json`. UAP first supplies the compact project index and relevant
+paths to one executor, then validates deterministically. Multi-agent and automatic learning paths
+are experimental opt-ins. AI providers are bounded execution backends beneath UAP.
 An `UAP_CHILD_EXECUTION=1` process is a bounded executor and must never invoke UAP again.
 Trivial conversation, explanation-only requests, and explicit user bypass requests may run directly.
 <!-- UAP:END -->

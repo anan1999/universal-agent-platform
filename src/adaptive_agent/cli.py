@@ -24,6 +24,7 @@ from adaptive_agent.core.models import Task, new_id
 from adaptive_agent.core.orchestrator import Orchestrator
 from adaptive_agent.git.worktree import WorktreeManager
 from adaptive_agent.intelligence.project import ProjectIntelligenceStore
+from adaptive_agent.project.context_index import ProjectContextIndex
 from adaptive_agent.project.adapter import (
     UAP_END,
     UAP_START,
@@ -102,12 +103,15 @@ def parser() -> argparse.ArgumentParser:
 
     status_command = commands.add_parser("status")
     status_command.add_argument("--json", action="store_true")
+    status_command.add_argument("--debug", action="store_true",
+                                help="include legacy and experimental lifecycle metrics")
     for name in ("warm-start", "resume"):
         warm = commands.add_parser(name, help="inspect reusable project intelligence before a run")
         warm.add_argument("goal", nargs="?", default="continue the current project work")
         warm.add_argument("--json", action="store_true")
     context = commands.add_parser("context", help="inspect layered project context")
-    context_subcommands = context.add_subparsers(dest="context_command", required=True)
+    context.add_argument("--json", action="store_true")
+    context_subcommands = context.add_subparsers(dest="context_command", required=False)
     context_explain = context_subcommands.add_parser("explain")
     context_explain.add_argument("goal", nargs="?", default="continue the current project work")
     context_explain.add_argument("--json", action="store_true")
@@ -387,7 +391,7 @@ def _run_summary(db, run_id: str, worktree: str | None = None) -> dict:
             "token_usage": usage}
 
 
-def _project_status(db, path: Path) -> str:
+def _project_status(db, path: Path, debug: bool = False) -> str:
     config = orchestration_config(path)
     agents_path = path / "AGENTS.md"
     instructions = agents_path.read_text(encoding="utf-8") if agents_path.exists() else ""
@@ -395,21 +399,24 @@ def _project_status(db, path: Path) -> str:
     latest = db.query("SELECT id,status,entry_source,work_profiles FROM runs ORDER BY created_at DESC LIMIT 1")
     active = project_profiles(path) or ["(inferred from each goal)"]
     ready = [item["name"] for item in registry_providers(db) if item["ready"]]
-    intelligence = ProjectIntelligenceStore(path).status() if (path / ".agent").is_dir() else None
-    return "\n".join([
-        f"Project: {path.name}",
-        f"Orchestration owner: {'Universal Agent Platform' if config['owner'] == 'universal-agent-platform' else config['owner']}",
-        f"Platform enabled: {'YES' if config['owner'] == 'universal-agent-platform' and marker else 'NO'}",
-        f"Active work profiles: {', '.join(active)}",
-        f"Consumption policy: {project_consumption_mode(path) or consumption_mode()}",
-        f"Ready providers: {', '.join(ready) or 'none'}",
-        (f"Project intelligence: L{intelligence['level']} {intelligence['level_name']} "
-         f"({intelligence['current']} current, {intelligence['reuse_hits']} reuse hits)"
-         if intelligence else "Project intelligence: unavailable"),
-        "Child execution guard: READY",
-        f"Router authority: {'platform' if config['owner'] == 'universal-agent-platform' else config['owner']}",
-        f"Latest run: {latest[0]['id']} ({latest[0]['status']}, {latest[0]['entry_source']})" if latest else "Latest run: none",
-    ])
+    context = ProjectContextIndex(path).status() if (path / ".agent").is_dir() else None
+    architecture = (" + ".join(context["architecture"].values())
+                    if context and context["architecture"] else "unknown")
+    lines = [f"PROJECT\n{path.name}", "", f"Architecture:\n{architecture}", "",
+             (f"Index:\n{context['size_bytes'] / 1024:.1f} KB" if context else "Index:\nunavailable"),
+             "", (f"Cached relevant files:\n{context['cached_relevant_files']}" if context
+                    else "Cached relevant files:\n0"),
+             "", f"Skills:\n{len(list((path / '.agent' / 'skills').glob('*/skill.json'))) if (path / '.agent' / 'skills').exists() else 0}",
+             "", f"Last task:\n{latest[0]['status'].upper() if latest else 'none'}"]
+    if debug:
+        intelligence = ProjectIntelligenceStore(path).status() if (path / ".agent").is_dir() else None
+        lines += ["", "DEBUG", f"Active work profiles: {', '.join(active)}",
+                  f"Consumption policy: {project_consumption_mode(path) or consumption_mode()}",
+                  f"Ready providers: {', '.join(ready) or 'none'}",
+                  f"Legacy intelligence: {json.dumps(intelligence) if intelligence else 'unavailable'}",
+                  "Child execution guard: READY",
+                  f"Router authority: {'platform' if config['owner'] == 'universal-agent-platform' else config['owner']}"]
+    return "\n".join(lines)
 
 
 def _table(headers: list[str], values: list[list[object]]) -> str:
@@ -609,38 +616,34 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if status == "completed" else 1
 
     if args.command == "status":
+        context_status = (ProjectContextIndex(Path.cwd()).status()
+                          if (Path.cwd() / ".agent").is_dir() else None)
         intelligence = (ProjectIntelligenceStore(Path.cwd()).status()
-                        if (Path.cwd() / ".agent").is_dir() else None)
+                        if args.debug and (Path.cwd() / ".agent").is_dir() else None)
         if args.json:
             print(json.dumps({"project": orchestration_config(Path.cwd()),
                               "profiles": project_profiles(Path.cwd()),
                               "consumption": project_consumption_mode(Path.cwd()) or consumption_mode(),
                               "providers_ready": provider_registry().ready_ids(),
-                              "project_intelligence": intelligence}, indent=2))
+                              "context": context_status,
+                              **({"project_intelligence": intelligence} if args.debug else {})}, indent=2))
         else:
-            print(_project_status(db, Path.cwd()))
+            print(_project_status(db, Path.cwd(), debug=args.debug))
     elif args.command in {"warm-start", "resume"}:
-        from adaptive_agent.core.goal_analyzer import GoalAnalyzer
-
-        capabilities = GoalAnalyzer().analyze(args.goal).capabilities
-        selection = ProjectIntelligenceStore(Path.cwd()).select(
-            args.goal, capabilities, record_reuse=False)
-        payload = {"goal": args.goal, **selection.to_dict(),
-                   "maturity": ProjectIntelligenceStore(Path.cwd()).status()}
+        selection = ProjectContextIndex(Path.cwd()).select(args.goal)
+        payload = {"goal": args.goal, **selection.to_dict()}
         print(json.dumps(payload, indent=2) if args.json else
-              f"{selection.temperature.upper()} START\nReason: {selection.reason}\n"
-              f"Reusable items: {selection.reuse_hits}\nStale items: {len(selection.stale_items)}\n"
+              f"FRESH SESSION CONTEXT\nRelevant paths: {', '.join(selection.relevant_paths) or 'none'}\n"
+              f"Cached files: {len(selection.cached_files)}\n"
               f"Estimated context: {selection.estimated_tokens} tokens")
     elif args.command == "context":
-        from adaptive_agent.core.goal_analyzer import GoalAnalyzer
-
-        capabilities = GoalAnalyzer().analyze(args.goal).capabilities
-        selection = ProjectIntelligenceStore(Path.cwd()).select(
-            args.goal, capabilities, record_reuse=False)
+        goal = getattr(args, "goal", None) or "continue the current project work"
+        selection = ProjectContextIndex(Path.cwd()).select(goal)
         payload = selection.to_dict()
         print(json.dumps(payload, indent=2) if args.json else
-              f"Context mode: {selection.temperature}\nWhy: {selection.reason}\n" +
-              "\n".join(f"- {item['id']}: {item['summary']}" for item in selection.items))
+              f"Project index: {selection.context_chars} chars\n"
+              f"Relevant paths:\n" +
+              "\n".join(f"- {item}" for item in selection.relevant_paths))
     elif args.command == "intelligence" and args.intelligence_command == "explain":
         explanation = ProjectIntelligenceStore(Path.cwd()).explain()
         if args.json:

@@ -101,7 +101,9 @@ def test_unknown_compound_capability_proposes_temporary_skill_not_agent(tmp_path
     analysis = GoalAnalysis("perform novel check", ["novel_capability"],
                             complexity=Complexity.SMALL, risk=Risk.LOW,
                             read_only=False, profiles=["general"])
-    plan = ExecutionPlanner(ToolRegistry.default(), SkillResolver([])).plan(analysis.goal, analysis)
+    plan = ExecutionPlanner(ToolRegistry.default(), SkillResolver([]),
+                            allow_skill_synthesis=True, minimal_skills=False).plan(
+                                analysis.goal, analysis)
     assert [item.id for item in plan.temporary_skills] == ["temporary-novel-capability"]
     assert plan.ai_agents == 1
     assert plan.selected_skills[0].manifest.status is SkillStatus.TEMPORARY
@@ -113,7 +115,8 @@ def test_all_execution_strategy_shapes_are_reachable():
     from adaptive_agent.core.goal_analyzer import GoalAnalysis
     from adaptive_agent.core.tools import ToolRegistry
 
-    planner = ExecutionPlanner(ToolRegistry.default(), SkillResolver([]))
+    planner = ExecutionPlanner(ToolRegistry.default(), SkillResolver([]),
+                               allow_multi_agent=True, minimal_skills=False)
     artifact = GoalAnalysis("Record artifact report.md", ["documentation"],
                             complexity=Complexity.TRIVIAL, read_only=True)
     approval = GoalAnalysis("Approve production deployment", ["deployment"],

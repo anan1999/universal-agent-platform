@@ -3,8 +3,8 @@
   "name": "Universal Agent Platform",
   "version": "2.3.1",
   "type": "agent-orchestration-framework",
-  "product_positioning": "project-intelligence-orchestration-platform",
-  "summary": "UAP turns early AI project work into reusable project intelligence so future tasks can reuse knowledge, Skills, decisions and working roles instead of rediscovering the same context.",
+  "product_positioning": "compact-project-context-platform",
+  "summary": "UAP gives a fresh AI session a small verified project map and relevant paths so it can avoid repeated repository discovery.",
   "cli": "agentctl",
 
   "documentation": {
@@ -15,6 +15,7 @@
     "project_intelligence": "docs/project-intelligence.md",
     "amortized_context": "docs/amortized-context.md",
     "cold_warm_start": "docs/cold-warm-start.md",
+    "simplified_core": "docs/v2.3.1-simplified-core.md",
     "read_first_if_you_are_an_ai": "AI-BOOTSTRAP.md"
   },
 
@@ -52,15 +53,28 @@
     "agents": "agentctl agents --json",
     "skills": "agentctl skills --json",
     "tools": "agentctl tools --json",
-    "project_status": "agentctl status --json"
+    "project_status": "agentctl status --json",
+    "project_context": "agentctl context --json"
+  },
+
+  "project_context": {
+    "index": ".agent/project-index.json",
+    "file_cache": ".agent/cache/files.json",
+    "policy": "reuse_before_reexplore",
+    "target_bytes": 4096,
+    "maximum_bytes": 8192,
+    "pre_task_ai_calls": 0,
+    "recursive_scan": false
   },
 
   "project_intelligence": {
     "index": ".agent/intelligence.json",
+    "default_hot_path": false,
+    "classification": "experimental_analytics_and_legacy_compatibility",
     "policy": "reuse_before_relearn",
     "states": ["cold", "warm", "revalidation"],
     "item_statuses": ["current", "needs_revalidation", "superseded", "inactive", "needs_review"],
-    "inspect": "agentctl warm-start \"<goal>\" --json",
+    "inspect": "agentctl intelligence explain --json",
     "explain": "agentctl context explain \"<goal>\" --json",
     "privacy": "Stores evidence-backed project facts and compact receipts; never conversations or hidden reasoning."
   },
@@ -74,7 +88,9 @@
     "recursion_guard_env": "UAP_CHILD_EXECUTION",
     "recursion_guard_note": "A process started with UAP_CHILD_EXECUTION=1 is a bounded executor and must never invoke the orchestrator again.",
     "execution_strategies": ["tool_only", "single_agent", "single_agent_with_tools", "multi_agent_parallel", "multi_agent_dag", "human_approval", "artifact_only"],
-    "minimum_sufficient_rule": "Use deterministic tools before AI, reusable Skills before new specialists, and add reasoning roles only when independent responsibilities require them."
+    "minimum_sufficient_rule": "Read compact project context, route one executor to relevant paths, load a procedure Skill only when clearly useful, then validate deterministically.",
+    "default_ai_agents": 1,
+    "pre_task_ai_calls": 0
   },
 
   "skill_intelligence": {
@@ -89,7 +105,7 @@
       "history": "agentctl skill history <skill-id>",
       "candidates": "agentctl skill candidates \"<capability>\""
     },
-    "temporary_skill_safety": "Generated packages are specification-first, temporary, review-required, statically validated, and never silently overwrite an existing version."
+    "temporary_skill_safety": "Automatic Skill synthesis is OFF by default. When explicitly enabled, generated packages remain temporary, review-required, statically validated, and never overwrite an existing version."
   },
 
   "consumption_policies": {
@@ -149,7 +165,9 @@
 
   "project_initialization": {
     "manifest": ".agent/project.yaml",
-    "intelligence_index": ".agent/intelligence.json",
+    "context_index": ".agent/project-index.json",
+    "file_cache": ".agent/cache/files.json",
+    "legacy_intelligence_index": ".agent/intelligence.json",
     "command_allowlist": ".agent/commands.yaml",
     "capabilities": ".agent/capabilities.yaml",
     "auto_detect": true,
@@ -178,6 +196,8 @@
     "offline_provider": "mock",
     "cross_provider_demo": "agentctl demo --delay 0",
     "domain_matrix": "python scripts/domain_matrix.py",
-    "real_longitudinal_benchmark": "python scripts/pocketflow_longitudinal_benchmark.py --execute --provider codex"
+    "context_cache_benchmark": "python scripts/context_cache_benchmark.py --dry-run",
+    "real_context_cache_pair": "python scripts/context_cache_benchmark.py --execute --provider codex",
+    "real_longitudinal_benchmark": "experimental; not the default benchmark"
   }
 }

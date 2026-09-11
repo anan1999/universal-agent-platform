@@ -13,10 +13,10 @@ If you prefer structured input, read that file instead and use this one as the r
 
 The Universal Agent Platform turns a plain-language goal into an executed plan.
 
-Given a goal, it analyzes which **capabilities** the work needs, chooses the **minimum sufficient
-execution strategy**, reuses deterministic tools and versioned **Skills** before adding Agents,
-routes required reasoning roles to an available **provider and model**, executes the plan, and
-records receipts, artifacts and performance history exposed through the CLI and API.
+Given a goal, it reads a compact project index, selects relevant paths, uses one AI executor first,
+loads a versioned **Skill** only when it is a clearly useful non-trivial procedure, routes execution
+to an available **provider and model**, and validates with deterministic tools. Context construction
+uses zero AI calls and does not recursively index the repository.
 
 It is not tied to any AI vendor and not tied to software engineering. Codex, a deterministic
 mock, and an environment-configured OpenAI-compatible endpoint are implemented today; other
@@ -105,7 +105,8 @@ agentctl init --auto              # then apply
 Always run `--dry-run` first and show the user what it found. `init` writes files into their
 repository, and they should see the plan before it happens.
 
-`init` creates `.agent/project.yaml` (the project manifest), `.agent/commands.yaml` (the
+`init` creates `.agent/project.yaml` (the project manifest), `.agent/project-index.json` (the
+compact routing map), `.agent/commands.yaml` (the
 allowlist of shell commands the platform may run), `.agent/capabilities.yaml`, and a marked
 block in `AGENTS.md`. Content outside the `<!-- UAP:START -->` / `<!-- UAP:END -->` markers is
 never touched.
@@ -124,10 +125,9 @@ agentctl init --upgrade
 
 ## 7. Project discovery
 
-`init --auto` reads the repository and reports what it found. It looks at language and build
-markers (`pyproject.toml`, `package.json`, `build.gradle`, `AndroidManifest.xml`, `Dockerfile`,
-Terraform files, notebooks), documentation density, and existing agent instructions, then
-recommends work profiles with the evidence for each recommendation.
+`init --auto` performs bounded discovery of high-value root files, build/package manifests,
+entry points, test configuration and top-level directories. It does not recursively read the
+repository. The resulting project index is a routing map, not embedded documentation.
 
 Recommendations are advisory. A project can activate several profiles at once — activating a
 profile does not activate every role in it. Profiles supply *candidate* capabilities, and the
@@ -163,9 +163,9 @@ first whenever something behaves unexpectedly.
 
 ## 9. Choose a consumption policy
 
-The default `balanced` policy preserves normal orchestration. If the user asks to conserve a
-subscription allowance, use `economy`; it reduces agent fan-out, reasoning, carried context,
-and retries without bypassing capability checks, deterministic validation, or approvals.
+The default path already uses one executor first, no preliminary AI calls, compact context and
+bounded receipts. `economy` can further reduce reasoning and retries without bypassing capability
+checks, deterministic validation, or approvals.
 
 ```bash
 agentctl consumption
@@ -187,10 +187,9 @@ Pass the goal and the constraints that matter. Do **not** pass agent names, mode
 provider names, role assignments, or a task breakdown. Choosing those is the platform's job,
 and overriding them is how you get a worse plan than the one it would have built.
 
-The execution planner starts with the smallest strategy that can satisfy the goal: tool-only,
-one Agent, one Agent with deterministic tools, multiple parallel Agents, a dependency DAG, a
-human approval gate, or artifact-only execution. Treat a Skill as reusable procedure/context,
-not as a reasoning role. Do not create a specialist merely to hold reusable knowledge.
+The execution planner starts with tool-only or one Agent plus deterministic tools. Multi-agent
+composition, Agent learning and automatic Skill synthesis are experimental opt-ins. Treat a Skill
+as a reusable procedure, not a generic expert label or reasoning role.
 
 To see the plan without executing:
 
@@ -215,9 +214,9 @@ agentctl warm-start "<goal>" --json
 agentctl context explain "<goal>" --json
 ```
 
-`cold` means no reusable evidence exists, `warm` means verified project intelligence will be
-loaded, and `revalidation` means related source changed. Stale intelligence is withheld until it
-is revalidated. Never replace this durable evidence with remembered chat history.
+The fresh session receives `.agent/project-index.json`, relevant paths and only hash-valid cached
+file summaries. It reads actual files on demand and never receives the old conversation. Legacy
+intelligence lifecycle data remains available through debug commands but is not loaded by default.
 
 Inspect Skill decisions when needed:
 

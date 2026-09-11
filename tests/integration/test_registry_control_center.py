@@ -25,7 +25,7 @@ def test_registry_apis_bind_agents_skills_and_profiles(tmp_path):
     assert client.patch("/api/codex/profiles", json={}).status_code == 404
 
 
-def test_runtime_skill_associations_are_history_not_permanent_loads(tmp_path):
+def test_generic_skill_labels_are_not_loaded_as_procedure_skills(tmp_path):
     db = Database(tmp_path / "runtime.db")
     bus = EventBus(db)
     asyncio.run(Orchestrator(db, MockProvider(delay=0), bus,
@@ -33,18 +33,17 @@ def test_runtime_skill_associations_are_history_not_permanent_loads(tmp_path):
         "Search the repository and report relevant files. Do not modify anything."))
     client = TestClient(create_app(db, bus))
     selected_skill = client.get("/api/skills/repository_search").json()
-    assert selected_skill["load_count"] == 1
+    assert selected_skill["load_count"] == 0
     assert selected_skill["loaded"] is False
-    assert selected_skill["used_by_agents"]
+    assert selected_skill["used_by_agents"] == ["explorer"], \
+        "registry declarations remain visible even when no procedure package is loaded"
     assert client.get("/api/skills/git").json()["load_count"] == 0, \
         "progressive loading must not inherit every Skill declared by a role"
     usage = client.get("/api/skills/repository_search/usage").json()
-    assert usage["history"][0]["source"] == "runtime"
+    assert usage["history"] == []
     run_id = db.query("SELECT id FROM runs ORDER BY created_at DESC LIMIT 1")[0]["id"]
     run_skills = client.get(f"/api/runs/{run_id}/skills").json()
-    assert run_skills[0]["skill_id"] == "repository_search"
-    assert run_skills[0]["version"]
-    assert run_skills[0]["loaded_references"] == []
+    assert run_skills == []
     assert client.get("/api/runs/DOES-NOT-EXIST/skills").status_code == 404
 
 

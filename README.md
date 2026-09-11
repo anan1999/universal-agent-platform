@@ -1,26 +1,25 @@
 # Universal Agent Platform
 
-**Spend context once. Reuse project intelligence many times.**
+**Stop making every AI session rediscover your project.**
 
-Bring your goal. Bring your AI. The platform builds the team.
+Learn the repository once. Reuse the useful context later.
 
-Give it a goal in plain language. It works out which capabilities the work needs, chooses the
-minimum sufficient execution strategy, reuses deterministic tools and Skills before adding
-reasoning roles, routes required roles to a provider and model that can actually do the job,
-executes the plan, and records receipts, artifacts and performance history.
+UAP keeps a compact project map, reusable project procedures, and validated commands with the
+repository. A fresh AI session reads only the project context it needs, goes directly to relevant
+files, executes with one AI agent first, and validates the result with deterministic tools.
 
 It is provider-agnostic, capability-first, work-profile-driven, local-first, inspectable,
 auditable, and extensible. It is not tied to software engineering. Version **2.3.1**.
 
-UAP learns compact, evidence-backed project knowledge, decisions, commands and procedures
-during early tasks, then retrieves only what a later task needs. Cold start may be more expensive;
-the intended benefit is cumulative. It reports cold,
-warm, and revalidation starts honestly; no token saving is claimed without measured evidence.
+The default path performs no preliminary AI calls, embeddings, recursive repository scan, Agent
+learning, Skill synthesis, maturity routing, or payback analysis. Those existing mechanisms remain
+available for explicit experiments; they do not tax ordinary tasks.
 
-For example, an early task can learn a project API validation workflow. That procedure is stored as
-a review-required, project-local Skill under `.agent/skills/`. A fresh later AI session can discover
-and reuse that Skill; source changes invalidate it for revalidation instead of silently loading stale
-instructions.
+Example: on the first session UAP inspects `package.json`, `app/main.py`, top-level directories and
+test/build configuration, then records FastAPI, React, SQLite, important paths and canonical
+commands in `.agent/project-index.json`. On a later request such as “Add monthly spending summary,”
+the fresh session receives the backend/API/frontend paths and commands instead of starting with a
+full repository rediscovery.
 
 ---
 
@@ -90,23 +89,23 @@ agentctl run "<your goal>" --consumption economy --dry-run
 Set `consumption.mode` in `.agent/project.yaml` for a project default. A per-run flag takes
 precedence over the project setting, which takes precedence over the global setting.
 
-## Reuse project intelligence
+## Reuse compact project context
 
-Project initialization creates a compact `.agent/intelligence.json` index. A first task is a
-**cold start**. Evidence-backed discoveries are distilled after the run, then future tasks use
-a **warm start** and load only relevant detail. If a related source file changes, the affected
-item becomes `needs_revalidation` and is not silently reused.
+Project initialization creates `.agent/project-index.json`, intentionally targeted at 4 KiB with
+an 8 KiB soft maximum. It is a routing map rather than full documentation. Useful file summaries
+are added incrementally to `.agent/cache/files.json`; a changed file hash invalidates its summary.
 
 ```bash
 agentctl warm-start "<your next goal>" --json
+agentctl context --json
 agentctl context explain "<your next goal>" --json
 agentctl status --json
 ```
 
-The index stores knowledge, decisions, commands, evaluations, artifacts, issues, task history,
-compact receipts, and validated reusable Skills/Agent roles. It never stores conversations or
-hidden reasoning. See [Project intelligence](docs/project-intelligence.md) and
-[amortized context](docs/amortized-context.md).
+The older `.agent/intelligence.json` data remains readable through debug/experimental commands,
+but its maturity, promotion and payback lifecycle is not part of the default execution path.
+See [V2.3.1 simplified core](docs/v2.3.1-simplified-core.md) for budgets, feature flags and the
+isolated context-cache benchmark contract.
 
 ## Copy this into any AI assistant
 
@@ -120,8 +119,8 @@ Read AI-BOOTSTRAP.md and agent-platform.json. If the platform is not installed,
 install it using the documented GitHub installation method. Set it up once for
 this machine, initialize the current project, run health checks, then use the
 platform to determine capabilities, select the minimum sufficient execution strategy,
-reuse tools and Skills before adding Agents, select providers and models, plan the task DAG, and execute the
-work. Do not manually assign agents, models, or providers unless the framework
+read the compact project index, route one executor to relevant files, optionally load one clearly
+useful procedure Skill, select a compatible provider/model, and validate the work. Do not manually assign agents, models, or providers unless the framework
 explicitly requires a user decision. After initialization succeeds, proceed
 directly with the requested work.
 ```
@@ -170,11 +169,8 @@ capability-driven plan.
 ## How a goal becomes work
 
 ```text
-Goal -> Goal Analyzer -> Capability Resolver -> Skill Resolver -> Execution Planner
-     -> Team Composer (only when multiple reasoning roles are required)
-     -> Task Planner -> Task DAG (agent | tool | approval | artifact)
-     -> Provider Router -> Execution -> Receipts / Artifacts / Evaluation
-     -> Performance History -> CLI / API
+Goal -> Compact Project Index -> Relevant Paths -> Optional Procedure Skill
+     -> One AI Executor -> Deterministic Validation -> Compact Receipt
 ```
 
 The **Goal Analyzer** derives capabilities, complexity and risk from the goal text
@@ -185,9 +181,9 @@ temporary specialist. The **Execution Planner** chooses the smallest sufficient 
 role was chosen and why each candidate was left out. The **Provider Router** then maps required
 capabilities plus risk, history and availability onto a concrete `(provider, model)` pair.
 
-Execution scales with the work: deterministic requests can be tool-only, ordinary work starts
-with one Agent plus reusable Skills, and high-risk or genuinely separable work can use a parallel
-team or dependency DAG with evaluation and approval gates.
+Deterministic requests can still be tool-only. Ordinary work starts with one Agent; multi-agent
+composition and automatic Skill synthesis require explicit experimental flags. Approval gates and
+provider capability checks remain active.
 
 ### The layers stay independent
 

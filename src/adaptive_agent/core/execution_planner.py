@@ -46,14 +46,20 @@ class ExecutionPlan:
 
 
 class ExecutionPlanner:
-    def __init__(self, tools: ToolRegistry, skills: SkillResolver, minimize_cost: bool = False):
+    def __init__(self, tools: ToolRegistry, skills: SkillResolver, minimize_cost: bool = False,
+                 allow_skill_synthesis: bool = False, allow_multi_agent: bool = False,
+                 minimal_skills: bool = True):
         self.tools, self.skills, self.minimize_cost = tools, skills, minimize_cost
+        self.allow_skill_synthesis = allow_skill_synthesis
+        self.allow_multi_agent = allow_multi_agent
+        self.minimal_skills = minimal_skills
 
     def plan(self, goal: str, analysis: GoalAnalysis) -> ExecutionPlan:
         capabilities = sorted({normalize(item) for item in analysis.capabilities})
         deterministic = self.tools.search(capabilities)
         explicit_tool = self._explicit_tool(goal, deterministic)
-        selected, rejected = self.skills.select(capabilities, self.minimize_cost)
+        selected, rejected = self.skills.select(
+            capabilities, self.minimize_cost, minimal=self.minimal_skills)
         covered = {capability for item in selected for capability in item.matched}
         deterministic_capabilities = {capability for tool in deterministic for capability in tool.capabilities}
         skill_tools = {tool for item in selected for tool in item.manifest.tools}
@@ -72,7 +78,8 @@ class ExecutionPlanner:
             return ExecutionPlan(ExecutionStrategy.HUMAN_APPROVAL, capabilities, [], rejected,
                                  [], 0, 0, ["The only executable step is a mandatory human approval."])
 
-        temporary = self._temporary_skills(set(capabilities) - covered - deterministic_capabilities)
+        temporary = (self._temporary_skills(set(capabilities) - covered - deterministic_capabilities)
+                     if self.allow_skill_synthesis else [])
         selected.extend(SkillCandidate(item, 0, list(item.capabilities), [],
                                        ["no equivalent tool or reusable Skill was found",
                                         "temporary procedure proposed; promotion requires approval"])
@@ -80,16 +87,17 @@ class ExecutionPlanner:
 
         reasoning_capabilities = [item for item in capabilities if item not in deterministic_capabilities]
         distinct = self._distinct_responsibilities(reasoning_capabilities)
-        if analysis.risk is Risk.HIGH:
+        if analysis.risk is Risk.HIGH and self.allow_multi_agent:
             return ExecutionPlan(ExecutionStrategy.MULTI_AGENT_DAG, capabilities, selected, rejected,
                                  tool_ids, 2, 1,
                                  ["High-risk work requires an independent reasoning responsibility.",
                                   "Mandatory approval and provider capability checks remain in force."], temporary)
-        if analysis.complexity.rank <= Complexity.SMALL.rank or distinct <= 1:
+        if (not self.allow_multi_agent or analysis.complexity.rank <= Complexity.SMALL.rank
+                or distinct <= 1):
             strategy = (ExecutionStrategy.SINGLE_AGENT_WITH_TOOLS if tool_ids
                         else ExecutionStrategy.SINGLE_AGENT)
             return ExecutionPlan(strategy, capabilities, selected, rejected, tool_ids, 1, 0,
-                                 ["One reasoning responsibility is sufficient; no team handoff is justified.",
+                                 ["Single-agent-first is the default; no team handoff is justified.",
                                   "Reusable Skills were selected from metadata before loading instructions."], temporary)
         agents = min(analysis.complexity.max_team_size, distinct)
         strategy = (ExecutionStrategy.MULTI_AGENT_PARALLEL if analysis.read_only

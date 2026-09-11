@@ -2,4 +2,6 @@
 
 Use the global Universal Agent Platform registry. Project-specific facts belong in `.agent/`.
 Execute only commands explicitly listed in `.agent/commands.yaml`. Never perform destructive Git recovery automatically.
-Search before reading large files and prefer receipts over repeated discovery.
+Read `.agent/project-index.json` before repository exploration. Start with its relevant paths,
+reuse only valid entries from `.agent/cache/files.json`, and prefer targeted reads over recursive
+discovery. Use one executor first and validate with commands from `.agent/commands.yaml`.

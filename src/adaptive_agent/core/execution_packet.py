@@ -33,6 +33,8 @@ class ExecutionPacket:
     project_skills: list[str] = field(default_factory=list)
     agent_role_context: list[str] = field(default_factory=list)
     context_attribution: list[str] = field(default_factory=list)
+    project_context: list[str] = field(default_factory=list)
+    cached_file_summaries: list[str] = field(default_factory=list)
 
     def render(self) -> str:
         def section(name: str, values: list[str], fallback: str = "None") -> str:
@@ -46,8 +48,8 @@ class ExecutionPacket:
             "Use only this packet and the workspace content the task actually needs.",
             "Do not inspect unrelated directories or include full logs in the response.",
             f"Keep the final structured response within {self.max_output_words} words.",
-            "Before returning, explicitly evaluate whether the work produced a stable project fact, explicit decision, validated command, concrete project-specific procedure, recurring role, evaluation rule, or evidence-backed issue that future tasks are likely to need.",
-            "When such reusable evidence exists, include it in learning_evidence with concrete evidence, related source paths, capabilities, expected reuse, and validation. Use an empty array only when no candidate survives that evidence gate.",
+            "Before returning, record only a stable project fact, explicit decision, reusable procedure, or canonical command that is likely to help a later session.",
+            "Use an empty learning_evidence array when no stable reusable information was learned.",
             "Never invent learning evidence or include temporary debugging notes, generic advice, hidden reasoning, or transcripts.",
         ])
         if self.read_only:
@@ -58,6 +60,8 @@ class ExecutionPacket:
             f"TASK:\n{self.task}",
             f"PROJECT:\n{self.project_name} ({self.project_type})",
             f"EXPECTED ARTIFACT:\n{self.artifact_type}" if self.artifact_type != "unknown" else "",
+            section("COMPACT PROJECT INDEX", self.project_context),
+            section("VALID CACHED FILE SUMMARIES", self.cached_file_summaries),
             section("DEPENDENCY RECEIPTS", self.dependency_receipts),
             section("ALLOWED SCOPE", self.allowed_files, "Minimize the workspace scope required by the task."),
             section("REQUIRED SKILLS", self.required_skills),
@@ -90,6 +94,10 @@ class ExecutionPacketBuilder:
         inferred_read_only = bool(task.metadata.get("read_only")) or "do not modify" in task.title.lower()
         intelligence = task.metadata.get("project_intelligence", {})
         intelligence_items = list(intelligence.get("items", []))
+        project_index = intelligence.get("project_index", {})
+        architecture = project_index.get("architecture", {}) if isinstance(project_index, dict) else {}
+        commands = project_index.get("commands", {}) if isinstance(project_index, dict) else {}
+        important_paths = project_index.get("important_paths", {}) if isinstance(project_index, dict) else {}
         def summaries(kind: str) -> list[str]:
             return [f"{item['id']}: {item['summary']}" +
                     (f"\n{item['detail']}" if item.get("detail") else "")
@@ -115,6 +123,15 @@ class ExecutionPacketBuilder:
             agent_role_context=summaries("agent"),
             context_attribution=[f"{item.get('id')}: {', '.join(item.get('evidence', []))}"
                                  for item in intelligence_items],
+            project_context=[
+                f"Architecture: {', '.join(f'{key}={value}' for key, value in architecture.items()) or 'unknown'}",
+                f"Important paths: {', '.join(f'{key}={value}' for key, value in important_paths.items()) or 'none'}",
+                f"Validated commands: {', '.join(f'{key}={value}' for key, value in commands.items()) or 'none'}",
+            ] if project_index else [],
+            cached_file_summaries=[
+                f"{item.get('path')}: {item.get('summary')}"
+                for item in intelligence.get("cached_files", [])
+            ],
         )
 
     def _summarize(self, receipt: Receipt) -> str:

@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Sequence
 
 from adaptive_agent.agents.registry import AgentRegistry
-from adaptive_agent.core.capabilities import Requirement
+from adaptive_agent.core.capabilities import Requirement, Risk
 from adaptive_agent.core.capability_resolver import CapabilityResolver
 from adaptive_agent.core.capability_router import CapabilityRouter
 from adaptive_agent.core.consumption import ConsumptionPolicy, consumption_policy
@@ -24,12 +26,13 @@ from adaptive_agent.models.registry import ModelRegistry
 from adaptive_agent.intelligence.project import ContextSelection, IntelligenceDistiller, ProjectIntelligenceStore
 from adaptive_agent.observability.event_bus import EventBus
 from adaptive_agent.profiles.registry import WorkProfileRegistry, profile_registry
+from adaptive_agent.project.context_index import ProjectContextIndex
 from adaptive_agent.providers.base import AIProvider
 from adaptive_agent.providers.registry import ProviderRegistry, providers as provider_registry
 from adaptive_agent.runtime import RESOURCE_ROOT, platform_home
 from adaptive_agent.skills.manifest import SkillTrust
 from adaptive_agent.skills.registry import SkillRegistry
-from adaptive_agent.skills.resolver import SkillCandidate, SkillResolver
+from adaptive_agent.skills.resolver import SkillResolver
 from adaptive_agent.storage.database import Database
 from adaptive_agent.tasks.graph import TaskGraph
 
@@ -85,6 +88,37 @@ class Orchestrator:
         self.tools = ToolRegistry.default()
         self.skills = SkillRegistry.from_yaml(RESOURCE_ROOT / "config" / "default_skills.yaml")
 
+    @staticmethod
+    def _experimental(name: str) -> bool:
+        return os.getenv(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+    @staticmethod
+    def _legacy_selection(value: dict[str, Any]) -> ContextSelection:
+        allowed = ContextSelection.__dataclass_fields__
+        return ContextSelection(**{key: value[key] for key in allowed if key in value})
+
+    @staticmethod
+    def _stable_index_changes(evidence: list[dict[str, Any]]) -> dict[str, Any]:
+        changes: dict[str, Any] = {"commands": {}, "constraints": [], "decisions": []}
+        for item in evidence:
+            kind = str(item.get("type", "")).lower()
+            summary = str(item.get("summary", "")).strip()
+            validation = str(item.get("validation", "")).lower()
+            expected_reuse = int(item.get("expected_reuse", 0) or 0)
+            tags = {str(value).lower() for value in item.get("tags", [])}
+            if not summary or validation not in {"validated", "measured"} or expected_reuse < 2:
+                continue
+            if kind == "decision":
+                changes["decisions"].append(summary)
+            elif kind in {"command", "validated_command"}:
+                command = str(item.get("detail", "")).strip()
+                if command and len(command) <= 240:
+                    name = (sorted(tags)[0] if tags else "validated_command").replace("-", "_")
+                    changes["commands"][name] = command
+            elif kind in {"project_fact", "validated_project_fact"} and "constraint" in tags:
+                changes["constraints"].append(summary)
+        return changes
+
     # -- composition -------------------------------------------------------
 
     def compose(self, run_id: str, goal: str, working_directory: str | None = None,
@@ -92,12 +126,27 @@ class Orchestrator:
                 project_signals: Sequence[str] = (), constraints: Sequence[str] = (),
         approvals: Sequence[str] = (), record_intelligence: bool = False,
         intelligence_directory: str | None = None) -> Composition:
+        started = time.perf_counter()
         analysis = self.analyzer.analyze(goal, self.active_profiles, project_signals)
-        intelligence = ContextSelection("cold", "project adapter unavailable")
+        context: dict[str, Any] = {
+            "project_index": {}, "relevant_paths": [], "cached_files": [],
+            "discovery_performed": False, "context_chars": 0, "estimated_tokens": 0,
+            "pre_task_ai_calls": 0, "temperature": "cold",
+            "reason": "project adapter unavailable", "items": [], "stale_items": [],
+            "reuse_hits": 0, "rediscovery_count": 0, "loaded_detail_paths": [],
+            "selected_only_count": 0, "reuse_miss_reason": None,
+            "typed_reuse_hits": {}, "stale_count": 0, "historical_items": [],
+            "skipped_items": [],
+        }
         intelligence_root = intelligence_directory or working_directory
         if intelligence_root and (Path(intelligence_root) / ".agent").is_dir():
-            intelligence = ProjectIntelligenceStore(Path(intelligence_root)).select(
-                goal, analysis.capabilities, record_reuse=record_intelligence)
+            context = ProjectContextIndex(Path(intelligence_root)).select(goal).to_dict()
+            if self._experimental("UAP_EXPERIMENTAL_HEAVY_LEARNING"):
+                legacy = ProjectIntelligenceStore(Path(intelligence_root)).select(
+                    goal, analysis.capabilities, record_reuse=record_intelligence)
+                legacy_value = legacy.to_dict()
+                context.update({key: value for key, value in legacy_value.items()
+                                if key not in {"context_chars", "estimated_tokens"}})
         self.skills.discover_directory(RESOURCE_ROOT / "skills", SkillTrust.BUILT_IN)
         self.skills.discover_directory(platform_home() / "skills", SkillTrust.TRUSTED)
         project_root = intelligence_directory or working_directory
@@ -106,28 +155,10 @@ class Orchestrator:
                                            SkillTrust.PROJECT_LOCAL)
         execution = ExecutionPlanner(
             self.tools, SkillResolver(self.skills.manifests()),
-            minimize_cost=self.consumption_policy.mode.value == "economy").plan(goal, analysis)
-        # Project-local Skills can be relevant by their learned project summary
-        # even when the generic GoalAnalyzer only reports "coding". Keep this
-        # narrow, lexical, and benefit-gated; no embeddings or forced loading.
-        goal_terms = ProjectIntelligenceStore._terms(goal)
-        for learned in intelligence.items:
-            if learned.get("kind") != "skill" or learned.get("status") not in {
-                    "temporary", "validated", "promotion_candidate", "current"}:
-                continue
-            if not (goal_terms & ProjectIntelligenceStore._terms(
-                    " ".join([learned.get("summary", ""), *learned.get("tags", []),
-                              *learned.get("capabilities", [])]))):
-                continue
-            try:
-                manifest = self.skills.manifest(str(learned["id"]))
-            except KeyError:
-                continue
-            if any(candidate.manifest.id == manifest.id for candidate in execution.selected_skills):
-                continue
-            execution.selected_skills.append(SkillCandidate(
-                manifest, 1.0, list(manifest.capabilities), [],
-                ["selected by project-intelligence relevance and Skill benefit gate"]))
+            minimize_cost=self.consumption_policy.mode.value == "economy",
+            allow_skill_synthesis=self._experimental("UAP_EXPERIMENTAL_SKILL_SYNTHESIS"),
+            allow_multi_agent=self._experimental("UAP_EXPERIMENTAL_MULTI_AGENT"),
+            minimal_skills=True).plan(goal, analysis)
         for manifest in execution.temporary_skills:
             self.skills.register_manifest(manifest, replace=True)
         resolver = CapabilityResolver(
@@ -140,17 +171,24 @@ class Orchestrator:
             self._assign_selected_skills(team, execution)
         else:
             team = self._minimum_team(analysis, execution, constraints)
-        self._reuse_project_roles(team, intelligence)
+        if self._experimental("UAP_EXPERIMENTAL_AGENT_LEARNING"):
+            legacy_context = ContextSelection(
+                context.get("temperature", "cold"), context.get("reason", ""),
+                items=context.get("items", []), stale_items=context.get("stale_items", []))
+            self._reuse_project_roles(team, legacy_context)
         execution.ai_agents = len(team.members)
         execution.expected_handoffs = max(0, len(team.members) - 1)
         graph = self.universal_planner.plan(run_id, goal, analysis, team, execution)
         rationale = self._route(graph, analysis, team, working_directory, project_name,
                                 project_type, approvals)
         for task in graph.tasks.values():
-            task.metadata["project_intelligence"] = intelligence.to_dict()
+            task.metadata["project_intelligence"] = context
+            task.metadata["allowed_files"] = list(context.get("relevant_paths", []))
+        context["orchestration_wall_ms"] = round((time.perf_counter() - started) * 1000, 3)
+        context["pre_task_ai_calls"] = 0
         return Composition(analysis, team, graph, rationale,
                            consumption=self.consumption_policy.to_dict(), execution_plan=execution,
-                           project_intelligence=intelligence.to_dict())
+                           project_intelligence=context)
 
     @staticmethod
     def _reuse_project_roles(team: TeamPlan, intelligence: ContextSelection) -> None:
@@ -184,7 +222,15 @@ class Orchestrator:
                             list(analysis.capabilities), list(execution.reasons), tools=execution.tools,
                             approval_gates=gates, consumption_mode=self.consumption_policy.mode.value)
         wanted = set(analysis.capabilities)
-        roles = [role for role in self.profiles.roles(analysis.profiles) if not role.evaluative]
+        all_roles = self.profiles.roles(analysis.profiles)
+        roles = [role for role in all_roles if not role.evaluative]
+        # A review/audit goal may use a reviewer as its sole executor. This is
+        # still single-agent-first: the role performs the requested work rather
+        # than reviewing a separate producer.
+        review_as_work = [role for role in all_roles if role.evaluative
+                          and wanted & set(role.capabilities)]
+        if analysis.read_only and review_as_work:
+            roles = review_as_work
         role = max(roles, key=lambda item: (len(wanted & set(item.capabilities)), -item.stage),
                    default=None)
         omitted = [{"role": item.name,
@@ -197,6 +243,22 @@ class Orchestrator:
             selected_skills, role.profile if role else (analysis.profiles or ["general"])[0],
             role.stage if role else 50, read_only=analysis.read_only,
             reason="One reasoning responsibility covers all required capabilities.")
+        members = [member]
+        # Independent review is one of the few concrete reasons to exceed the
+        # single-agent default. Keep it limited to high-risk work and one role.
+        if analysis.risk is Risk.HIGH and not (role and role.evaluative):
+            reviewers = [item for item in all_roles if item.evaluative]
+            reviewer = max(
+                reviewers,
+                key=lambda item: (len(wanted & set(item.capabilities)), -item.stage),
+                default=None,
+            )
+            if reviewer:
+                members.append(TeamMember(
+                    reviewer.id, reviewer.name, reviewer.responsibility,
+                    sorted(wanted & set(reviewer.capabilities) or set(reviewer.capabilities)),
+                    [], reviewer.profile, reviewer.stage, evaluative=True, read_only=True,
+                    reason="Independent review is justified by high execution risk."))
         declared: list[str] = []
         profile = self.profiles.get(role.profile) if role else None
         if profile:
@@ -210,13 +272,16 @@ class Orchestrator:
             fallback = EvaluationRegistry().get("goal_coverage")
             if fallback:
                 evaluations = [fallback]
-        rationale = list(execution.reasons)
+        rationale = [f"Consumption policy: {self.consumption_policy.mode.value}.",
+                     *execution.reasons]
+        if len(members) > 1:
+            rationale.append("High-risk work adds one independent review responsibility.")
         skipped_profiles = [item for item in analysis.profiles
                             if role is not None and item != role.profile]
         if skipped_profiles:
             rationale.append(f"Evaluation uses {role.profile}; {', '.join(skipped_profiles)} did not draw on "
                              "the capabilities required by this goal.")
-        return TeamPlan([member], analysis.complexity, analysis.risk, list(analysis.profiles),
+        return TeamPlan(members, analysis.complexity, analysis.risk, list(analysis.profiles),
                         sorted(wanted), rationale, omitted=omitted,
                         evaluation=evaluations,
                         tools=execution.tools, approval_gates=gates,
@@ -322,20 +387,24 @@ class Orchestrator:
                                    project_signals, constraints, approvals, record_intelligence=True,
                                    intelligence_directory=intelligence_directory)
         intelligence_store = None
+        context_index = None
         intelligence_root = intelligence_directory or working_directory
         if intelligence_root and (Path(intelligence_root) / ".agent").is_dir():
-            intelligence_store = ProjectIntelligenceStore(Path(intelligence_root))
-            intelligence_store.record_run(run_id, ContextSelection(**composition.project_intelligence),
-                                           success=False, evaluation_passed=False)
-            self.database.execute(
-                "INSERT INTO project_intelligence_runs(run_id,temperature,reason,reuse_hits,rediscovery_count,"
-                "context_chars,estimated_tokens,data_json) VALUES(?,?,?,?,?,?,?,?)",
-                (run_id, composition.project_intelligence["temperature"],
-                 composition.project_intelligence["reason"], composition.project_intelligence["reuse_hits"],
-                 composition.project_intelligence["rediscovery_count"],
-                 composition.project_intelligence["context_chars"],
-                 composition.project_intelligence["estimated_tokens"],
-                 self.database.json(composition.project_intelligence)))
+            context_index = ProjectContextIndex(Path(intelligence_root))
+            if self._experimental("UAP_EXPERIMENTAL_HEAVY_LEARNING"):
+                intelligence_store = ProjectIntelligenceStore(Path(intelligence_root))
+                intelligence_store.record_run(
+                    run_id, self._legacy_selection(composition.project_intelligence),
+                    success=False, evaluation_passed=False)
+                self.database.execute(
+                    "INSERT INTO project_intelligence_runs(run_id,temperature,reason,reuse_hits,rediscovery_count,"
+                    "context_chars,estimated_tokens,data_json) VALUES(?,?,?,?,?,?,?,?)",
+                    (run_id, composition.project_intelligence["temperature"],
+                     composition.project_intelligence["reason"], composition.project_intelligence["reuse_hits"],
+                     composition.project_intelligence["rediscovery_count"],
+                     composition.project_intelligence["context_chars"],
+                     composition.project_intelligence["estimated_tokens"],
+                     self.database.json(composition.project_intelligence)))
         graph = composition.graph
         if composition.execution_plan:
             for manifest in composition.execution_plan.temporary_skills:
@@ -384,35 +453,43 @@ class Orchestrator:
         status = "completed" if success else "failed"
         self.database.execute("UPDATE runs SET status=?,completed_at=? WHERE id=?", (status, now_iso(), run_id))
         self.events.emit(Event(f"run_{status}", run_id))
+        reported_files: list[str] = []
+        structured_evidence: list[dict[str, Any]] = []
+        for row in self.database.query(
+                "SELECT data_json FROM receipts WHERE task_id IN "
+                "(SELECT id FROM tasks WHERE run_id=?)", (run_id,)):
+            receipt_data = json.loads(row["data_json"])
+            reported_files.extend(receipt_data.get("files", []))
+            values = receipt_data.get("learning_evidence", [])
+            if isinstance(values, list):
+                structured_evidence.extend(value for value in values if isinstance(value, dict))
+        evaluations = self.database.query(
+            "SELECT passed FROM artifact_evaluations WHERE run_id=?", (run_id,))
+        evaluated = (all(bool(item["passed"]) for item in evaluations) if evaluations else None)
+        if context_index and success and (evaluated is None or evaluated):
+            context_index.remember_useful_files(reported_files)
+            context_index.update_stable(self._stable_index_changes(structured_evidence))
         if intelligence_store:
             from adaptive_agent.project.discovery import discover
 
             if composition.project_intelligence["temperature"] == "cold":
                 intelligence_store.learn_discovery(discover(Path(intelligence_root)), run_id)
-            reported_files: list[str] = []
-            structured_evidence: list[dict[str, Any]] = []
-            for row in self.database.query(
-                    "SELECT data_json FROM receipts WHERE task_id IN "
-                    "(SELECT id FROM tasks WHERE run_id=?)", (run_id,)):
-                receipt_data = json.loads(row["data_json"])
-                reported_files.extend(receipt_data.get("files", []))
-                values = receipt_data.get("learning_evidence", [])
-                if isinstance(values, list):
-                    structured_evidence.extend(value for value in values if isinstance(value, dict))
-            evaluations = self.database.query(
-                "SELECT passed FROM artifact_evaluations WHERE run_id=?", (run_id,))
-            evaluated = (all(bool(item["passed"]) for item in evaluations) if evaluations else None)
             # Replace the provisional selection record with the measured outcome.
             intelligence_store.record_run(
-                run_id, ContextSelection(**composition.project_intelligence),
+                run_id, self._legacy_selection(composition.project_intelligence),
                 success=success, evaluation_passed=evaluated if evaluated is not None else success)
             intelligence_store.distill_run(run_id, status, goal, len(graph.tasks),
                                            reported_files, evaluated)
             # The distiller consumes structured execution evidence only. It never
             # invokes a provider just to manufacture a summary.
+            experimental_evidence = [item for item in structured_evidence
+                                     if (self._experimental("UAP_EXPERIMENTAL_AGENT_LEARNING")
+                                         or item.get("type") not in {"agent", "agent_role"})
+                                     and (self._experimental("UAP_EXPERIMENTAL_SKILL_SYNTHESIS")
+                                          or item.get("type") not in {"skill", "procedure"})]
             distillation = IntelligenceDistiller().distill(
                 run_id=run_id, status=status, goal=goal, task_count=len(graph.tasks),
-                structured_evidence=structured_evidence,
+                structured_evidence=experimental_evidence,
                 reported_files=reported_files, evaluation_passed=evaluated)
             intelligence_store.learn_candidates(distillation.candidates, run_id=run_id)
         return run_id

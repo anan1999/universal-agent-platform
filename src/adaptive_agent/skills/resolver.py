@@ -53,6 +53,7 @@ class SkillCandidate:
     missing: list[str] = field(default_factory=list)
     reasons: list[str] = field(default_factory=list)
     context_cost_source: str = "estimated"
+    decision: str = "SKIP"
 
     def to_dict(self) -> dict:
         return {"skill": self.manifest.id, "version": self.manifest.version,
@@ -60,7 +61,7 @@ class SkillCandidate:
                 "reasons": self.reasons, "trust": self.manifest.trust.value,
                 "status": self.manifest.status.value,
                 "estimated_context_tokens": self.manifest.estimated_context_tokens,
-                "context_cost_source": self.context_cost_source}
+                "context_cost_source": self.context_cost_source, "decision": self.decision}
 
 
 class SkillResolver:
@@ -89,20 +90,41 @@ class SkillResolver:
                       key=lambda item: (-item.score, item.manifest.id, item.manifest.version))
 
     def select(self, required: Iterable[str], minimize_cost: bool = False,
-               provider_capabilities: Iterable[str] = ()) -> tuple[list[SkillCandidate], list[SkillCandidate]]:
+               provider_capabilities: Iterable[str] = (),
+               minimal: bool = False) -> tuple[list[SkillCandidate], list[SkillCandidate]]:
         wanted = {normalize(item) for item in required if normalize(item)}
         ranked = self.candidates(wanted, minimize_cost, provider_capabilities)
         selected, covered = [], set()
         for candidate in ranked:
+            if minimal and not self._reusable_procedure(candidate.manifest):
+                candidate.reasons.append(
+                    "SKIP: generic capability metadata is not a reusable project procedure")
+                continue
             new = set(candidate.matched) - covered
             if not new:
                 continue
+            candidate.decision = "USE"
+            candidate.reasons.append("USE: clearly matched a non-trivial reusable procedure")
             selected.append(candidate)
             covered.update(new)
             if covered >= wanted:
                 break
         rejected = [item for item in ranked if item not in selected]
         return selected, rejected
+
+    @staticmethod
+    def _reusable_procedure(manifest: SkillManifest) -> bool:
+        """A loadable Skill must contain an actual bounded procedure.
+
+        Legacy catalog labels such as ``Python expert`` stay discoverable but
+        are not placed in every task's context.  Project/package Skills with a
+        real SKILL.md remain eligible through the same resolver.
+        """
+        if manifest.estimated_context_tokens is not None and manifest.estimated_context_tokens > 4_000:
+            return False
+        if manifest.path and (manifest.path / manifest.entrypoint).is_file():
+            return True
+        return bool(manifest.provenance.get("reusable_procedure"))
 
     def equivalent(self, capability: str, offered: str) -> bool:
         capability, offered = normalize(capability), normalize(offered)

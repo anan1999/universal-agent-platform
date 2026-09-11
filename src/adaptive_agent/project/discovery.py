@@ -38,7 +38,9 @@ CONTEXT_MARKERS: tuple[str, ...] = (
     ".storybook", "design-tokens.json", "figma.json", "brand.json", ".git",
 )
 
-#: Extensions worth reporting when they appear anywhere in the tree.
+#: Extensions worth reporting when they appear at the root or one directory
+#: below it.  Discovery is intentionally bounded; it never recursively indexes
+#: the repository.
 CONTENT_MARKERS: tuple[tuple[str, str], ...] = (
     ("*.ipynb", "*.ipynb"), ("*.csv", "*.csv"), ("*.parquet", "*.parquet"),
     ("*.onnx", "model.onnx"), ("*.kt", "kotlin"), ("*.java", "java"), ("*.cpp", "cpp"),
@@ -67,13 +69,20 @@ class ProjectInfo:
 
 
 def signals(path: Path) -> list[str]:
-    """File markers present in the project, without walking the whole tree twice."""
+    """High-value markers without a recursive repository scan."""
     path = Path(path).resolve()
     found = [marker for marker, *_ in LANGUAGE_MARKERS if (path / marker).exists()]
     found += [marker for marker in CONTEXT_MARKERS if (path / marker).exists()]
     for pattern, label in CONTENT_MARKERS:
-        if next(path.rglob(pattern), None) is not None:
+        if next(path.glob(pattern), None) is not None:
             found.append(label)
+            continue
+        for child in path.iterdir():
+            if (child.is_dir() and child.name not in {
+                    ".git", ".agent", ".venv", "venv", "node_modules", "build", "dist"}
+                    and next(child.glob(pattern), None) is not None):
+                found.append(label)
+                break
     return sorted(set(found))
 
 

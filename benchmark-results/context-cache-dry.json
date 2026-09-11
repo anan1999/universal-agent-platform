@@ -1,0 +1,13 @@
+{
+  "ready": true,
+  "same_source_hash": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+  "pre_task_ai_calls": 0,
+  "project_context_chars": 600,
+  "relevant_paths": [
+    "app/",
+    "frontend/"
+  ],
+  "baseline_has_index": false,
+  "uap_has_index": true,
+  "provider_calls": 0
+}

@@ -24,7 +24,8 @@ def initialized_project(tmp_path):
     return project
 
 
-def test_cold_run_distills_evidence_and_next_run_is_warm(tmp_path):
+def test_cold_run_distills_evidence_and_next_run_is_warm(tmp_path, monkeypatch):
+    monkeypatch.setenv("UAP_EXPERIMENTAL_HEAVY_LEARNING", "1")
     project = initialized_project(tmp_path)
     db = Database(tmp_path / "history.db")
     db.execute("INSERT INTO projects(id,path,name,type,config_json) VALUES(?,?,?,?,?)",
@@ -58,7 +59,8 @@ def test_changed_project_signal_forces_revalidation_run(tmp_path):
     assert "project-discovery" in selection.stale_items
 
 
-def test_context_reaches_execution_packet_metadata(tmp_path):
+def test_context_reaches_execution_packet_metadata(tmp_path, monkeypatch):
+    monkeypatch.setenv("UAP_EXPERIMENTAL_HEAVY_LEARNING", "1")
     project = initialized_project(tmp_path)
     store = ProjectIntelligenceStore(project)
     store.learn_discovery(discover(project), "RUN-COLD")
@@ -71,7 +73,9 @@ def test_context_reaches_execution_packet_metadata(tmp_path):
     assert composition.to_dict()["project_intelligence"]["temperature"] == "warm"
 
 
-def test_validated_project_role_replaces_equivalent_generated_role(tmp_path):
+def test_validated_project_role_replaces_equivalent_generated_role(tmp_path, monkeypatch):
+    monkeypatch.setenv("UAP_EXPERIMENTAL_HEAVY_LEARNING", "1")
+    monkeypatch.setenv("UAP_EXPERIMENTAL_AGENT_LEARNING", "1")
     project = initialized_project(tmp_path)
     store = ProjectIntelligenceStore(project)
     store.add(IntelligenceItem(
@@ -93,7 +97,9 @@ def test_cli_exposes_warm_start_resume_and_context(tmp_path, monkeypatch, capsys
     choices = next(action.choices for action in parser()._actions if action.choices)
     assert {"warm-start", "resume", "context"} <= set(choices)
     assert main(["warm-start", "test python", "--json"]) == 0
-    assert json.loads(capsys.readouterr().out)["temperature"] == "cold"
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["temperature"] == "warm"
+    assert payload["pre_task_ai_calls"] == 0
     assert main(["context", "explain", "test python", "--json"]) == 0
     assert "estimated_tokens" in json.loads(capsys.readouterr().out)
 

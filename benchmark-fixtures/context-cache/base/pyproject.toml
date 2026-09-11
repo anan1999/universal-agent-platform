@@ -1,0 +1,7 @@
+[project]
+name = "pocket-expense"
+version = "0.1.0"
+dependencies = ["fastapi", "pydantic"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

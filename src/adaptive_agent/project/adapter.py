@@ -7,6 +7,7 @@ import yaml
 
 from adaptive_agent.project.discovery import ProjectInfo, discover
 from adaptive_agent.intelligence.project import ProjectIntelligenceStore
+from adaptive_agent.project.context_index import ProjectContextIndex
 
 
 UAP_START = "<!-- UAP:START -->"
@@ -16,9 +17,9 @@ UAP_AGENTS_BLOCK = f"""{UAP_START}
 
 This repository uses the Universal Agent Platform as its task orchestrator.
 For non-trivial project tasks, route the concise user goal and essential constraints through
-`agentctl orchestrate \"<goal>\" --json`. The platform owns goal analysis, capability
-resolution, team composition, the task DAG, provider and model routing, skills, tools,
-evaluation, and escalation.
+`agentctl orchestrate \"<goal>\" --json`. The platform reads the compact project index,
+routes the fresh session to relevant files, uses one executor first, and runs deterministic
+validation. Multi-agent composition and automatic learning are experimental opt-ins.
 
 AI providers are bounded execution backends beneath the platform, never the orchestrator.
 Do not run a second top-level planner while this platform owns orchestration.
@@ -101,6 +102,9 @@ def initialize_project(path: Path, templates: Path, force: bool = False, upgrade
     project["consumption"] = project.get("consumption") or {"mode": "balanced"}
     project["intelligence"] = project.get("intelligence") or {
         "index": ".agent/intelligence.json", "policy": "reuse_before_relearn"}
+    project["context"] = project.get("context") or {
+        "index": ".agent/project-index.json", "policy": "reuse_before_reexplore",
+        "maximum_bytes": 8192}
     project["constraints"] = project.get("constraints") or {
         "require_human_approval_for": ["destructive_actions", "deployment", "publishing"]}
     project_path.write_text(yaml.safe_dump(project, sort_keys=False), encoding="utf-8")
@@ -113,6 +117,10 @@ def initialize_project(path: Path, templates: Path, force: bool = False, upgrade
     commands_path = agent_dir / "commands.yaml"
     if not commands_path.exists():
         commands_path.write_text(yaml.safe_dump(commands, sort_keys=False), encoding="utf-8")
+
+    # Compact context is created only after canonical commands are known.  The
+    # legacy intelligence file remains readable for debug/experimental modes.
+    ProjectContextIndex(path).initialize()
 
     capabilities_path = agent_dir / "capabilities.yaml"
     if not capabilities_path.exists():

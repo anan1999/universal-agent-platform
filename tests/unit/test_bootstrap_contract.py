@@ -114,5 +114,5 @@ def test_readme_routes_ai_assistants_to_the_contract():
     assert "FOR HUMANS" in text
     assert "AI-BOOTSTRAP.md" in text and "agent-platform.json" in text
     # The promise the whole product rests on.
-    assert "Bring your goal. Bring your AI. The platform builds the team." in text
+    assert "Stop making every AI session rediscover your project." in text
     assert text.index("FOR AI ASSISTANTS") < text.index("FOR HUMANS")
