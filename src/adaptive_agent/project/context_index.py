@@ -130,7 +130,7 @@ class FileSummaryCache:
         if not entry:
             return None
         target = (self.root / relative).resolve()
-        if not target.is_file() or entry.get("hash") != _hash(target):
+        if not target.is_relative_to(self.root) or not target.is_file() or entry.get("hash") != _hash(target):
             data["files"].pop(relative, None)
             self._write(data)
             return None

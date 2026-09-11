@@ -1,0 +1,27 @@
+{
+  "source_hashes": {
+    "baseline": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+    "uap": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+  },
+  "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+  "model": "gpt-5.6-luna",
+  "reasoning": "low",
+  "goal": "Add a GET /reports/monthly/{month} API endpoint that returns the selected month, total spending, and totals by category, then display that monthly total and category breakdown in the existing React dashboard. Preserve existing expense behavior and validate the work.",
+  "order": [
+    "baseline",
+    "uap"
+  ],
+  "initial_index_ms": 569.45,
+  "warm_prepare_ms": 15.529,
+  "pre_task_ai_calls": 0,
+  "context_chars": 662,
+  "limitations": [
+    "one ordered pair, no statistical generalization",
+    "index reuse only; prior AI-authored knowledge is tested offline",
+    "tool calls are observable events, not internal reasoning rounds",
+    "subscription quota conversion is unavailable",
+    "frontend acceptance checks integration source, not browser rendering"
+  ],
+  "results": {},
+  "dry_run": true
+}

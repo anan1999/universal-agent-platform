@@ -15,16 +15,14 @@ UAP_END = "<!-- UAP:END -->"
 UAP_AGENTS_BLOCK = f"""{UAP_START}
 # Universal Agent Platform
 
-This repository uses the Universal Agent Platform as its task orchestrator.
-For non-trivial project tasks, route the concise user goal and essential constraints through
-`agentctl orchestrate \"<goal>\" --json`. The platform reads the compact project index,
-routes the fresh session to relevant files, uses one executor first, and runs deterministic
-validation. Multi-agent composition and automatic learning are experimental opt-ins.
-
-AI providers are bounded execution backends beneath the platform, never the orchestrator.
-Do not run a second top-level planner while this platform owns orchestration.
-An `UAP_CHILD_EXECUTION=1` process is a bounded executor and must never invoke the platform again.
-Trivial conversation, explanation-only requests, and explicit user bypass requests may run directly.
+The current AI executes the user's task directly. Start non-trivial work with
+`agentctl prepare \"<goal>\" --json` to retrieve relevant context without provider calls.
+Read actual source as needed. Batch independent reads; run relevant deterministic validation.
+Use `agentctl check project_test` for compact allowlisted test results.
+After verifying a useful fact, save it with `agentctl remember <source-path> \"<short fact>\"`.
+Do not start another AI, synthesize Skills, or create a team by default.
+`agentctl orchestrate` is an explicit opt-in for delegated execution.
+An `UAP_CHILD_EXECUTION=1` process must never invoke orchestration again.
 {UAP_END}"""
 
 DEFAULT_ORCHESTRATION = {"owner": "universal-agent-platform", "threshold": "non_trivial"}

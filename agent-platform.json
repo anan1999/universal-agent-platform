@@ -79,7 +79,16 @@
     "privacy": "Stores evidence-backed project facts and compact receipts; never conversations or hidden reasoning."
   },
 
+  "direct_execution": {
+    "default": true,
+    "prepare": "agentctl prepare \"<goal>\" --json",
+    "remember": "agentctl remember <source-path> \"<short verified fact>\"",
+    "check": "agentctl check project_test",
+    "executor": "current AI task",
+    "additional_provider_calls": 0
+  },
   "orchestration": {
+    "opt_in": true,
     "entrypoint": "agentctl orchestrate \"<goal>\" --json",
     "plan_only": "agentctl run \"<goal>\" --dry-run --json",
     "execute": "agentctl run \"<goal>\" --json",

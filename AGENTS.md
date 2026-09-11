@@ -26,11 +26,10 @@ Treat context as expensive. Search before reading large files. Do not reread fil
 <!-- UAP:START -->
 # Universal Agent Platform
 
-This repository uses Universal Agent Platform as the primary task orchestrator.
-For non-trivial project tasks, route the concise user goal and essential constraints through
-`agentctl orchestrate "<goal>" --json`. UAP first supplies the compact project index and relevant
-paths to one executor, then validates deterministically. Multi-agent and automatic learning paths
-are experimental opt-ins. AI providers are bounded execution backends beneath UAP.
+The current AI executes work directly. Use `agentctl prepare "<goal>" --json` for
+compact context, then read relevant source and validate the result.
+Use `agentctl remember <source-path> "<short verified fact>"` only for useful new knowledge.
+Delegated execution through `agentctl orchestrate` requires explicit user intent.
 An `UAP_CHILD_EXECUTION=1` process is a bounded executor and must never invoke UAP again.
 Trivial conversation, explanation-only requests, and explicit user bypass requests may run directly.
 <!-- UAP:END -->

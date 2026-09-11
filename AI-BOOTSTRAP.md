@@ -11,12 +11,12 @@ If you prefer structured input, read that file instead and use this one as the r
 
 ## 1. What this framework is
 
-The Universal Agent Platform turns a plain-language goal into an executed plan.
+The Universal Agent Platform supports the AI already executing the user's task.
 
-Given a goal, it reads a compact project index, selects relevant paths, uses one AI executor first,
-loads a versioned **Skill** only when it is a clearly useful non-trivial procedure, routes execution
-to an available **provider and model**, and validates with deterministic tools. Context construction
-uses zero AI calls and does not recursively index the repository.
+By default, `prepare` reads a compact project index and relevant source-linked notes. The current
+AI continues implementation and deterministic validation. No provider is started and no team is
+composed. `remember` saves short verified facts for other tasks; changed source invalidates them.
+Provider routing and delegated execution remain available through explicit `run`/`orchestrate`.
 
 It is not tied to any AI vendor and not tied to software engineering. Codex, a deterministic
 mock, and an environment-configured OpenAI-compatible endpoint are implemented today; other
@@ -175,17 +175,20 @@ agentctl run "<goal>" --consumption economy --dry-run --json
 Do not silently select `maximum`. A per-run `--consumption` override is safer than changing
 the global default for a single task.
 
-## 10. Invoke orchestration
+## 10. Continue in the current AI task
 
 This is the main entry point:
 
 ```bash
-agentctl orchestrate "<the user's goal in one clear sentence>" --json
+agentctl prepare "<the user's goal in one clear sentence>" --json
 ```
 
-Pass the goal and the constraints that matter. Do **not** pass agent names, model names,
-provider names, role assignments, or a task breakdown. Choosing those is the platform's job,
-and overriding them is how you get a worse plan than the one it would have built.
+Read the returned relevant context, then implement the task yourself. This command starts no AI
+provider. Use `agentctl check project_test` for compact deterministic validation when configured.
+If you learn a useful source-backed fact, save at most a short note:
+`agentctl remember <source-path> "<verified fact>"`. No new fact means no memory write.
+
+The following planner and delegation commands are optional diagnostics or explicit user opt-ins.
 
 The execution planner starts with tool-only or one Agent plus deterministic tools. Multi-agent
 composition, Agent learning and automatic Skill synthesis are experimental opt-ins. Treat a Skill
@@ -298,7 +301,7 @@ If the user says *"use this repository for agent orchestration and then build X"
 4. `cd` to the user's project. `agentctl init --auto --dry-run`, show them the result, then
    `agentctl init --auto`.
 5. `agentctl doctor` — confirm health before doing real work.
-6. `agentctl orchestrate "<their goal>" --json` — the goal and its real constraints, nothing else.
+6. `agentctl prepare "<their goal>" --json` — then implement directly in the current task.
 7. Report what was built, what was checked, and what the platform decided. Point them at
    `agentctl explain <run-id>` and the read-only API views.
 

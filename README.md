@@ -40,13 +40,15 @@ cd <the user's project>
 agentctl init --auto --dry-run    # show the user before applying
 agentctl init --auto
 agentctl doctor
-agentctl orchestrate "<the user's goal>" --json
+agentctl prepare "<the user's goal>" --json
 ```
 
-Pass the goal and its real constraints. Do not pass agent names, model names, providers, or a
-task breakdown — deciding those is the platform's job. If `UAP_CHILD_EXECUTION=1` is set in
-your environment you are already running inside a platform task: do the bounded work and do
-not orchestrate again.
+Continue implementation in the current AI task. `prepare` starts no provider, team, database,
+or learning pipeline. Read the suggested source paths, implement, and run relevant checks.
+`agentctl check project_test` returns compact allowlisted results. Save a useful verified fact
+with `agentctl remember app/main.py "Expense dates use the date field."` (example only).
+Notes are hash-checked on retrieval. Commit useful project notes with their source changes.
+Delegated execution through `orchestrate` remains an explicit opt-in.
 
 ---
 
@@ -73,7 +75,9 @@ Then use your preferred AI normally, or preview a plan with
 
 ## Control subscription usage
 
-UAP has three quota-conscious orchestration policies. `balanced` preserves the normal V2.3
+For direct work, `prepare` adds zero provider calls. Internal model reasoning and subscription
+quota accounting are controlled by the host; UAP cannot promise a quota saving percentage.
+The following three policies apply only to explicitly delegated execution. `balanced` preserves the V2.3
 behavior. `economy` runs agents sequentially, prefers lower-cost compatible models and lower
 reasoning for non-high-risk work, carries fewer and shorter receipts, caps team growth, and
 allows only one escalation per task. `maximum` provides wider concurrency, context and
@@ -318,7 +322,10 @@ agentctl run | orchestrate | explain | replay
 agentctl agents | skills | skill | tools | profiles | providers | models
 ```
 
-`agentctl orchestrate "<goal>" --json` is the canonical entry point for an AI assistant.
+`agentctl prepare "<goal>" --json` is the default entry point for an existing AI task.
+`agentctl remember <source-path> "<short fact>"` stores a source-linked note for later tasks.
+`agentctl check project_test project_build` runs allowed checks and suppresses successful logs.
+`agentctl orchestrate "<goal>" --json` explicitly delegates execution to a provider.
 `agentctl run --dry-run` plans without executing. Add `--json` to anything you want to parse.
 
 ## Development

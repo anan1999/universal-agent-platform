@@ -55,6 +55,10 @@ def parser() -> argparse.ArgumentParser:
                                    description="Universal Agent Platform")
     root.add_argument("--version", action="version", version=__version__)
     commands = root.add_subparsers(dest="command", required=True)
+    for name, help_text in (("prepare", "retrieve context for the current AI task; zero provider calls"),
+                            ("remember", "save a short source-linked fact for later tasks"),
+                            ("check", "run allowlisted validation with compact output")):
+        commands.add_parser(name, help=help_text)
 
     setup = commands.add_parser("setup", help="prepare the user-level platform installation")
     setup.add_argument("--auto", action="store_true", help="accept safe defaults for every decision")
@@ -521,6 +525,10 @@ def _explain(db, run_id: str) -> dict:
 
 
 def main(argv: list[str] | None = None) -> int:
+    arguments = list(sys.argv[1:] if argv is None else argv)
+    if arguments and arguments[0] in {"prepare", "remember", "check"}:
+        from adaptive_agent.project.direct import main as direct_main
+        return direct_main(arguments)
     args = parser().parse_args(argv)
     db = database()
     selected_profiles = ([item.strip() for item in args.profiles.split(",") if item.strip()]

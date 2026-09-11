@@ -89,7 +89,7 @@ def test_bootstrap_document_covers_every_required_section():
     for heading in ("What this framework is", "When to use it", "Installation",
                     "Detect an existing installation", "Global setup",
                     "Initialize the target project", "Project discovery",
-                    "Provider discovery and health", "Invoke orchestration", "Safety",
+                    "Provider discovery and health", "Continue in the current AI task", "Safety",
                     "Upgrade", "Uninstall and detach", "Troubleshooting"):
         assert heading in text, f"AI-BOOTSTRAP.md is missing the {heading!r} section"
 
