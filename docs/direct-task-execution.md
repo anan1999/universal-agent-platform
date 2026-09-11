@@ -53,3 +53,7 @@ This pair tests index reuse and direct-task instructions. Cross-task AI-authored
 source rejection are verified offline; this pair does not claim measured amortization of a
 previous AI task's learning cost. The acceptance checks backend behavior and frontend source
 integration, not browser rendering or a complete production-quality audit.
+
+Latest [fixed-contract benchmark](direct-batch-real-20260911.md): both variants passed and UAP
+used 8.44% fewer total tokens in one pair, but tool calls and visible message length increased.
+This is not evidence of fewer interactions or lower subscription-quota usage.
