@@ -646,6 +646,33 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
         reset_source(baseline_checkpoint, baseline)
         reset_source(uap_checkpoint, uap, include_agent=True)
         resume_payload = {"tasks": tasks}
+
+    # A provider can modify its source tree and then fail before returning a
+    # usable receipt (for example, a CLI timeout after tests completed).  Such
+    # a pending result is not a checkpoint.  Restore the failed side from the
+    # last VALID pair before retrying so --resume cannot inherit unmeasured
+    # work.  A completed baseline is retained when only the UAP side failed.
+    pending = resume_payload.get("pending", {})
+    expected_pending_task = len(tasks) + 1
+    if (resuming and pending.get("task_number") == expected_pending_task
+            and mode is BenchmarkMode.LONGITUDINAL_LEARNING):
+        baseline_checkpoint = baseline_checkpoints / f"task-{len(tasks)}"
+        uap_checkpoint = uap_checkpoints / f"task-{len(tasks)}"
+        if not baseline_checkpoint.exists() or not uap_checkpoint.exists():
+            raise SystemExit(
+                f"Cannot safely restore pending task {expected_pending_task}: source checkpoint unavailable."
+            )
+        baseline_pending = pending.get("baseline", {})
+        uap_pending = pending.get("uap", {})
+        if baseline_pending.get("status") != "completed":
+            reset_source(baseline_checkpoint, baseline)
+            reset_source(uap_checkpoint, uap, include_agent=True)
+            rollback_invalid_runs(db, uap, [{"uap": uap_pending}])
+            resume_payload = {"tasks": tasks}
+        elif uap_pending and uap_pending.get("status") != "completed":
+            reset_source(uap_checkpoint, uap, include_agent=True)
+            rollback_invalid_runs(db, uap, [{"uap": uap_pending}])
+            resume_payload["pending"].pop("uap", None)
     if tasks and mode is BenchmarkMode.LONGITUDINAL_LEARNING and not resume_payload.get("pending"):
         last = tasks[-1]["source_lineage"]
         if (source_tree_hash(baseline) != last["baseline"]["ending_hash"]
