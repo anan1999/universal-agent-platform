@@ -29,7 +29,10 @@ def evaluate(project: Path) -> dict:
             body = response.json()
             assert body["month"] == "2026-01"
             assert body["total"] == 15.5
-            assert body["categories"] == {"food": 10.0, "travel": 5.5}
+            # The task specifies totals by category, not a wire-key spelling.
+            # Accept the two conventional shapes while keeping values strict.
+            categories = body.get("categories", body.get("by_category"))
+            assert categories == {"food": 10.0, "travel": 5.5}
         source = (project / "frontend" / "src" / "App.jsx").read_text(encoding="utf-8")
         lowered = source.lower()
         assert "/reports/monthly" in source

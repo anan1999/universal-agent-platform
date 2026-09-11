@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 from adaptive_agent.core.capabilities import Complexity
 from adaptive_agent.core.execution_planner import ExecutionPlanner, ExecutionStrategy
+from adaptive_agent.core.goal_analyzer import GoalAnalyzer
 from adaptive_agent.core.goal_analyzer import GoalAnalysis
 from adaptive_agent.core.orchestrator import Orchestrator
 from adaptive_agent.core.tools import ToolRegistry
@@ -117,6 +118,20 @@ def test_default_planner_is_single_agent_and_does_not_synthesize_skills():
         allow_multi_agent=True, minimal_skills=False).plan(analysis.goal, analysis)
     assert experimental.strategy is ExecutionStrategy.MULTI_AGENT_DAG
     assert experimental.temporary_skills
+
+
+def test_endpoint_follow_up_routes_to_coding_and_testing_capabilities():
+    analysis = GoalAnalyzer().analyze(
+        "Add a GET /reports/monthly/{month} endpoint and validate the work")
+    assert {"coding", "testing"} <= set(analysis.capabilities)
+
+
+def test_benchmark_follow_up_selects_developer_not_generic_analyst(tmp_path):
+    _fixture(tmp_path)
+    initialize_project(tmp_path, _templates(tmp_path))
+    composition = Orchestrator(Database(tmp_path / "route.db"), MockProvider(delay=0)).compose(
+        "RUN-ROUTE", context_cache_benchmark.GOAL, str(tmp_path), "expense")
+    assert [member.role_id for member in composition.team.members] == ["developer"]
 
 
 def test_fresh_orchestrator_uses_index_with_zero_pre_task_ai_calls(tmp_path):
