@@ -34,6 +34,31 @@ def test_distiller_normalizes_external_evidence_and_materializes_skill(tmp_path)
     assert "1. update schema" in loaded.instructions
 
 
+def test_distiller_accepts_provider_project_fact_aliases():
+    result = IntelligenceDistiller().distill(
+        run_id="RUN-CURSOR", status="completed", goal="monthly report", task_count=1,
+        structured_evidence=[
+            {"type": "project_fact", "summary": "Reports use YYYY-MM", "evidence": ["app/main.py"]},
+            {"type": "validated_project_fact", "summary": "Invalid months return 422",
+             "evidence": ["tests/test_expenses.py"]},
+        ])
+    assert [item["kind"] for item in result.candidates] == ["knowledge", "knowledge"]
+
+
+def test_selector_normalizes_monthly_and_plural_terms(tmp_path):
+    store = ProjectIntelligenceStore(tmp_path)
+    result = IntelligenceDistiller().distill(
+        run_id="RUN-1", status="completed", goal="month reports", task_count=1,
+        structured_evidence=[{
+            "type": "knowledge", "summary": "Month report categories use expense records",
+            "evidence": ["app/main.py"], "capabilities": ["category report"],
+        }])
+    store.learn_candidates(result.candidates, run_id="RUN-1")
+    selection = store.select("Create monthly reports for expenses", record_reuse=True)
+    assert selection.reuse_hits == 1
+    assert selection.temperature == "warm"
+
+
 def test_learning_evidence_is_not_invented_and_quality_gates_reuse(tmp_path):
     store = ProjectIntelligenceStore(tmp_path)
     assert IntelligenceDistiller().distill(run_id="R", status="completed", goal="x", task_count=1,

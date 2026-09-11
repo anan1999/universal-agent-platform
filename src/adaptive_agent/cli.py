@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 from adaptive_agent import __version__
@@ -769,12 +770,17 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(payload, indent=2) if args.json else
                   f"{args.name}: {probe.state.value.upper()} - {probe.detail}")
             return 2
-        task = Task(new_id("TASK"), new_id("RUN"), args.prompt,
-                    "provider_test", ["text"], metadata={
-                        "goal": args.prompt, "read_only": True,
-                        "model": "env:UAP_OPENAI_COMPATIBLE_MODEL" if args.name == "openai_compatible" else None,
-                    })
-        receipt = asyncio.run(provider.execute(task))
+        # Never expose the caller's current project merely to run a tiny
+        # provider health request. Agentic CLI providers receive an empty,
+        # isolated workspace; API reasoning providers simply ignore it.
+        with tempfile.TemporaryDirectory(prefix="uap-provider-test-") as directory:
+            task = Task(new_id("TASK"), new_id("RUN"), args.prompt,
+                        "provider_test", ["text"], metadata={
+                            "goal": args.prompt, "read_only": True,
+                            "working_directory": directory,
+                            "model": "env:UAP_OPENAI_COMPATIBLE_MODEL" if args.name == "openai_compatible" else None,
+                        })
+            receipt = asyncio.run(provider.execute(task))
         payload = {"provider": args.name, "status": receipt.status,
                    "output": receipt.summary, "model": receipt.model,
                    "duration_seconds": receipt.duration_seconds,

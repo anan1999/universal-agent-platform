@@ -50,7 +50,7 @@ def test_every_manifest_command_exists_in_the_cli(manifest, section):
 
 def test_manifest_is_honest_about_provider_support(manifest):
     architecture = manifest["provider_architecture"]
-    assert set(architecture["implemented"]) == {"codex", "mock", "openai_compatible"}
+    assert set(architecture["implemented"]) == {"codex", "cursor", "mock", "openai_compatible"}
     assert "openai" in architecture["plugin_ready"]
     assert "openai_compatible" not in architecture["plugin_ready"]
     # Nothing may be listed as both real and aspirational.

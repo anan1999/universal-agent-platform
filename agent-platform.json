@@ -107,7 +107,7 @@
     "states": ["available", "installed", "unconfigured", "configured", "connected", "unavailable", "unsupported"],
     "execution_modes": ["agentic_local", "api_reasoning", "local_model", "mock"],
     "capability_values": ["supported", "unsupported", "model_dependent", "unknown"],
-    "implemented": ["codex", "mock", "openai_compatible"],
+    "implemented": ["codex", "cursor", "mock", "openai_compatible"],
     "plugin_ready": ["openai", "anthropic", "gemini", "ollama"],
     "selection": "auto",
     "prefer_command": "agentctl provider prefer <provider-id>",

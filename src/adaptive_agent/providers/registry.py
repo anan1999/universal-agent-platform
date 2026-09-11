@@ -118,6 +118,12 @@ def _openai_compatible_factory(**kwargs: Any) -> AIProvider:
     return OpenAICompatibleProvider(**accepted)
 
 
+def _cursor_factory(**kwargs: Any) -> AIProvider:
+    from adaptive_agent.providers.cursor import CursorProvider
+
+    return CursorProvider(timeout=kwargs.get("timeout", 900.0))
+
+
 def _codex_profile(role: str) -> str | None:
     from adaptive_agent.providers.codex import codex_profile_for
 
@@ -130,6 +136,8 @@ def default_registry() -> ProviderRegistry:
     registry = ProviderRegistry([
         ProviderDescriptor("codex", "Codex", ProviderKind.CLI, _codex_factory,
                            notes="First validated real adapter.", profile_for_role=_codex_profile),
+        ProviderDescriptor("cursor", "Cursor Agent", ProviderKind.CLI, _cursor_factory,
+                           notes="Authenticated Cursor Agent CLI adapter."),
         ProviderDescriptor("mock", "Mock", ProviderKind.TEST, _mock_factory,
                            notes="Deterministic; consumes zero AI quota."),
         ProviderDescriptor("openai_compatible", "OpenAI-compatible endpoint", ProviderKind.API,

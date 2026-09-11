@@ -171,3 +171,10 @@ def test_real_benchmark_requires_opt_in_and_forbids_mock():
     assert "Mock fallback is prohibited" in script
     assert script.count('"Implement the backend foundation') == 1
     assert "TASKS = [" in script and len(__import__("re").findall(r'^    "', script, __import__("re").M)) >= 5
+    assert 'checkpoints / f"task-{number}"' in script
+    assert "Cannot safely roll back" in script
+    assert '"Read(../**)"' in script and '"WebFetch(*)"' in script
+    assert 'choices=("baseline", "uap")' in script
+    assert "chosen_name = args.canonical_source" in script
+    assert 'path / "frontend" / "src", path / "src"' in script
+    assert '("frontend/src/", "src/")' in script

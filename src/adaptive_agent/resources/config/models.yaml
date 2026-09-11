@@ -10,6 +10,30 @@
 #
 # `tier` is a human-readable summary only. It is never a routing key.
 models:
+  cursor:
+    gpt-5.6-luna-low:
+      display_name: Cursor Luna Low
+      model_id: gpt-5.6-luna-low
+      tier: fast
+      cost: low
+      latency: fast
+      availability: provider_dependent
+      notes: Exact Cursor Agent CLI model used by the bounded acceptance benchmark.
+      capabilities:
+        reasoning: medium
+        coding: high
+        debugging: medium
+        code_review: medium
+        repository_search: high
+        file_discovery: high
+        testing: high
+        structured_output: medium
+        tool_use: high
+        long_context: medium
+        writing: medium
+        analysis: medium
+        planning: medium
+
   openai_compatible:
     openai-compatible-configured:
       display_name: Configured OpenAI-compatible model

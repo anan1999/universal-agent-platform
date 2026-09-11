@@ -244,6 +244,7 @@ agentctl providers
 | Provider | State in this build |
 |---|---|
 | Codex | ✅ Implemented and validated against the real CLI |
+| Cursor Agent | ✅ Implemented and validated against the authenticated real CLI |
 | Mock | ✅ Implemented, deterministic and offline |
 | OpenAI-compatible | ✅ Implemented; ready only after a successful endpoint probe |
 | Ollama | 🟡 Runtime detection only; direct adapter not implemented |
@@ -262,6 +263,11 @@ Selection defaults to `auto`. To bias it: `agentctl provider prefer codex`, or s
 
 The OpenAI-compatible adapter reads its base URL, model, and optional key from environment
 variables; it never stores or prints key values and it has no project filesystem access.
+
+The Cursor adapter uses an existing `agent login` session and never reads or stores Cursor
+credentials. Native Windows currently has no Cursor OS sandbox, so automated write runs use
+project-local CLI deny rules and must be limited to a trusted, isolated workspace. Cursor documents
+these rules as best-effort guardrails rather than a security boundary.
 
 ```bash
 export UAP_OPENAI_COMPATIBLE_BASE_URL=http://127.0.0.1:11434/v1
@@ -338,7 +344,7 @@ is in `docs/`. The release evidence, including the bounded real-provider run, is
 - Goal analysis and planning are deterministic and rule-based, not LLM-generated. This keeps
   planning free and reproducible, but it will not infer intent that the goal text does not
   state.
-- Codex, Mock, and the configured OpenAI-compatible adapter execute. Other provider names are
+- Codex, Cursor Agent, Mock, and the configured OpenAI-compatible adapter execute. Other provider names are
   truthful placeholders awaiting adapters.
 - Adaptive routing needs five comparable samples before history influences a decision, and it
   ranks candidates rather than modifying policy.

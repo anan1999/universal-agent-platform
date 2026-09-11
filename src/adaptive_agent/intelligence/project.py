@@ -706,7 +706,12 @@ class ProjectIntelligenceStore:
 
     @staticmethod
     def _terms(value: str) -> set[str]:
-        return {item for item in re.findall(r"[a-z0-9_+-]{3,}", value.lower())}
+        values = {item for item in re.findall(r"[a-z0-9_+-]{3,}", value.lower())}
+        aliases = {
+            "categories": "category", "expenses": "expense", "monthly": "month",
+            "months": "month", "reports": "report", "tests": "test",
+        }
+        return values | {aliases[item] for item in values if item in aliases}
 
     @staticmethod
     def _maturity(current_items: int, runs: int, reuse_hits: int) -> int:
@@ -731,6 +736,7 @@ class IntelligenceDistiller:
                 structured_evidence: Iterable[dict[str, Any]] = (), reported_files: Iterable[str] = (),
                 evaluation_passed: bool | None = None) -> "DistillationResult":
         mapping = {"knowledge": "knowledge", "decision": "decision", "command": "command",
+                   "project_fact": "knowledge", "validated_project_fact": "knowledge",
                    "evaluation_rule": "evaluation", "known_issue": "known_issue",
                    "procedure": "skill_candidate", "skill": "skill_candidate",
                    "agent_role": "agent_role_candidate", "agent": "agent_role_candidate"}

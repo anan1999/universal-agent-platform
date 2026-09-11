@@ -52,6 +52,8 @@ def arguments() -> argparse.Namespace:
     parser.add_argument("--provider", required=True, help="explicit real provider id (Mock is forbidden)")
     parser.add_argument("--model", help="provider model override when supported")
     parser.add_argument("--reasoning", default="medium", choices=("low", "medium", "high", "xhigh"))
+    parser.add_argument("--canonical-source", default="baseline", choices=("baseline", "uap"),
+                        help="fixed passing implementation used as the next paired checkpoint")
     parser.add_argument("--timeout", type=float, default=900)
     parser.add_argument("--workspace", type=Path, default=Path("build/pocketflow-longitudinal"))
     parser.add_argument("--output", type=Path,
@@ -109,6 +111,20 @@ def seed(path: Path) -> None:
         encoding="utf-8")
     (path / "tests").mkdir(exist_ok=True)
     (path / "tests" / "test_seed.py").write_text("def test_seed():\n    assert True\n", encoding="utf-8")
+    cursor_rules = path / ".cursor" / "cli.json"
+    cursor_rules.parent.mkdir(exist_ok=True)
+    cursor_rules.write_text(json.dumps({
+        "permissions": {
+            "allow": ["Read(**)", "Write(**)", "Shell(python:*)", "Shell(pytest:*)",
+                      "Shell(node:*)", "Shell(npm:*)", "Shell(npx:*)"],
+            "deny": ["Read(../**)", "Write(../**)", "Read(.env*)", "Read(**/.env*)",
+                     "Read(**/*.key)", "Read(**/*.pem)", "Write(.git/**)",
+                     "Write(**/.env*)", "Write(**/*.key)", "Write(**/*.pem)",
+                     "Shell(curl:*)", "Shell(Invoke-WebRequest:*)", "Shell(Invoke-RestMethod:*)",
+                     "Shell(git:push*)", "Shell(git:remote*)", "Shell(rm:*)", "Shell(del:*)",
+                     "WebFetch(*)", "Mcp(*:*)"],
+        }
+    }, indent=2) + "\n", encoding="utf-8")
 
 
 def reset_source(source: Path, destination: Path, preserve_agent: bool = False) -> None:
@@ -169,10 +185,10 @@ def evaluate(path: Path, task_number: int) -> dict[str, Any]:
     if task_number >= 1:
         checks.append(("backend", any("FastAPI(" in item.read_text(encoding="utf-8", errors="replace")
                                       for item in python_sources)))
-    source_root = path / "frontend" / "src"
-    frontend_sources = ([item for pattern in ("*.jsx", "*.tsx") for item in source_root.glob(pattern)
-                         if ".test." not in item.name and ".spec." not in item.name]
-                        if source_root.is_dir() else [])
+    source_roots = [root for root in (path / "frontend" / "src", path / "src") if root.is_dir()]
+    frontend_sources = [item for source_root in source_roots
+                        for pattern in ("*.jsx", "*.tsx") for item in source_root.glob(pattern)
+                        if ".test." not in item.name and ".spec." not in item.name]
     if task_number >= 2:
         checks.append(("react dashboard", bool(frontend_sources)))
     source = "\n".join(item.read_text(encoding="utf-8", errors="replace").lower()
@@ -274,14 +290,28 @@ def summarize_uap_run(db: Database, run_id: str, provider_id: str,
 
 
 def render_report(payload: dict[str, Any]) -> str:
+    def model_label(value: Any) -> str:
+        if isinstance(value, list):
+            return ", ".join(str(item) for item in value) or "default"
+        return str(value or "default")
+
+    providers_used = sorted({str(side.get("provider", "unknown"))
+                             for task in payload["tasks"] for side in (task["baseline"], task["uap"])})
+    provider_note = (f"All paired tasks used the single provider {providers_used[0]}."
+                     if len(providers_used) == 1 else
+                     f"This is a mixed-provider sequence: {', '.join(providers_used)}.")
+    canonical = payload["environment"].get("canonical_source", "baseline")
     lines = ["# PocketFlow longitudinal results", "", "## Environment", "",
              f"- UAP: {payload['environment']['uap']}",
              f"- Commit: {payload['environment']['commit']}",
              f"- Provider: {payload['environment']['provider']}",
              f"- Model: {payload['environment']['model'] or 'provider default'}",
+             f"- Canonical source: {payload['environment'].get('canonical_source', 'baseline')}",
              f"- Date: {payload['environment']['date']}", ""]
     for task in payload["tasks"]:
         lines += [f"## Task {task['task_number']}", "",
+                  f"- Provider/model: baseline={task['baseline']['provider']}/{model_label(task['baseline'].get('model'))}; "
+                  f"UAP={task['uap']['provider']}/{model_label(task['uap'].get('model'))}",
                   f"- Baseline: {task['baseline']['status']}, {task['baseline_tokens']} tokens ({task['baseline']['token_source']})",
                   f"- UAP: {task['uap']['status']}, {task['uap_tokens']} tokens ({task['uap']['token_source']})",
                   f"- Quality: baseline={task['quality']['baseline']['passed']}, UAP={task['quality']['uap']['passed']}",
@@ -301,13 +331,16 @@ def render_report(payload: dict[str, Any]) -> str:
               f"- Baseline total: {payload['cumulative']['baseline_tokens']}",
               f"- UAP total: {payload['cumulative']['uap_tokens']}",
               f"- Valid paired tasks: {payload['cumulative']['comparison_valid_tasks']}",
+              f"- Paired measurement claimable: {payload['cumulative'].get('paired_measurement_claimable', False)}",
               f"- Savings claimable: {payload['cumulative'].get('savings_claimable', False)}",
+              f"- Learning reuse validated: {payload['cumulative'].get('learning_reuse_validated', False)}",
+              f"- Learning savings claimable: {payload['cumulative'].get('learning_savings_claimable', False)}",
               f"- Break-even: {payload['cumulative']['break_even_task'] or 'not reached'}", "",
               "## Intelligence ROI", "",
               f"- Final state: `{json.dumps(payload['intelligence'], ensure_ascii=False)}`", "",
               "## Limitations", "",
               "Provider sessions are ephemeral, but provider-side caching may still exist. Files explored are unavailable unless the provider reports them. "
-             "Paired task inputs are reset to the same accepted source checkpoint. Canonical checkpoint policy is fixed: if both systems pass, baseline is canonical; if only one passes, the passing result is canonical; token counts never choose the checkpoint. Task 2 used the UAP checkpoint only as a documented recovery exception after the former App.jsx-only evaluator produced a false negative and had already discarded the baseline tree. UAP alone retains durable `.agent` intelligence.\n"]
+             f"Paired task inputs are reset to the same accepted source checkpoint. When both systems pass, the predeclared canonical source is {canonical}; if only one passes, the passing result is canonical. Token outcomes never choose the checkpoint. {provider_note} A valid paired measurement and validated learning reuse do not imply token savings; break-even must also be reached. UAP alone retains durable `.agent` intelligence.\n"]
     return "\n".join(lines)
 
 
@@ -373,12 +406,16 @@ def write_interruption(args: argparse.Namespace, tasks: list[dict[str, Any]],
     payload = {
         "environment": {"uap": __version__, "commit": commit, "provider": args.provider,
                         "model": args.model, "reasoning": args.reasoning,
+                        "canonical_source": args.canonical_source,
                         "date": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())},
         "tasks": tasks,
         "interrupted": interruption,
         "cumulative": {"baseline_tokens": cumulative_baseline, "uap_tokens": cumulative_uap,
                        "break_even_task": "NOT_CLAIMABLE", "observed_break_even_task": break_even,
+                       "paired_measurement_claimable": False,
                        "savings_claimable": False,
+                       "learning_reuse_validated": False,
+                       "learning_savings_claimable": False,
                        "comparison_valid_tasks": sum(bool(item.get("comparison_valid")) for item in tasks)},
         "intelligence": ProjectIntelligenceStore(uap_root).status(),
     }
@@ -393,7 +430,7 @@ def repair_react_filename_false_negative(task: dict[str, Any]) -> None:
     for side in ("baseline", "uap"):
         modified = task.get(side, {}).get("files_modified", [])
         has_component = any(
-            str(name).replace("\\", "/").startswith("frontend/src/")
+            str(name).replace("\\", "/").startswith(("frontend/src/", "src/"))
             and str(name).lower().endswith((".jsx", ".tsx"))
             and ".test." not in str(name).lower() and ".spec." not in str(name).lower()
             for name in modified
@@ -412,8 +449,18 @@ def repair_react_filename_false_negative(task: dict[str, Any]) -> None:
         and task.get("baseline", {}).get("token_source") == "measured"
         and task.get("uap", {}).get("token_source") == "measured"
     )
-    if task["comparison_valid"]:
+    if task["comparison_valid"] and not task.get("canonical_source"):
         task["canonical_source"] = "uap (legacy evaluator recovery)"
+
+
+def paired_models_match(task: dict[str, Any]) -> bool:
+    """Require an explicit model match when a baseline model was pinned."""
+    baseline_model = task.get("baseline", {}).get("model")
+    if not baseline_model:
+        return True
+    uap_model = task.get("uap", {}).get("model")
+    models = set(uap_model if isinstance(uap_model, list) else [uap_model])
+    return baseline_model in models
 
 
 async def execute(args: argparse.Namespace) -> dict[str, Any]:
@@ -437,16 +484,23 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
     if workspace.exists() and not resuming:
         shutil.rmtree(workspace)
     canonical, baseline, uap = workspace / "canonical", workspace / "baseline", workspace / "uap"
+    checkpoints = workspace / "checkpoints"
     if not resuming:
         seed(canonical)
         reset_source(canonical, baseline)
         reset_source(canonical, uap)
         initialize_project(uap, RESOURCE_ROOT / "templates", auto=True)
+        reset_source(canonical, checkpoints / "task-0")
     db = Database(workspace / "uap-history.db")
     resume_payload = (json.loads(args.output.read_text(encoding="utf-8")) if resuming else {})
     tasks: list[dict[str, Any]] = list(resume_payload.get("tasks", []))
     for previous in tasks:
         repair_react_filename_false_negative(previous)
+        if (not previous.get("baseline", {}).get("files_modified")
+                or not previous.get("uap", {}).get("files_modified")):
+            previous["comparison_valid"] = False
+        if not paired_models_match(previous):
+            previous["comparison_valid"] = False
     for previous in tasks:
         run_id = previous.get("uap", {}).get("run_id")
         if run_id and previous.get("uap", {}).get("token_source") == "unavailable":
@@ -461,8 +515,17 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
     first_invalid = next((index for index, item in enumerate(tasks)
                           if not item.get("comparison_valid")), None)
     if first_invalid is not None:
+        checkpoint = checkpoints / f"task-{first_invalid}"
+        if not checkpoint.exists():
+            raise SystemExit(
+                f"Cannot safely roll back task {first_invalid + 1}: filesystem checkpoint "
+                f"{checkpoint} is unavailable. Start a fresh benchmark workspace."
+            )
         rollback_invalid_runs(db, uap, tasks[first_invalid:])
         tasks = tasks[:first_invalid]
+        reset_source(checkpoint, canonical)
+        reset_source(canonical, baseline)
+        reset_source(canonical, uap, preserve_agent=True)
         args.output.write_text(json.dumps({"tasks": tasks}, indent=2), encoding="utf-8")
     cumulative_baseline = sum(int(item["baseline_tokens"]) for item in tasks)
     cumulative_uap = sum(int(item["uap_tokens"]) for item in tasks)
@@ -515,13 +578,20 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
         cumulative_uap += uap_tokens
         comparison_valid = (baseline_result["status"] == "completed" and
                             uap_result["status"] == "completed" and
+                            bool(baseline_result.get("files_modified")) and
+                            bool(uap_result.get("files_modified")) and
+                            paired_models_match({"baseline": baseline_result, "uap": uap_result}) and
                             baseline_quality["passed"] and uap_quality["passed"] and
                             baseline_result["token_source"] == "measured" and
                             uap_result["token_source"] == "measured")
         if comparison_valid and break_even is None and cumulative_uap <= cumulative_baseline:
             break_even = number
         # Fixed, pre-declared checkpoint rule; token outcome never selects it.
-        chosen = baseline if baseline_quality["passed"] else uap
+        if baseline_quality["passed"] and uap_quality["passed"]:
+            chosen_name = args.canonical_source
+        else:
+            chosen_name = "baseline" if baseline_quality["passed"] else "uap"
+        chosen = baseline if chosen_name == "baseline" else uap
         reset_source(chosen, canonical)
         task_result = {"task_number": number, "goal": goal, "baseline": baseline_result,
                        "uap": uap_result, "baseline_tokens": baseline_tokens,
@@ -532,9 +602,10 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
                        "rediscovery": uap_result["rediscovery"],
                        "cold_or_warm": uap_result["temperature"],
                        "comparison_valid": comparison_valid,
-                       "canonical_source": "baseline" if baseline_quality["passed"] else "uap",
+                       "canonical_source": chosen_name,
                        "paired_source_files": len(before_baseline)}
         tasks.append(task_result)
+        reset_source(canonical, checkpoints / f"task-{number}")
         partial = {"tasks": tasks}
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(partial, indent=2), encoding="utf-8")
@@ -543,15 +614,22 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
 
     commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True,
                             text=True, check=False).stdout.strip() or "unknown"
+    paired_measurement = len(tasks) == len(TASKS) and all(
+        item.get("comparison_valid") for item in tasks)
+    learning_reuse = paired_measurement and any(int(item.get("reuse_hits", 0)) > 0 for item in tasks)
+    observed_savings = paired_measurement and cumulative_uap < cumulative_baseline
     payload = {"environment": {"uap": __version__, "commit": commit,
                                 "provider": args.provider, "model": args.model,
                                 "reasoning": args.reasoning,
+                                "canonical_source": args.canonical_source,
                                 "date": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())},
                "tasks": tasks,
                "cumulative": {"baseline_tokens": cumulative_baseline,
                               "uap_tokens": cumulative_uap, "break_even_task": break_even,
-                              "savings_claimable": len(tasks) == len(TASKS) and all(
-                                  item.get("comparison_valid") for item in tasks),
+                              "paired_measurement_claimable": paired_measurement,
+                              "savings_claimable": observed_savings,
+                              "learning_reuse_validated": learning_reuse,
+                              "learning_savings_claimable": learning_reuse and observed_savings,
                               "comparison_valid_tasks": sum(item["comparison_valid"] for item in tasks)},
                "intelligence": ProjectIntelligenceStore(uap).status()}
     args.output.write_text(json.dumps(payload, indent=2), encoding="utf-8")
