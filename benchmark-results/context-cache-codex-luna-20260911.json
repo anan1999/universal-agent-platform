@@ -1,0 +1,80 @@
+{
+  "environment": {
+    "uap": "2.3.1",
+    "commit": "a6f7938e300aad7ab9f2d2cde20189f40d24188b",
+    "provider": "codex",
+    "model": "gpt-5.6-luna",
+    "reasoning": "low",
+    "task": "Add a GET /reports/monthly/{month} API endpoint that returns the selected month, total spending, and totals by category, then display that monthly total and category breakdown in the existing React dashboard. Preserve existing expense behavior and validate the work.",
+    "source_hash": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+  },
+  "baseline": {
+    "status": "completed",
+    "provider": "codex",
+    "model": "gpt-5.6-luna",
+    "input_tokens": 153819,
+    "cached_input_tokens": 128256,
+    "non_cached_input_tokens": 25563,
+    "output_tokens": 3337,
+    "total_tokens": 157156,
+    "token_source": "measured",
+    "duration_seconds": 112.235,
+    "ai_invocations": 1,
+    "files_read": "UNAVAILABLE",
+    "files_changed": [
+      "app/main.py",
+      "frontend/src/App.jsx",
+      "tests/test_expenses.py"
+    ],
+    "error": "Backend behavior is validated, but the frontend build toolchain is unavailable in the environment.",
+    "quality": {
+      "passed": true,
+      "contract": "context-cache-monthly-v1",
+      "error": null,
+      "returncode": 0
+    }
+  },
+  "uap": {
+    "status": "completed",
+    "provider": "codex",
+    "model": "gpt-5.6-luna",
+    "input_tokens": 50065,
+    "cached_input_tokens": 16128,
+    "non_cached_input_tokens": 33937,
+    "output_tokens": 784,
+    "total_tokens": 50849,
+    "token_source": "measured",
+    "duration_seconds": 32.156,
+    "ai_invocations": 1,
+    "files_read": "UNAVAILABLE",
+    "files_changed": [
+      "app/main.py",
+      "frontend/src/App.jsx",
+      "tests/test_expenses.py"
+    ],
+    "error": null,
+    "quality": {
+      "passed": false,
+      "contract": "context-cache-monthly-v1",
+      "error": "AssertionError: {\"detail\":\"Not Found\"}",
+      "returncode": 1
+    },
+    "project_context_chars": 600,
+    "relevant_paths": [
+      "app/",
+      "frontend/"
+    ],
+    "pre_task_ai_calls": 0,
+    "orchestration_wall_ms": 14663.938
+  },
+  "equal_quality": false,
+  "acceptance_revision_note": "Post-run offline reevaluation accepts either categories or by_category because the task did not prescribe a response-key spelling. No provider was rerun.",
+  "decision_evidence": {
+    "measured_tokens": true,
+    "fewer_tokens": true,
+    "equal_tokens": false,
+    "materially_faster_10_percent": true
+  },
+  "conclusion": "INCONCLUSIVE",
+  "claim": "no benefit claim is supported by this pair"
+}
