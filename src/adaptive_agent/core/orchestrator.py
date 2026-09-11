@@ -29,7 +29,7 @@ from adaptive_agent.providers.registry import ProviderRegistry, providers as pro
 from adaptive_agent.runtime import RESOURCE_ROOT, platform_home
 from adaptive_agent.skills.manifest import SkillTrust
 from adaptive_agent.skills.registry import SkillRegistry
-from adaptive_agent.skills.resolver import SkillCandidate, SkillResolver
+from adaptive_agent.skills.resolver import SkillResolver
 from adaptive_agent.storage.database import Database
 from adaptive_agent.tasks.graph import TaskGraph
 
@@ -94,9 +94,11 @@ class Orchestrator:
         intelligence_directory: str | None = None) -> Composition:
         analysis = self.analyzer.analyze(goal, self.active_profiles, project_signals)
         intelligence = ContextSelection("cold", "project adapter unavailable")
+        intelligence_store: ProjectIntelligenceStore | None = None
         intelligence_root = intelligence_directory or working_directory
         if intelligence_root and (Path(intelligence_root) / ".agent").is_dir():
-            intelligence = ProjectIntelligenceStore(Path(intelligence_root)).select(
+            intelligence_store = ProjectIntelligenceStore(Path(intelligence_root))
+            intelligence = intelligence_store.select(
                 goal, analysis.capabilities, record_reuse=record_intelligence)
         self.skills.discover_directory(RESOURCE_ROOT / "skills", SkillTrust.BUILT_IN)
         self.skills.discover_directory(platform_home() / "skills", SkillTrust.TRUSTED)
@@ -104,30 +106,17 @@ class Orchestrator:
         if project_root:
             self.skills.discover_directory(Path(project_root) / ".agent" / "skills",
                                            SkillTrust.PROJECT_LOCAL)
+        project_skill_metadata = (intelligence_store.skill_metadata(
+            goal, analysis.complexity.value) if intelligence_store else {})
         execution = ExecutionPlanner(
-            self.tools, SkillResolver(self.skills.manifests()),
+            self.tools, SkillResolver(self.skills.manifests(),
+                                      project_metadata=project_skill_metadata),
             minimize_cost=self.consumption_policy.mode.value == "economy").plan(goal, analysis)
-        # Project-local Skills can be relevant by their learned project summary
-        # even when the generic GoalAnalyzer only reports "coding". Keep this
-        # narrow, lexical, and benefit-gated; no embeddings or forced loading.
-        goal_terms = ProjectIntelligenceStore._terms(goal)
-        for learned in intelligence.items:
-            if learned.get("kind") != "skill" or learned.get("status") not in {
-                    "temporary", "validated", "promotion_candidate", "current"}:
-                continue
-            if not (goal_terms & ProjectIntelligenceStore._terms(
-                    " ".join([learned.get("summary", ""), *learned.get("tags", []),
-                              *learned.get("capabilities", [])]))):
-                continue
-            try:
-                manifest = self.skills.manifest(str(learned["id"]))
-            except KeyError:
-                continue
-            if any(candidate.manifest.id == manifest.id for candidate in execution.selected_skills):
-                continue
-            execution.selected_skills.append(SkillCandidate(
-                manifest, 1.0, list(manifest.capabilities), [],
-                ["selected by project-intelligence relevance and Skill benefit gate"]))
+        if intelligence_store:
+            selected_project_skills = [candidate.manifest.id for candidate in execution.selected_skills
+                                       if candidate.manifest.id in project_skill_metadata]
+            intelligence_store.attach_selected_skills(
+                intelligence, selected_project_skills, record_reuse=record_intelligence)
         for manifest in execution.temporary_skills:
             self.skills.register_manifest(manifest, replace=True)
         resolver = CapabilityResolver(
@@ -414,5 +403,21 @@ class Orchestrator:
                 run_id=run_id, status=status, goal=goal, task_count=len(graph.tasks),
                 structured_evidence=structured_evidence,
                 reported_files=reported_files, evaluation_passed=evaluated)
-            intelligence_store.learn_candidates(distillation.candidates, run_id=run_id)
+            persistence = intelligence_store.learn_candidates_with_report(
+                distillation.candidates, run_id=run_id,
+                quality_passed=bool(success and evaluated is not False))
+            funnel = intelligence_store.record_learning_funnel(
+                run_id, structured_evidence, distillation, persistence)
+            reusable_kinds = {"knowledge", "decision", "skill", "command",
+                              "evaluation", "known_issue", "agent"}
+            validated_count = (sum(item.get("kind") in reusable_kinds
+                                   for item in composition.project_intelligence["items"])
+                               if success and (evaluated is not False) else 0)
+            lifecycle_data = {**composition.project_intelligence,
+                              "successful_selected_items": validated_count,
+                              "validated_context_reuse": validated_count,
+                              "learning_funnel": funnel}
+            self.database.execute(
+                "UPDATE project_intelligence_runs SET data_json=? WHERE run_id=?",
+                (self.database.json(lifecycle_data), run_id))
         return run_id

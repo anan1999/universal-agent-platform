@@ -651,7 +651,8 @@ def main(argv: list[str] | None = None) -> int:
             for item in explanation["items"]:
                 print(f"- {item['id']} [{item['kind']}]: {item['summary']}")
                 print(f"  persisted because: {item.get('why_persisted') or 'not recorded'}; "
-                      f"reuse: {item.get('validated_reuse_count', 0)} validated; payback: {item['payback_status']}")
+                      f"validated context reuse: {item.get('validated_reuse_count', 0)}; "
+                      f"payback: {item['payback_status']}")
     elif args.command == "agents":
         values = registry_agents(db)
         if args.verbose or args.json:

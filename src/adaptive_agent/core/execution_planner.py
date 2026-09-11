@@ -53,7 +53,7 @@ class ExecutionPlanner:
         capabilities = sorted({normalize(item) for item in analysis.capabilities})
         deterministic = self.tools.search(capabilities)
         explicit_tool = self._explicit_tool(goal, deterministic)
-        selected, rejected = self.skills.select(capabilities, self.minimize_cost)
+        selected, rejected = self.skills.select(capabilities, self.minimize_cost, goal=goal)
         covered = {capability for item in selected for capability in item.matched}
         deterministic_capabilities = {capability for tool in deterministic for capability in tool.capabilities}
         skill_tools = {tool for item in selected for tool in item.manifest.tools}

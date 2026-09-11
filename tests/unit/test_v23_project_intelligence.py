@@ -70,6 +70,21 @@ def test_revalidation_refreshes_hash_and_timestamp(tmp_path):
     assert "reviewed after source change" in refreshed.evidence
 
 
+def test_revalidation_explains_exact_changed_paths(tmp_path):
+    source = tmp_path / "schema.py"
+    source.write_text("VERSION = 1\n", encoding="utf-8")
+    store = ProjectIntelligenceStore(tmp_path)
+    store.add(IntelligenceItem(
+        id="schema-contract", kind="knowledge", summary="Schema version contract",
+        capabilities=["schema"], related_paths=["schema.py"], evidence=["accepted task"]))
+    source.write_text("VERSION = 2\n", encoding="utf-8")
+    selection = store.select("schema change")
+    assert selection.temperature == "revalidation"
+    assert selection.stale_reasons[0]["id"] == "schema-contract"
+    assert selection.stale_reasons[0]["reason"] == "source_hash_changed"
+    assert selection.stale_reasons[0]["changed_paths"] == ["schema.py"]
+
+
 def test_dedup_and_contradiction_supersession(tmp_path):
     (tmp_path / "pyproject.toml").write_text("stable", encoding="utf-8")
     store = ProjectIntelligenceStore(tmp_path)
@@ -175,6 +190,9 @@ def test_real_benchmark_requires_opt_in_and_forbids_mock():
     assert "Cannot safely roll back" in script
     assert '"Read(../**)"' in script and '"WebFetch(*)"' in script
     assert 'choices=("baseline", "uap")' in script
-    assert "chosen_name = args.canonical_source" in script
-    assert 'path / "frontend" / "src", path / "src"' in script
-    assert '("frontend/src/", "src/")' in script
+    assert 'BenchmarkMode.LONGITUDINAL_LEARNING' in script
+    assert '"independent longitudinal baseline and UAP lines"' in script
+    assert 'reset_source(baseline_checkpoint, baseline)' in script
+    assert 'reset_source(uap_checkpoint, uap, include_agent=True)' in script
+    assert 'benchmark-fixtures" / "pocketflow" / "acceptance" / "contract.py"' in script
+    assert '"quality_source": "benchmark_owned_external_acceptance"' in script

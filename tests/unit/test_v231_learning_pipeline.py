@@ -59,6 +59,43 @@ def test_selector_normalizes_monthly_and_plural_terms(tmp_path):
     assert selection.temperature == "warm"
 
 
+def test_learning_funnel_reports_every_rejection_stage(tmp_path):
+    evidence = [
+        {"type": "knowledge", "summary": "Stable API prefix", "evidence": ["app.py"],
+         "chain_of_thought": "must never persist"},
+        {"type": "procedure", "summary": "Coding best practices",
+         "procedure_steps": ["code"], "evidence": ["generic"]},
+        {"type": "knowledge", "summary": "Missing proof", "evidence": []},
+        {"type": "mystery", "summary": "Unknown", "evidence": ["x"]},
+    ]
+    distillation = IntelligenceDistiller().distill(
+        run_id="RUN-FUNNEL", status="completed", goal="API", task_count=1,
+        structured_evidence=evidence, evaluation_passed=True)
+    assert len(distillation.candidates) == 1
+    assert distillation.rejected_by_reason["generic"] == 1
+    assert distillation.rejected_by_reason["missing_evidence"] == 1
+    assert distillation.rejected_by_reason["unsupported"] == 1
+
+    store = ProjectIntelligenceStore(tmp_path)
+    store.record_run("RUN-FUNNEL", store.select("API"), success=True, evaluation_passed=True)
+    persistence = store.learn_candidates_with_report(distillation.candidates, "RUN-FUNNEL")
+    funnel = store.record_learning_funnel("RUN-FUNNEL", evidence, distillation, persistence)
+    assert funnel["provider_learning_evidence_count"] == 4
+    assert funnel["persistence_accepted_count"] == 1
+    assert funnel["accepted_by_kind"]["knowledge"] == 1
+    assert "chain_of_thought" not in funnel["provider_learning_evidence"][0]
+    assert store.status()["learning_yield"]["evidence_emitted"] == 4
+
+
+def test_failed_acceptance_rejects_provider_candidates_as_weak_validation(tmp_path):
+    store = ProjectIntelligenceStore(tmp_path)
+    result = store.learn_candidates_with_report([{
+        "kind": "knowledge", "summary": "Unverified output", "evidence": ["provider said so"],
+    }], "RUN-FAIL", quality_passed=False)
+    assert not result.accepted
+    assert result.rejected_by_reason["weak_validation"] == 1
+
+
 def test_learning_evidence_is_not_invented_and_quality_gates_reuse(tmp_path):
     store = ProjectIntelligenceStore(tmp_path)
     assert IntelligenceDistiller().distill(run_id="R", status="completed", goal="x", task_count=1,

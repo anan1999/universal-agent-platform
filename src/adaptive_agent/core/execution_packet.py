@@ -46,8 +46,8 @@ class ExecutionPacket:
             "Use only this packet and the workspace content the task actually needs.",
             "Do not inspect unrelated directories or include full logs in the response.",
             f"Keep the final structured response within {self.max_output_words} words.",
-            "Before returning, explicitly evaluate whether the work produced a stable project fact, explicit decision, validated command, concrete project-specific procedure, recurring role, evaluation rule, or evidence-backed issue that future tasks are likely to need.",
-            "When such reusable evidence exists, include it in learning_evidence with concrete evidence, related source paths, capabilities, expected reuse, and validation. Use an empty array only when no candidate survives that evidence gate.",
+            "Before returning, explicitly evaluate whether the task reveals a stable project fact, explicit decision, reusable project-specific procedure, validated command, known issue, evaluation rule, or recurring responsibility likely to help future tasks; if so, include compact structured learning_evidence with concrete evidence, related paths, capabilities, expected reuse, and validation.",
+            "learning_evidence is optional in substance: return an empty array when nothing reusable was learned.",
             "Never invent learning evidence or include temporary debugging notes, generic advice, hidden reasoning, or transcripts.",
         ])
         if self.read_only:

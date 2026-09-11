@@ -106,7 +106,9 @@ agentctl status --json
 The index stores knowledge, decisions, commands, evaluations, artifacts, issues, task history,
 compact receipts, and validated reusable Skills/Agent roles. It never stores conversations or
 hidden reasoning. See [Project intelligence](docs/project-intelligence.md) and
-[amortized context](docs/amortized-context.md).
+[amortized context](docs/amortized-context.md). Benchmark claims are governed by the separate
+[execution-efficiency and longitudinal-learning protocol](docs/v2.3.1-proof-hardening.md); selected
+context plus a successful evaluation is reported as validated context reuse, not semantic causality.
 
 ## Copy this into any AI assistant
 

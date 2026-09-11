@@ -9,9 +9,11 @@ The lifecycle metric records provider tokens separately from UAP-controlled cont
 remain `measured`, `estimated`, or `unavailable` according to the provider receipt. These values
 must not be conflated.
 
-Break-even is the smallest task number where cumulative UAP cost is no greater than cumulative
-direct-provider baseline cost. A cold task may cost more. If no break-even occurs, the report
-must say so rather than extrapolating savings.
+For a longitudinal claim, Baseline and UAP must preserve independent source lines and pass the same
+benchmark-owned external acceptance contract. Break-even is the smallest task number where every
+pair through that task remains `VALID` and quality-equivalent and cumulative UAP cost is no greater
+than cumulative direct-provider baseline cost. A cold task may cost more. If no break-even occurs,
+the report must say so rather than extrapolating savings.
 
 Use `ProjectIntelligenceStore.amortization()` for deterministic accounting and the explicit
 PocketFlow benchmark for provider-measured evidence.

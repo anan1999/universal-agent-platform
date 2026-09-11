@@ -7,7 +7,7 @@ loaded only after metadata retrieval selects an item for the current goal.
 Supported categories are knowledge, decisions, Skills, Agent roles, commands, evaluations,
 artifacts, known issues, task history, and compact receipts. Every item has an identity,
 summary, evidence, validation state, source paths and hashes when applicable, confidence,
-status, verification time, and reuse count.
+status, verification time, selection count, and validated context reuse count.
 
 Creation gates require a non-empty summary and explicit evidence. Reusable Skills and Agent
 roles additionally require validation and expected reuse of at least two tasks. Re-adding an
@@ -33,5 +33,7 @@ Inspect it with `agentctl status --json` or `agentctl context explain "<goal>" -
 
 Execution context is assembled in layers: project knowledge and decisions, current task,
 validated Agent-role context, selected Skill instructions/references, dependency receipts, and
-provider/model routing. Project metadata is ranked first; only selected detail files enter the
-packet. The explain payload names each item and its evidence so context is attributable.
+provider/model routing. All built-in, trusted, project-local, and temporary Skills enter one
+`SkillResolver` candidate pool. Project Intelligence contributes ranking and benefit-gate metadata;
+it does not run a second Skill selection algorithm. Only selected detail files enter the packet.
+The explain payload names each item, score, gate result, and evidence so context is attributable.
