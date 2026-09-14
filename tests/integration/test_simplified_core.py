@@ -150,7 +150,8 @@ def test_fresh_orchestrator_uses_index_with_zero_pre_task_ai_calls(tmp_path):
                             str(tmp_path), "expense")
     assert resumed.project_intelligence["pre_task_ai_calls"] == 0
     assert resumed.project_intelligence["relevant_paths"] == ["app/"]
-    assert all(task.metadata["allowed_files"] == ["app/"] for task in resumed.graph.tasks.values())
+    assert all(task.metadata["suggested_paths"] == ["app/"] for task in resumed.graph.tasks.values())
+    assert all(task.metadata["allowed_scope"] == [] for task in resumed.graph.tasks.values())
     assert (tmp_path / ".agent" / "project-index.json").read_text(encoding="utf-8") == index_before
 
 
