@@ -17,7 +17,7 @@ sys.path.insert(0, str(ROOT))
 
 from adaptive_agent import __version__
 from adaptive_agent.core.execution_packet import ExecutionPacketBuilder
-from adaptive_agent.core.models import TaskKind
+from adaptive_agent.core.models import Task, TaskKind, new_id
 from adaptive_agent.core.orchestrator import Orchestrator
 from adaptive_agent.project.context_index import ProjectContextIndex
 from adaptive_agent.providers.registry import providers
@@ -69,6 +69,16 @@ def seed(destination: Path) -> None:
 def initialize_context_only(root: Path) -> None:
     (root / ".agent").mkdir(parents=True, exist_ok=True)
     ProjectContextIndex(root).initialize()
+
+
+def task(root: Path, model: str | None, reasoning: str, goal: str = GOAL) -> Task:
+    """Compatibility constructor shared by the older benchmark tools."""
+    return Task(
+        new_id("TASK"), new_id("RUN"), goal, "single_executor",
+        ["coding", "frontend_implementation", "testing"], reasoning=reasoning,
+        metadata={"goal": goal, "working_directory": str(root), "model": model,
+                  "read_only": False}, kind=TaskKind.AGENT,
+    )
 
 
 def receipt_metrics(receipt, duration: float) -> dict[str, Any]:

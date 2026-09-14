@@ -203,3 +203,10 @@ def test_context_cache_scale_suite_reuses_prepared_fixture_and_is_quota_free(tmp
     assert first["prepared_fixture"]["reused"] is False
     assert second["prepared_fixture"]["reused"] is True
     assert len({row["source_hash"] for row in first["tasks"]}) == 1
+
+
+def test_context_cache_keeps_shared_benchmark_task_constructor(tmp_path):
+    built = context_cache_benchmark.task(tmp_path, "model-x", "low", "Small goal")
+    assert built.title == "Small goal"
+    assert built.metadata["working_directory"] == str(tmp_path)
+    assert built.metadata["model"] == "model-x"
