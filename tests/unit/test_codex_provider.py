@@ -7,7 +7,7 @@ import pytest
 from adaptive_agent.core.execution_packet import ExecutionPacketBuilder
 from adaptive_agent.core.models import Receipt, Task
 from adaptive_agent.providers.codex import RESULT_SCHEMA, CodexCapabilities, CodexErrorCode, CodexProvider
-from adaptive_agent.providers.codex.provider import CodexEventBudget
+from adaptive_agent.providers.codex.provider import CodexEventBudget, CodexTimeout
 
 
 def test_capability_detection_from_fake_executable(tmp_path):
@@ -144,6 +144,38 @@ def test_policy_block_is_environment_failure_without_escalation(tmp_path):
     receipt = asyncio.run(provider.execute(task))
     assert receipt.error_code == CodexErrorCode.CAPABILITY_UNAVAILABLE.value
     assert receipt.needs_escalation is False
+
+
+def test_timeout_preserves_partial_measured_usage(tmp_path):
+    output = "\n".join([
+        json.dumps({"type": "thread.started", "thread_id": "thread-timeout-1"}),
+        json.dumps({"type": "item.completed", "item": {"type": "command_execution"}}),
+        json.dumps({"type": "turn.completed", "usage": {
+            "input_tokens": 321, "cached_input_tokens": 120, "output_tokens": 45,
+        }}),
+        "{incomplete",
+    ])
+    capabilities = CodexCapabilities(
+        available=True, supports_noninteractive=True, supports_structured_output=True,
+        supports_working_directory=True, supports_jsonl=True,
+    )
+
+    class TimedOutProvider(CodexProvider):
+        async def _communicate(self, args, prompt, working_directory, budget=None):
+            raise CodexTimeout(output.encode(), b"")
+
+    provider = TimedOutProvider(command_prefix=["fake"], capabilities=capabilities, timeout=1)
+    task = Task("T", "R", "Modify a file", "developer",
+                metadata={"working_directory": str(tmp_path)})
+    receipt = asyncio.run(provider.execute(task))
+    assert receipt.status == "failed"
+    assert receipt.error_code == CodexErrorCode.TIMEOUT.value
+    assert receipt.token_usage == {
+        "input": 321, "output": 45, "cached": 120,
+        "source": "partial_measured", "estimated": False, "complete": False,
+        "invocation_count": 1, "provider_tool_calls": 1, "provider_messages": 0,
+        "execution_id": "thread-timeout-1",
+    }
 
 
 def test_live_event_budget_stops_before_accepting_an_extra_tool():

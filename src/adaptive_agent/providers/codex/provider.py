@@ -46,6 +46,15 @@ class CodexBudgetExceeded(RuntimeError):
         self.assistant_messages = assistant_messages
 
 
+class CodexTimeout(TimeoutError):
+    """Timeout that preserves bounded subprocess telemetry collected so far."""
+
+    def __init__(self, stdout: bytes, stderr: bytes):
+        super().__init__("Codex execution timed out")
+        self.stdout = stdout
+        self.stderr = stderr
+
+
 @dataclass(slots=True)
 class CodexEventBudget:
     max_tool_calls: int | None = None
@@ -278,6 +287,28 @@ class CodexProvider(AIProvider):
                 (f"{error.reason}; observed tool_calls={error.tool_calls}, "
                  f"assistant_messages={error.assistant_messages}."),
                 started, model=model)
+        except CodexTimeout as error:
+            message = f"Codex exceeded {self.timeout:g}s timeout."
+            stdout_text = error.stdout.decode("utf-8", errors="replace")
+            usage, execution_id = self._parse_telemetry(stdout_text)
+            if not usage:
+                return self._failure(task, CodexErrorCode.TIMEOUT, message, started, model=model)
+            token_usage: dict[str, int | bool | str] = {
+                "input": int(usage.get("input_tokens", 0)),
+                "output": int(usage.get("output_tokens", 0)),
+                "cached": int(usage.get("cached_input_tokens", 0)),
+                "source": "partial_measured",
+                "estimated": False,
+                "complete": False,
+                "invocation_count": 1,
+                **self._execution_counts(stdout_text),
+            }
+            if execution_id:
+                token_usage["execution_id"] = execution_id
+            self._accumulate(token_usage)
+            receipt = self._failure(task, CodexErrorCode.TIMEOUT, message, started, model=model)
+            receipt.token_usage = token_usage
+            return receipt
         except TimeoutError:
             return self._failure(task, CodexErrorCode.TIMEOUT, f"Codex exceeded {self.timeout:g}s timeout.", started, model=model)
         except OSError as error:
@@ -381,9 +412,12 @@ class CodexProvider(AIProvider):
         except TimeoutError:
             process.terminate()
             await process.wait()
-            if not stderr_task.done():
+            if stderr_task.done() and not stderr_task.cancelled():
+                stderr = stderr_task.result()
+            else:
                 stderr_task.cancel()
-            raise
+                stderr = b""
+            raise CodexTimeout(b"".join(stdout_parts), stderr)
         except asyncio.CancelledError:
             process.terminate()
             try:
@@ -418,17 +452,11 @@ class CodexProvider(AIProvider):
     @staticmethod
     def _parse_jsonl(output: str) -> tuple[dict[str, Any], dict[str, int], str | None]:
         final_text: str | dict[str, Any] | None = None
-        usage: dict[str, int] = {}
-        execution_id: str | None = None
+        usage, execution_id = CodexProvider._parse_telemetry(output)
         for line in output.splitlines():
             if not line.strip():
                 continue
             event = json.loads(line)
-            candidate = event.get("usage")
-            if isinstance(candidate, dict):
-                usage.update({key: int(value) for key, value in candidate.items() if isinstance(value, (int, float))})
-            if event.get("type") == "thread.started" and event.get("thread_id"):
-                execution_id = str(event["thread_id"])
             item = event.get("item")
             if isinstance(item, dict) and item.get("type") == "agent_message":
                 final_text = item.get("text") or item.get("content")
@@ -440,6 +468,24 @@ class CodexProvider(AIProvider):
         if not isinstance(result, dict) or "status" not in result or "summary" not in result:
             raise ValueError("Codex final message did not match the receipt contract")
         return result, usage, execution_id
+
+    @staticmethod
+    def _parse_telemetry(output: str) -> tuple[dict[str, int], str | None]:
+        """Extract usage and execution id even when the final JSONL line is incomplete."""
+        usage: dict[str, int] = {}
+        execution_id: str | None = None
+        for line in output.splitlines():
+            try:
+                event = json.loads(line)
+            except (ValueError, json.JSONDecodeError):
+                continue
+            candidate = event.get("usage")
+            if isinstance(candidate, dict):
+                usage.update({key: int(value) for key, value in candidate.items()
+                              if isinstance(value, (int, float))})
+            if event.get("type") == "thread.started" and event.get("thread_id"):
+                execution_id = str(event["thread_id"])
+        return usage, execution_id
 
     @staticmethod
     def _execution_counts(output: str) -> dict[str, int]:
