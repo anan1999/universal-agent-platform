@@ -89,6 +89,10 @@ def summarize(rounds: list[dict]) -> dict:
             item["results"][arm]["end_to_end_seconds"] for item in rounds), 3)
         pooled[arm]["parent_tool_calls"] = sum(
             item["results"][arm]["parent_validation"]["tool_calls"] for item in rounds)
+        pooled[arm]["provider_validation_actions"] = sum(
+            "validation" in action.get("labels", [])
+            for item in rounds
+            for action in item["results"][arm].get("telemetry", {}).get("actions", []))
     return {
         "rounds_completed": len(rows),
         "agent_quality_passes": sum(row["agent_quality"] for row in rows),
@@ -132,6 +136,8 @@ def render(report: dict) -> str:
         f"- Pooled uncached-token reduction: {summary['pooled_uncached_token_reduction_percent']}%",
         f"- Pooled provider-tool reduction: {summary['pooled_provider_tool_reduction_percent']}%",
         f"- Pooled end-to-end time reduction: {summary['pooled_end_to_end_time_reduction_percent']}%",
+        f"- Provider validation actions, agent-owned: {summary['pooled']['agent_owned']['provider_validation_actions']}",
+        f"- Provider validation actions, parent-owned: {summary['pooled']['parent_owned']['provider_validation_actions']}",
         f"- Parent deterministic tool calls: {summary['pooled']['parent_owned']['parent_tool_calls']}",
         "", "Quality is decided by the benchmark-owned acceptance contract, not the model's claim.", "",
     ])
@@ -140,6 +146,13 @@ def render(report: dict) -> str:
     elif ((summary["pooled_total_token_reduction_percent"] or 0) > 0
           and (summary["pooled_uncached_token_reduction_percent"] or 0) > 0):
         lines.append("Decision: **CANDIDATE** — quality was preserved and pooled measured token cost fell.")
+    elif all((summary[key] or 0) < 0 for key in (
+            "pooled_total_token_reduction_percent",
+            "pooled_uncached_token_reduction_percent",
+            "pooled_provider_tool_reduction_percent")):
+        lines.append(
+            "Decision: **REJECT_COST** — quality held, but total tokens, uncached tokens, "
+            "and provider tool calls all increased.")
     else:
         lines.append("Decision: **INCONCLUSIVE** — quality held, but pooled measured token cost did not improve.")
     return "\n".join(lines) + "\n"
