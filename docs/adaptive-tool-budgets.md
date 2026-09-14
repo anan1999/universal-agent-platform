@@ -31,9 +31,23 @@ Inspect the selected source and evidence count using `--dry-run`. The decision a
 `project_intelligence.adaptive_tool_budget` and the effective value appears under
 `execution_budget.max_provider_tool_calls`.
 
+The same decision is available without planning or a provider call:
+
+```bash
+agentctl budget status
+agentctl budget explain "<goal>"
+agentctl budget reset "<goal>"
+agentctl budget reset --all
+```
+
+`status` never returns raw goals, prompts, commands, outputs, or model messages. A reset with no
+goal is rejected unless `--all` is explicit, and it affects only adaptive evidence for the
+current project environment.
+
 Evidence is stored locally in `.agent/cache/adaptive-budgets.sqlite3`. It expires after 30 days
-and contains only hashes, a count, and a timestamp. It is a performance hint, not proof that a
-future result is correct.
+and contains task/environment hashes, accepted and measured sample counts, bounded numeric cost
+metrics, effective caps, and timestamps. It is a performance hint, not proof that a future result
+is correct.
 
 ## Real benchmark, 2026-09-14
 

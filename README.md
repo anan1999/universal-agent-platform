@@ -351,6 +351,7 @@ treat anything you download as untrusted input.
 ```bash
 agentctl setup | init | attach | doctor | status
 agentctl run | orchestrate | explain | replay
+agentctl budget status | budget explain | budget reset
 agentctl agents | skills | skill | tools | profiles | providers | models
 ```
 
@@ -385,10 +386,19 @@ commands:
     acceptance: true
 ```
 
-The local database stores only a task-family hash, environment fingerprint, accepted-run count,
-and timestamp—never prompts, model prose, command output, or secrets. Current real-provider
-evidence is promising but limited to one software task family; see
+The local database stores only task/environment hashes, accepted and measured sample counts,
+bounded numeric cost metrics, effective caps, and timestamps—never prompts, model prose, command
+output, or secrets. Current real-provider evidence is promising but limited to one software task family; see
 [`docs/adaptive-tool-budgets.md`](docs/adaptive-tool-budgets.md).
+
+Inspect or revoke the local evidence without invoking an AI provider:
+
+```bash
+agentctl budget status
+agentctl budget explain "<goal>"
+agentctl budget reset "<goal>"   # one comparable family
+agentctl budget reset --all      # explicit current-environment reset
+```
 
 ## Development
 
