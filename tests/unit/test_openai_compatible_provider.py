@@ -48,6 +48,21 @@ def test_execute_normalizes_result_and_measured_usage():
                                    "source": "measured", "estimated": False}
 
 
+def test_execute_passes_explicit_output_budget_to_compatible_api():
+    bodies = []
+
+    def transport(method, url, headers, body, timeout):
+        bodies.append(json.loads(body))
+        return 200, b'{"choices":[{"message":{"content":"bounded"}}]}'
+
+    provider = OpenAICompatibleProvider("http://localhost:9999/v1", model="test-model",
+                                        transport=transport)
+    task = Task("TASK-BUDGET", "RUN", "bounded", "tester", ["text"],
+                metadata={"execution_budget": {"max_output_tokens": 321}})
+    assert asyncio.run(provider.execute(task)).status == "completed"
+    assert bodies[0]["max_tokens"] == 321
+
+
 def test_execute_classifies_timeout_without_fabricating_usage():
     def timeout(*args):
         raise TimeoutError

@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import asynccontextmanager
+import time
 
 from pathlib import Path
 from typing import Sequence
 
 from adaptive_agent.core.capability_router import CapabilityRouter
 from adaptive_agent.core.artifact_evaluator import DeclaredArtifactEvaluator
+from adaptive_agent.core.consumption import ExecutionBudget
 from adaptive_agent.core.escalation import EscalationManager
 from adaptive_agent.core.execution_packet import ExecutionPacketBuilder
 from adaptive_agent.core.models import Event, Receipt, Task, TaskKind, TaskStatus
@@ -34,7 +36,8 @@ class Scheduler:
                  tools: ToolRegistry | None = None, approvals: Sequence[str] = (),
                  provider_registry: ProviderRegistry | None = None,
                  receipt_word_limit: int = 160, max_context_receipts: int = 4,
-                 skill_registry: SkillRegistry | None = None):
+                 skill_registry: SkillRegistry | None = None,
+                 execution_budget: ExecutionBudget | None = None):
         self.database = database
         self.events = events
         self.provider = provider
@@ -55,6 +58,73 @@ class Scheduler:
         self.skill_registry = skill_registry or SkillRegistry.from_yaml(
             RESOURCE_ROOT / "config" / "default_skills.yaml")
         self.skill_quality = SkillQualityStore(database)
+        self.budget = execution_budget or ExecutionBudget()
+        self._budget_started = time.monotonic()
+        self._provider_calls = 0
+        self._tool_calls = 0
+        self._tokens = 0
+
+    def budget_status(self) -> dict[str, object]:
+        return {
+            **self.budget.to_dict(),
+            "provider_calls_used": self._provider_calls,
+            "tool_calls_used": self._tool_calls,
+            "tokens_used": self._tokens,
+            "elapsed_seconds": round(time.monotonic() - self._budget_started, 3),
+        }
+
+    def _remaining_seconds(self) -> float | None:
+        if self.budget.max_wall_seconds is None:
+            return None
+        return self.budget.max_wall_seconds - (time.monotonic() - self._budget_started)
+
+    @staticmethod
+    def _is_verification(task: Task) -> bool:
+        text = f"{task.owner} {task.title} {task.metadata.get('task_type', '')}".lower()
+        return any(value in text for value in ("review", "verify", "validation", "test", "audit"))
+
+    def _claim_provider(self, task: Task, estimated_input_tokens: int) -> str | None:
+        remaining_seconds = self._remaining_seconds()
+        if remaining_seconds is not None and remaining_seconds <= 0:
+            return "wall-time budget exhausted"
+        if (self.budget.max_provider_calls is not None and
+                self._provider_calls >= self.budget.max_provider_calls):
+            return "provider-call budget exhausted"
+        if self.budget.max_total_tokens is not None:
+            token_limit = self.budget.max_total_tokens
+            if not self._is_verification(task):
+                token_limit = token_limit * (100 - self.budget.verification_reserve_percent) // 100
+            if self._tokens + estimated_input_tokens > token_limit:
+                return "token budget cannot fit the next provider input"
+        self._provider_calls += 1
+        return None
+
+    def _claim_tool(self) -> str | None:
+        remaining_seconds = self._remaining_seconds()
+        if remaining_seconds is not None and remaining_seconds <= 0:
+            return "wall-time budget exhausted"
+        if self.budget.max_tool_calls is not None and self._tool_calls >= self.budget.max_tool_calls:
+            return "tool-call budget exhausted"
+        self._tool_calls += 1
+        return None
+
+    def _budget_failure(self, task: Task, reason: str) -> bool:
+        task.status = TaskStatus.FAILED
+        task.metadata["budget"] = self.budget_status() | {"exhausted_reason": reason}
+        receipt = Receipt(
+            task.id, task.owner, "failed", f"Budget exhausted: {reason}.",
+            findings=["Completed work remains recorded; no automatic budget extension was allowed."],
+            token_usage={"input": 0, "output": 0, "cached": 0, "source": "unavailable",
+                         "estimated": False, "invocation_count": 0},
+            confidence="unknown", uncertainty_reason=reason, needs_escalation=False,
+            error_code="BUDGET_EXHAUSTED",
+        )
+        self._record_attempt(task, receipt)
+        self.completed_receipts[task.id] = receipt
+        self._persist(task)
+        self.events.emit(Event("budget_exhausted", task.run_id, task.owner, task.id,
+                               {"reason": reason, "budget": self.budget_status()}))
+        return False
 
     async def run(self, graph: TaskGraph) -> bool:
         graph.validate()
@@ -94,6 +164,9 @@ class Scheduler:
 
     def _execute_tool(self, task: Task) -> bool:
         """Deterministic execution. Consumes no AI quota and reports no tokens."""
+        exhausted = self._claim_tool()
+        if exhausted:
+            return self._budget_failure(task, exhausted)
         task.status = TaskStatus.RUNNING
         self._persist(task)
         self.events.emit(Event("tool_started", task.run_id, task.owner, task.id,
@@ -193,20 +266,43 @@ class Scheduler:
                     dependency_receipts,
                     loaded_skills=loaded_skills,
                 )
+                estimated_input = max(1, len(packet.render()) // 4)
+                exhausted = self._claim_provider(task, estimated_input)
+                if exhausted:
+                    self._set_skill_activity(task, False)
+                    return self._budget_failure(task, exhausted)
                 try:
                     async with self._model_slot(task.model_class):
-                        receipt = await provider.execute(task, progress, packet)
+                        remaining_seconds = self._remaining_seconds()
+                        execution = provider.execute(task, progress, packet)
+                        receipt = (await asyncio.wait_for(execution, remaining_seconds)
+                                   if remaining_seconds is not None else await execution)
+                except TimeoutError:
+                    self._set_skill_activity(task, False)
+                    return self._budget_failure(task, "wall-time budget exhausted")
                 except asyncio.CancelledError:
                     task.status = TaskStatus.CANCELLED
                     self._persist(task)
                     self.events.emit(Event("task_cancelled", task.run_id, task.owner, task.id))
                     raise
+                usage = receipt.token_usage
+                self._tokens += int(usage.get("input", 0)) + int(usage.get("output", 0))
+                task.metadata["budget"] = self.budget_status()
                 receipt.retry_count = attempts
                 receipt.escalated = attempts > 0
                 self._evaluate_artifact(task, receipt)
+                decision = self.escalation.decide(task, receipt, attempts)
+                if (decision.escalate and self.budget.max_retry_rounds is not None and
+                        attempts >= self.budget.max_retry_rounds):
+                    decision.escalate = False
+                    receipt.needs_escalation = False
+                    receipt.findings.append("Retry suppressed by the run budget.")
+                    task.metadata["budget_retry_suppressed"] = True
+                    self.events.emit(Event("budget_retry_suppressed", task.run_id, task.owner,
+                                           task.id, {"attempts": attempts,
+                                                     "max_retry_rounds": self.budget.max_retry_rounds}))
                 self._record_attempt(task, receipt)
                 self._record_skill_quality(task, receipt, loaded_skills)
-                decision = self.escalation.decide(task, receipt, attempts)
                 if decision.escalate:
                     attempts += 1
                     old_model = task.metadata.get("model")

@@ -1,0 +1,24 @@
+{
+  "experiment": "live_codex_tool_budget",
+  "model": "gpt-5.6-luna",
+  "timeout_seconds": 120.0,
+  "budget": {
+    "max_provider_tool_calls": 0,
+    "max_provider_messages": null
+  },
+  "status": "blocked",
+  "error_code": "CODEX_CAPABILITY_UNAVAILABLE",
+  "summary": "Unable to read pyproject.toml because shell commands were rejected by the execution policy.",
+  "duration_seconds": 20.813,
+  "usage": {
+    "input": 55785,
+    "output": 517,
+    "cached": 39168,
+    "source": "measured",
+    "estimated": false,
+    "invocation_count": 1,
+    "execution_id": "01a09af3-a343-7e13-b511-3e174b0e3d17"
+  },
+  "passed": false,
+  "expected": "The first attempted provider tool is rejected and the child is terminated."
+}

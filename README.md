@@ -79,6 +79,11 @@ Then use your preferred AI normally, or preview a plan with
 
 See [direct task execution](docs/direct-task-execution.md) for the default flow and benchmark limits.
 
+Procedure memory is experimental and off by default: its first real comparison
+did not reduce tokens. Explicitly add `--experience` to `check` to record evidence
+and to `prepare` to retrieve it. Default commands do not access operation memory.
+See [cross-task procedure reuse](docs/procedure-reuse.md) for evidence and limitations.
+
 For direct work, `prepare` adds zero provider calls. Internal model reasoning and subscription
 quota accounting are controlled by the host; UAP cannot promise a quota saving percentage.
 The following three policies apply only to explicitly delegated execution. `balanced` preserves the V2.3
@@ -96,6 +101,29 @@ agentctl run "<your goal>" --consumption economy --dry-run
 
 Set `consumption.mode` in `.agent/project.yaml` for a project default. A per-run flag takes
 precedence over the project setting, which takes precedence over the global setting.
+
+For a hard per-run orchestration envelope, add explicit limits:
+
+```bash
+agentctl run "<your goal>" --consumption economy \
+  --max-provider-calls 1 --max-provider-tool-calls 8 \
+  --max-provider-messages 5 --max-tool-calls 6 --max-retries 0 \
+  --max-tokens 12000 --max-output-tokens 2000 --budget-seconds 300
+```
+
+Provider-call, UAP tool-task, retry, token preflight and wall-time limits stop the run and
+record `BUDGET_EXHAUSTED`; they never expand automatically. `--verification-reserve` keeps
+20% by default for review/validation tasks. A provider may exceed the remaining token budget
+inside one indivisible call. `--max-output-tokens` is sent to compatible APIs that support it.
+For Codex JSONL execution, `--max-provider-tool-calls` and `--max-provider-messages`
+are monitored live; UAP terminates the child and records `BUDGET_EXHAUSTED` when the
+next action would exceed the envelope. Termination is intentionally fail-closed, so an
+over-budget child may leave valid workspace edits but does not return a successful receipt. See the
+[five-round real explicit-budget benchmark](docs/budget-multiround-real-20260913.md):
+quality passed in every pair, while pooled uncached tokens fell 11.55%; only 3/5
+pairs improved individually, so a fixed saving is not guaranteed. The separate
+[live provider-budget acceptance](docs/live-provider-budget-acceptance-20260913.md)
+proves both tool-event and assistant-message cancellation against real Codex executions.
 
 ## Reuse compact project context
 

@@ -35,6 +35,47 @@ class CodexErrorCode(StrEnum):
     EXECUTION_FAILED = "CODEX_EXECUTION_FAILED"
     OUTPUT_PARSE_FAILED = "CODEX_OUTPUT_PARSE_FAILED"
     CAPABILITY_UNAVAILABLE = "CODEX_CAPABILITY_UNAVAILABLE"
+    BUDGET_EXHAUSTED = "BUDGET_EXHAUSTED"
+
+
+class CodexBudgetExceeded(RuntimeError):
+    def __init__(self, reason: str, tool_calls: int, assistant_messages: int):
+        super().__init__(reason)
+        self.reason = reason
+        self.tool_calls = tool_calls
+        self.assistant_messages = assistant_messages
+
+
+@dataclass(slots=True)
+class CodexEventBudget:
+    max_tool_calls: int | None = None
+    max_assistant_messages: int | None = None
+    tool_calls: int = 0
+    assistant_messages: int = 0
+
+    def observe(self, line: bytes) -> str | None:
+        try:
+            event = json.loads(line.decode("utf-8", errors="replace"))
+        except (ValueError, json.JSONDecodeError):
+            return None
+        item = event.get("item")
+        if not isinstance(item, dict):
+            return None
+        kind = item.get("type")
+        tools = {"command_execution", "mcp_tool_call", "web_search"}
+        if event.get("type") == "item.started" and kind in tools:
+            if self.max_tool_calls is not None and self.tool_calls >= self.max_tool_calls:
+                return f"provider tool-call budget exhausted at {self.tool_calls}"
+        if event.get("type") == "item.completed" and kind in tools:
+            self.tool_calls += 1
+            if self.max_tool_calls is not None and self.tool_calls > self.max_tool_calls:
+                return f"provider tool-call budget exhausted at {self.tool_calls}"
+        if event.get("type") == "item.completed" and kind == "agent_message":
+            self.assistant_messages += 1
+            if (self.max_assistant_messages is not None and
+                    self.assistant_messages > self.max_assistant_messages):
+                return f"provider assistant-message budget exhausted at {self.assistant_messages}"
+        return None
 
 
 @dataclass(slots=True)
@@ -224,7 +265,15 @@ class CodexProvider(AIProvider):
         if progress:
             progress(1, f"Spawning Codex for {task.title}")
         try:
-            returncode, stdout, stderr = await self._communicate(args, packet.render(), packet.working_directory)
+            budget = task.metadata.get("execution_budget", {})
+            returncode, stdout, stderr = await self._communicate(
+                args, packet.render(), packet.working_directory, budget)
+        except CodexBudgetExceeded as error:
+            return self._failure(
+                task, CodexErrorCode.BUDGET_EXHAUSTED,
+                (f"{error.reason}; observed tool_calls={error.tool_calls}, "
+                 f"assistant_messages={error.assistant_messages}."),
+                started, model=model)
         except TimeoutError:
             return self._failure(task, CodexErrorCode.TIMEOUT, f"Codex exceeded {self.timeout:g}s timeout.", started, model=model)
         except OSError as error:
@@ -275,17 +324,60 @@ class CodexProvider(AIProvider):
                        learning_evidence=(result.get("learning_evidence", [])
                                           if isinstance(result.get("learning_evidence", []), list) else []),
                        duration_seconds=time.monotonic() - started)
-    async def _communicate(self, args: list[str], prompt: str, working_directory: Path) -> tuple[int, bytes, bytes]:
+    async def _communicate(self, args: list[str], prompt: str, working_directory: Path,
+                           budget: dict[str, Any] | None = None) -> tuple[int, bytes, bytes]:
         child_environment = self.child_environment()
         process = await asyncio.create_subprocess_exec(
             *args, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE, cwd=str(working_directory), env=child_environment,
         )
+        monitor = CodexEventBudget(
+            max_tool_calls=(budget or {}).get("max_provider_tool_calls"),
+            max_assistant_messages=(budget or {}).get("max_provider_messages"),
+        )
+        stdout_parts: list[bytes] = []
+        stderr_task = asyncio.create_task(process.stderr.read())
+
+        async def communicate() -> tuple[bytes, bytes]:
+            assert process.stdin is not None and process.stdout is not None
+            process.stdin.write(prompt.encode("utf-8"))
+            await process.stdin.drain()
+            process.stdin.close()
+            while True:
+                line = await process.stdout.readline()
+                if not line:
+                    break
+                stdout_parts.append(line)
+                reason = monitor.observe(line)
+                if reason:
+                    stopped = False
+                    try:
+                        process.terminate()
+                        stopped = True
+                    except OSError as terminate_error:
+                        try:
+                            process.kill()
+                            stopped = True
+                        except OSError as kill_error:
+                            reason += (f"; child termination unavailable "
+                                       f"({type(terminate_error).__name__}/{type(kill_error).__name__})")
+                    if stopped:
+                        await process.wait()
+                        await stderr_task
+                    else:
+                        stderr_task.cancel()
+                    raise CodexBudgetExceeded(reason, monitor.tool_calls,
+                                              monitor.assistant_messages)
+            await process.wait()
+            return b"".join(stdout_parts), await stderr_task
+
         try:
-            stdout, stderr = await asyncio.wait_for(process.communicate(prompt.encode("utf-8")), timeout=self.timeout)
+            stdout, stderr = await asyncio.wait_for(communicate(), timeout=self.timeout)
         except TimeoutError:
             process.terminate()
             await process.wait()
+            if not stderr_task.done():
+                stderr_task.cancel()
             raise
         except asyncio.CancelledError:
             process.terminate()
@@ -294,6 +386,8 @@ class CodexProvider(AIProvider):
             except TimeoutError:
                 process.kill()
                 await process.wait()
+            if not stderr_task.done():
+                stderr_task.cancel()
             raise
         return process.returncode or 0, stdout, stderr
 
@@ -363,6 +457,8 @@ class CodexProvider(AIProvider):
         return Receipt(task_id=task.id, agent=task.owner, status="failed", summary=message,
                        token_usage={"input": 0, "output": 0, "cached": 0, "source": "unavailable", "estimated": False},
                        confidence="unknown", uncertainty_reason=message,
-                       needs_escalation=not environment and code != CodexErrorCode.TIMEOUT,
+                       needs_escalation=(not environment and
+                                         code not in {CodexErrorCode.TIMEOUT,
+                                                      CodexErrorCode.BUDGET_EXHAUSTED}),
                        error_code=code.value, provider=CodexProvider.id, model=str(model) if model else None,
                        duration_seconds=time.monotonic() - started)

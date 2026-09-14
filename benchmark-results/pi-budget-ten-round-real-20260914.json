@@ -1,0 +1,2897 @@
+{
+  "experiment": "budget_only_vs_pi_progressive_context_ten_round",
+  "goal": "Add a GET /reports/monthly/{month} API endpoint that returns the selected month, total spending, and totals by category, then display that monthly total and category breakdown in the existing React dashboard. Preserve existing expense behavior and validate the work.",
+  "model": "gpt-5.6-luna",
+  "reasoning": "low",
+  "context_budget_chars": 4000,
+  "summary": {
+    "rounds_completed": 10,
+    "all_quality_equal_and_passed": false,
+    "pi_total_token_win_rounds": 3,
+    "pi_uncached_token_win_rounds": 2,
+    "median_total_token_reduction_percent": -13.2,
+    "median_uncached_token_reduction_percent": -22.24,
+    "median_time_reduction_percent": -9.37,
+    "pooled": {
+      "budget_only": {
+        "tokens": 1234194,
+        "uncached_tokens": 267794,
+        "tool_calls": 49,
+        "assistant_messages": 42,
+        "assistant_message_chars": 21044,
+        "seconds": 1060.114
+      },
+      "pi_context": {
+        "tokens": 1426512,
+        "uncached_tokens": 283472,
+        "tool_calls": 45,
+        "assistant_messages": 40,
+        "assistant_message_chars": 19005,
+        "seconds": 1143.887
+      }
+    },
+    "pooled_total_token_reduction_percent": -15.58,
+    "pooled_uncached_token_reduction_percent": -5.85,
+    "pooled_tool_call_reduction_percent": 8.16,
+    "pooled_message_reduction_percent": 4.76,
+    "pooled_message_char_reduction_percent": 9.69,
+    "pooled_time_reduction_percent": -7.9,
+    "rows": [
+      {
+        "round": 1,
+        "order": [
+          "budget_only",
+          "pi_context"
+        ],
+        "quality_equal_and_passed": true,
+        "token_reduction_percent": -21.69,
+        "uncached_reduction_percent": 68.17,
+        "tool_call_delta": 0,
+        "message_delta": 0,
+        "seconds_reduction_percent": -16.27,
+        "budget_only": {
+          "tokens": 112729,
+          "uncached_tokens": 44121,
+          "tool_calls": 4,
+          "assistant_messages": 4,
+          "assistant_message_chars": 2011
+        },
+        "pi_context": {
+          "tokens": 137179,
+          "uncached_tokens": 14043,
+          "tool_calls": 4,
+          "assistant_messages": 4,
+          "assistant_message_chars": 1862
+        }
+      },
+      {
+        "round": 2,
+        "order": [
+          "pi_context",
+          "budget_only"
+        ],
+        "quality_equal_and_passed": true,
+        "token_reduction_percent": -28.15,
+        "uncached_reduction_percent": 34.15,
+        "tool_call_delta": 0,
+        "message_delta": -1,
+        "seconds_reduction_percent": -51.9,
+        "budget_only": {
+          "tokens": 112910,
+          "uncached_tokens": 46350,
+          "tool_calls": 4,
+          "assistant_messages": 4,
+          "assistant_message_chars": 1886
+        },
+        "pi_context": {
+          "tokens": 144696,
+          "uncached_tokens": 30520,
+          "tool_calls": 4,
+          "assistant_messages": 5,
+          "assistant_message_chars": 2278
+        }
+      },
+      {
+        "round": 3,
+        "order": [
+          "budget_only",
+          "pi_context"
+        ],
+        "quality_equal_and_passed": true,
+        "token_reduction_percent": -40.72,
+        "uncached_reduction_percent": -27.88,
+        "tool_call_delta": 0,
+        "message_delta": 0,
+        "seconds_reduction_percent": -48.42,
+        "budget_only": {
+          "tokens": 130088,
+          "uncached_tokens": 41256,
+          "tool_calls": 5,
+          "assistant_messages": 4,
+          "assistant_message_chars": 1862
+        },
+        "pi_context": {
+          "tokens": 183064,
+          "uncached_tokens": 52760,
+          "tool_calls": 5,
+          "assistant_messages": 4,
+          "assistant_message_chars": 1718
+        }
+      },
+      {
+        "round": 4,
+        "order": [
+          "pi_context",
+          "budget_only"
+        ],
+        "quality_equal_and_passed": false,
+        "token_reduction_percent": -4.7,
+        "uncached_reduction_percent": -3.76,
+        "tool_call_delta": -1,
+        "message_delta": 0,
+        "seconds_reduction_percent": -2.47,
+        "budget_only": {
+          "tokens": 129392,
+          "uncached_tokens": 25456,
+          "tool_calls": 5,
+          "assistant_messages": 4,
+          "assistant_message_chars": 1801
+        },
+        "pi_context": {
+          "tokens": 135469,
+          "uncached_tokens": 26413,
+          "tool_calls": 6,
+          "assistant_messages": 4,
+          "assistant_message_chars": 1656
+        }
+      },
+      {
+        "round": 5,
+        "order": [
+          "budget_only",
+          "pi_context"
+        ],
+        "quality_equal_and_passed": true,
+        "token_reduction_percent": -2.09,
+        "uncached_reduction_percent": -26.67,
+        "tool_call_delta": 0,
+        "message_delta": 2,
+        "seconds_reduction_percent": 12.16,
+        "budget_only": {
+          "tokens": 153053,
+          "uncached_tokens": 15837,
+          "tool_calls": 6,
+          "assistant_messages": 5,
+          "assistant_message_chars": 2451
+        },
+        "pi_context": {
+          "tokens": 156252,
+          "uncached_tokens": 20060,
+          "tool_calls": 6,
+          "assistant_messages": 3,
+          "assistant_message_chars": 1142
+        }
+      },
+      {
+        "round": 6,
+        "order": [
+          "pi_context",
+          "budget_only"
+        ],
+        "quality_equal_and_passed": true,
+        "token_reduction_percent": -86.15,
+        "uncached_reduction_percent": -40.06,
+        "tool_call_delta": -3,
+        "message_delta": -1,
+        "seconds_reduction_percent": -55.11,
+        "budget_only": {
+          "tokens": 89328,
+          "uncached_tokens": 22768,
+          "tool_calls": 3,
+          "assistant_messages": 4,
+          "assistant_message_chars": 2270
+        },
+        "pi_context": {
+          "tokens": 166288,
+          "uncached_tokens": 31888,
+          "tool_calls": 6,
+          "assistant_messages": 5,
+          "assistant_message_chars": 2343
+        }
+      },
+      {
+        "round": 7,
+        "order": [
+          "budget_only",
+          "pi_context"
+        ],
+        "quality_equal_and_passed": true,
+        "token_reduction_percent": 11.23,
+        "uncached_reduction_percent": -1.79,
+        "tool_call_delta": 1,
+        "message_delta": 1,
+        "seconds_reduction_percent": 14.38,
+        "budget_only": {
+          "tokens": 132387,
+          "uncached_tokens": 13347,
+          "tool_calls": 5,
+          "assistant_messages": 5,
+          "assistant_message_chars": 2547
+        },
+        "pi_context": {
+          "tokens": 117522,
+          "uncached_tokens": 13586,
+          "tool_calls": 4,
+          "assistant_messages": 4,
+          "assistant_message_chars": 2264
+        }
+      },
+      {
+        "round": 8,
+        "order": [
+          "pi_context",
+          "budget_only"
+        ],
+        "quality_equal_and_passed": true,
+        "token_reduction_percent": 29.45,
+        "uncached_reduction_percent": -17.81,
+        "tool_call_delta": 6,
+        "message_delta": 1,
+        "seconds_reduction_percent": 31.13,
+        "budget_only": {
+          "tokens": 134085,
+          "uncached_tokens": 21189,
+          "tool_calls": 8,
+          "assistant_messages": 4,
+          "assistant_message_chars": 2109
+        },
+        "pi_context": {
+          "tokens": 94595,
+          "uncached_tokens": 24963,
+          "tool_calls": 2,
+          "assistant_messages": 3,
+          "assistant_message_chars": 1665
+        }
+      },
+      {
+        "round": 9,
+        "order": [
+          "budget_only",
+          "pi_context"
+        ],
+        "quality_equal_and_passed": true,
+        "token_reduction_percent": 41.03,
+        "uncached_reduction_percent": -89.33,
+        "tool_call_delta": 3,
+        "message_delta": 0,
+        "seconds_reduction_percent": 37.35,
+        "budget_only": {
+          "tokens": 129655,
+          "uncached_tokens": 12663,
+          "tool_calls": 5,
+          "assistant_messages": 4,
+          "assistant_message_chars": 2209
+        },
+        "pi_context": {
+          "tokens": 76455,
+          "uncached_tokens": 23975,
+          "tool_calls": 2,
+          "assistant_messages": 4,
+          "assistant_message_chars": 2113
+        }
+      },
+      {
+        "round": 10,
+        "order": [
+          "pi_context",
+          "budget_only"
+        ],
+        "quality_equal_and_passed": true,
+        "token_reduction_percent": -94.44,
+        "uncached_reduction_percent": -82.46,
+        "tool_call_delta": -2,
+        "message_delta": 0,
+        "seconds_reduction_percent": -40.69,
+        "budget_only": {
+          "tokens": 110567,
+          "uncached_tokens": 24807,
+          "tool_calls": 4,
+          "assistant_messages": 4,
+          "assistant_message_chars": 1898
+        },
+        "pi_context": {
+          "tokens": 214992,
+          "uncached_tokens": 45264,
+          "tool_calls": 6,
+          "assistant_messages": 4,
+          "assistant_message_chars": 1964
+        }
+      }
+    ]
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "order": [
+        "budget_only",
+        "pi_context"
+      ],
+      "source_hashes": {
+        "budget_only": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "pi_context": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+      "pi_context_chars": 3757,
+      "results": {
+        "budget_only": {
+          "status": "completed",
+          "usage": {
+            "input": 110446,
+            "output": 2283,
+            "cached": 68608,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d48-3cbe-7fb0-a917-a8047598c10d"
+          },
+          "duration_seconds": 92.805,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 4,
+            "assistant_messages": 4,
+            "assistant_message_chars": 2011,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "4150fdcb811d25604f61924f62595b27d4f0e448f5c80d58dec50fe07c433384",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 4509,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "2eedf9ba095b29e235320416698d161fc23886dc1e70cf4c97d157e992b6d148",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 3102,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "7be055735fac202ca172807987fe7ed17d5799ac3aab11eaf95d68cace7580d9",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1504,
+                "exit_code": 2,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "4a4b428096bba29f8e1fd23af93f42fe36ed305d62a910155991a4064dc0f16f",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 983,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              }
+            ]
+          },
+          "packet_chars": 1141,
+          "actual_source_changed": true
+        },
+        "pi_context": {
+          "status": "completed",
+          "usage": {
+            "input": 134500,
+            "output": 2679,
+            "cached": 123136,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d49-b425-7ad0-89e0-0b33eb2b2c0e"
+          },
+          "duration_seconds": 107.904,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 4,
+            "assistant_messages": 4,
+            "assistant_message_chars": 1862,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "62fc9fb9df44bf3ef9ccbdb6c4f69674dc2a3990b0c16b8f12a8e6162d9f935f",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 1782,
+                "exit_code": 1,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "6d0e164e93cfd1bdabae3ebd520e488a4afbbf814d3fea3346a82bfdcb81117a",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 1558,
+                "exit_code": 0,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "6521ae382da17c856fc8458a61923a54efc36a005e0d783068a457106abf43a1",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1912,
+                "exit_code": 1,
+                "failure_hints": [
+                  "permission",
+                  "test_failure"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 6,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "87ca26e3bf18d34476de549bb9759c47f58b0be0f737906f7fe8c6caff075f19",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 650,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 5289,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "round": 2,
+      "order": [
+        "pi_context",
+        "budget_only"
+      ],
+      "source_hashes": {
+        "budget_only": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "pi_context": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+      "pi_context_chars": 3757,
+      "results": {
+        "pi_context": {
+          "status": "completed",
+          "usage": {
+            "input": 140689,
+            "output": 4007,
+            "cached": 114176,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d4b-6c3d-76d0-9291-64f9eab7d943"
+          },
+          "duration_seconds": 128.463,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 4,
+            "assistant_messages": 5,
+            "assistant_message_chars": 2278,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "43a5a790c93ab994365d414ecc949c490d430a16fa5ad789c8714f5c621b295c",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py",
+                  "package.json"
+                ],
+                "output_chars": 3614,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "bca1f944c045112195a9a0bb644952e9cf83deeabf52a0c86bff72d479fe1e6e",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 1562,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "e2ccd6fdab36571caa3a3619d729ff804578e56c8ca7c3bda125948dfd51a61d",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1912,
+                "exit_code": 1,
+                "failure_hints": [
+                  "permission",
+                  "test_failure"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 6,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "e2ccd6fdab36571caa3a3619d729ff804578e56c8ca7c3bda125948dfd51a61d",
+                "repeated_exact_command": true,
+                "fixture_paths_mentioned": [],
+                "output_chars": 595,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 5289,
+          "actual_source_changed": true
+        },
+        "budget_only": {
+          "status": "completed",
+          "usage": {
+            "input": 110573,
+            "output": 2337,
+            "cached": 66560,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d4d-6765-76e0-bf8c-a0abba113fbb"
+          },
+          "duration_seconds": 84.571,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 4,
+            "assistant_messages": 4,
+            "assistant_message_chars": 1886,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "c213087c5832b6876c5faefa46c3e1b8169fd324f7b7d9cd319561f7d1f42755",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 4371,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "2110f73db241a6a6756657dfaf328d4e8578da9bc9dc0c60303bc371d7ccf917",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py",
+                  "package.json",
+                  "pyproject.toml"
+                ],
+                "output_chars": 2932,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation",
+                  "repository_status"
+                ],
+                "command_sha256": "cf4d86825a85c9f2b21728ccc72a217ab081db216b5f1e2eb4e9fe4fa97bda17",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2432,
+                "exit_code": 0,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "65b53296046f86b4801c5b1ce3aa480ec41e4be4a43f7f891ad54f868b47fc8c",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1362,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 1141,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "round": 3,
+      "order": [
+        "budget_only",
+        "pi_context"
+      ],
+      "source_hashes": {
+        "budget_only": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "pi_context": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+      "pi_context_chars": 3757,
+      "results": {
+        "budget_only": {
+          "status": "completed",
+          "usage": {
+            "input": 127369,
+            "output": 2719,
+            "cached": 88832,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d4e-c239-7ca2-9ee3-a4989b56e847"
+          },
+          "duration_seconds": 95.838,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 5,
+            "assistant_messages": 4,
+            "assistant_message_chars": 1862,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection",
+                  "environment"
+                ],
+                "command_sha256": "060e91c1b5c9cdc13550a26a75d7654208491dacf5f587260d90746d80a4c636",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2397,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "be3e57923f0192d635879ab978e22e0b3ca13a639ea57dbadfc5c9b43eb11083",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json",
+                  "pyproject.toml"
+                ],
+                "output_chars": 2966,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "51d9e322c7be40c95179fedfa398fede69d7b2065b511a39355a28b4732b10ac",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2258,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation",
+                  "repository_status"
+                ],
+                "command_sha256": "cb298769b4406786e912d8b6f41b908aaf8892bb3bc10ecdbcf63a2fd86825d3",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx"
+                ],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 6,
+                "type": "command_execution",
+                "labels": [
+                  "repository_status"
+                ],
+                "command_sha256": "fd63ac6f6217abe9b0d533f1ca466e3338e9d2bd9d592dc7272ef8834521df32",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx"
+                ],
+                "output_chars": 261,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 1141,
+          "actual_source_changed": true
+        },
+        "pi_context": {
+          "status": "completed",
+          "usage": {
+            "input": 179463,
+            "output": 3601,
+            "cached": 130304,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d50-410c-7e23-9923-f9aa1efa7825"
+          },
+          "duration_seconds": 142.242,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 5,
+            "assistant_messages": 4,
+            "assistant_message_chars": 1718,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "317f91f9644b1cf0f988ec7b35b01fda09abe66e364fe6123f5258d1d2cf39b5",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 3030,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "38464a61c04a53ace36d91db23ec5c367f86f9a8785d61d7a4d195f62c307358",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 481,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "134529f90308d3bdfcfee620283cd58a42d91eafa7f964aad00187d989a4f465",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1503,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "84bdfeedff233de75a78efd2c4829adb65717f59e5d9558dbdb9fe382a0529d0",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2967,
+                "exit_code": 1,
+                "failure_hints": [
+                  "permission",
+                  "missing_dependency",
+                  "test_failure"
+                ]
+              },
+              {
+                "sequence": 6,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 7,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 8,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "1b6e04b3d4146ec5345f89f404a5d4492595645658b162363bb43701f20cf880",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 595,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 5289,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "round": 4,
+      "order": [
+        "pi_context",
+        "budget_only"
+      ],
+      "source_hashes": {
+        "budget_only": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "pi_context": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+      "pi_context_chars": 3757,
+      "results": {
+        "pi_context": {
+          "status": "completed",
+          "usage": {
+            "input": 132900,
+            "output": 2569,
+            "cached": 109056,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d52-7ae7-79b3-a34c-c9e2430e8a43"
+          },
+          "duration_seconds": 109.254,
+          "quality": {
+            "passed": false,
+            "contract": "context-cache-monthly-v1",
+            "error": "AssertionError: Path parameters cannot have a default value",
+            "returncode": 1
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 6,
+            "assistant_messages": 4,
+            "assistant_message_chars": 1656,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "2d9fd1c76c0ca927ce456769d2999dff1d0b7c6e0e36f00481c633cd9f746c35",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 3536,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "8385d41727783230f1e0f68b85c2f52685be97b252509821a9fbbd080feed6f6",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 974,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "562024aab16e57d70a5de1b43aeccc98678696575e175708c7bc43ce45de5fdf",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 628,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "dbf28997d9b696a80d73e9564d94e05019fdc1d16f83deb7d2b09fcc08b582dd",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 268,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 6,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "134529f90308d3bdfcfee620283cd58a42d91eafa7f964aad00187d989a4f465",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1503,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 7,
+                "type": "command_execution",
+                "labels": [
+                  "unclassified"
+                ],
+                "command_sha256": "e183651e4728a2bcb4195dbc990f0e810789c2182c633329ef76a259062789d8",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 5289,
+          "actual_source_changed": true
+        },
+        "budget_only": {
+          "status": "completed",
+          "usage": {
+            "input": 126827,
+            "output": 2565,
+            "cached": 103936,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d54-2b74-7471-ab75-4bb140f833da"
+          },
+          "duration_seconds": 106.62,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 5,
+            "assistant_messages": 4,
+            "assistant_message_chars": 1801,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection",
+                  "environment"
+                ],
+                "command_sha256": "31c1ce2140be7688fd8915f6cd76c7bf3de82ec17b31b3c92de8d28346ce5c9b",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2269,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "c1880133a5b0140e0268a8db985de0fcb4da4c60806ddf9a0c25f3de2fcc7945",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json",
+                  "pyproject.toml"
+                ],
+                "output_chars": 3000,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "c317fef78e0515192dfbff7bc23ca6bfca67824269de1eb943834ff9817815b3",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1974,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "4fa9ee9927ba6e8970c7ff7fc8fae88d8ddc4983ec254b9d824dfdf7449b24aa",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1439,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 6,
+                "type": "command_execution",
+                "labels": [
+                  "unclassified"
+                ],
+                "command_sha256": "ff8d0ba3a4c1d92be4513c0ca7b48974806570d307d427814a09f3bd33ea8a71",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 305,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 1141,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "round": 5,
+      "order": [
+        "budget_only",
+        "pi_context"
+      ],
+      "source_hashes": {
+        "budget_only": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "pi_context": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+      "pi_context_chars": 3757,
+      "results": {
+        "budget_only": {
+          "status": "completed",
+          "usage": {
+            "input": 149365,
+            "output": 3688,
+            "cached": 137216,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d55-db78-74e1-8a57-4c95bb0aeaef"
+          },
+          "duration_seconds": 153.283,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 6,
+            "assistant_messages": 5,
+            "assistant_message_chars": 2451,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection",
+                  "environment"
+                ],
+                "command_sha256": "cef6414b71b7472cfeb352e2cf1e5d8a9a5c1cb07816d6e530bdf8d986b553ad",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2383,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "50a3978e74448b9195c09f7a101550ae94623448ab3f970173c2fb2d837bd618",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 3033,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "238c72fc080edbe08c10bf018abc34da5a96f8de178ce5f72b738d25acb25b3a",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "bdebaa7c8c6baece3616d197755982c19778e86f2a844fa684d8f51b47afb9b1",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 321,
+                "exit_code": 0,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 6,
+                "type": "command_execution",
+                "labels": [
+                  "unclassified"
+                ],
+                "command_sha256": "9ffe8aa595274ace8c0cb44e99f04b2a28762b4ea5d30bf6256b8d87829ec2d0",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2303,
+                "exit_code": 1,
+                "failure_hints": [
+                  "permission"
+                ]
+              },
+              {
+                "sequence": 7,
+                "type": "command_execution",
+                "labels": [
+                  "unclassified"
+                ],
+                "command_sha256": "36078da59da172c9cfb8ca0c44da7ebfd8338faf9df49896e3c41940c5483e9a",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 534,
+                "exit_code": 1,
+                "failure_hints": [
+                  "permission"
+                ]
+              }
+            ]
+          },
+          "packet_chars": 1141,
+          "actual_source_changed": true
+        },
+        "pi_context": {
+          "status": "completed",
+          "usage": {
+            "input": 153382,
+            "output": 2870,
+            "cached": 136192,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d58-4bb5-7a22-a87f-8ef06fcc7a0e"
+          },
+          "duration_seconds": 134.648,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 6,
+            "assistant_messages": 3,
+            "assistant_message_chars": 1142,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "2b4864b54c3ab7db84c61771d74ba1cf1c7d3697b15ba1283670a0802512a2fd",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 1356,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "5642c7d6ba14b3566b0d3c35ad2e483a3c05f19e7a6f3368fd72a5ec4dba171e",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx"
+                ],
+                "output_chars": 2363,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "1450d99e017eedb0bbafc7dce4f05afa2e223bab39e589b1411bca841f811196",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1793,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "inspection",
+                  "validation"
+                ],
+                "command_sha256": "078f9bd3e7349c3e38cd191b848c5c050eae2a38ea44a64a041832368612805b",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 787,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 6,
+                "type": "command_execution",
+                "labels": [
+                  "repository_status"
+                ],
+                "command_sha256": "1192dcdb3a77d531f30774650997aa1b64dab4c38697527b92fda51ade329940",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx"
+                ],
+                "output_chars": 548,
+                "exit_code": 0,
+                "failure_hints": [
+                  "permission"
+                ]
+              },
+              {
+                "sequence": 7,
+                "type": "command_execution",
+                "labels": [
+                  "repository_status"
+                ],
+                "command_sha256": "1aefcc1aa1ae2f8fe81b302bc90dfdc025abbbe7bf2f585aca6fe1c8b5bde1da",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 428,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 5289,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "round": 6,
+      "order": [
+        "pi_context",
+        "budget_only"
+      ],
+      "source_hashes": {
+        "budget_only": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "pi_context": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+      "pi_context_chars": 3757,
+      "results": {
+        "pi_context": {
+          "status": "completed",
+          "usage": {
+            "input": 162539,
+            "output": 3749,
+            "cached": 134400,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d5a-6ba4-7503-8756-45fc63e3f3cb"
+          },
+          "duration_seconds": 126.442,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 6,
+            "assistant_messages": 5,
+            "assistant_message_chars": 2343,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "7f14ab3b589b0542cff2d33035ad9717750ef90a6e587c4e6e83b6cfc90cb1c0",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py",
+                  "package.json"
+                ],
+                "output_chars": 3964,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "unclassified"
+                ],
+                "command_sha256": "26c9cefe96050b4c0f58b7da3b346d76066f4929f6c6b31e0bf19309330108b8",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 1626,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "dbf28997d9b696a80d73e9564d94e05019fdc1d16f83deb7d2b09fcc08b582dd",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 268,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "134529f90308d3bdfcfee620283cd58a42d91eafa7f964aad00187d989a4f465",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1503,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 6,
+                "type": "command_execution",
+                "labels": [
+                  "inspection",
+                  "validation"
+                ],
+                "command_sha256": "092eae8a2a6553d9d64e9211aae07f56a0665c80a06260e8de88574a3463ec81",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 2088,
+                "exit_code": 1,
+                "failure_hints": [
+                  "permission",
+                  "test_failure"
+                ]
+              },
+              {
+                "sequence": 7,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 8,
+                "type": "command_execution",
+                "labels": [
+                  "validation",
+                  "repository_status"
+                ],
+                "command_sha256": "8bf4e4794394acaae4bc19530260304899b32e21d731a759cb3face1f7a9d702",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 595,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 5289,
+          "actual_source_changed": true
+        },
+        "budget_only": {
+          "status": "failed",
+          "usage": {
+            "input": 86996,
+            "output": 2332,
+            "cached": 66560,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d5c-6294-7663-bf76-ff071100d845"
+          },
+          "duration_seconds": 81.519,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 3,
+            "assistant_messages": 4,
+            "assistant_message_chars": 2270,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection",
+                  "environment"
+                ],
+                "command_sha256": "9fb92e85639270697bf7d0d2a95a4961e56e5c72082c785b7e1e4f0efb6ef42c",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2382,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "97d0532ab1a209a092eb024a441c40bfda30ae26ee06626f0140fb81f89fe9ec",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 2972,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "1450d99e017eedb0bbafc7dce4f05afa2e223bab39e589b1411bca841f811196",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1794,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              }
+            ]
+          },
+          "packet_chars": 1141,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "round": 7,
+      "order": [
+        "budget_only",
+        "pi_context"
+      ],
+      "source_hashes": {
+        "budget_only": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "pi_context": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+      "pi_context_chars": 3757,
+      "results": {
+        "budget_only": {
+          "status": "completed",
+          "usage": {
+            "input": 129164,
+            "output": 3223,
+            "cached": 119040,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d5d-ac0a-77d2-86ea-b6109906506a"
+          },
+          "duration_seconds": 116.078,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 5,
+            "assistant_messages": 5,
+            "assistant_message_chars": 2547,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection",
+                  "environment"
+                ],
+                "command_sha256": "99ee6940ef497af40e2de5d1c52c98a7fb6cdb6d42aa2166634a32aaa2bf41ab",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2240,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "fbdddec7719df18909712d5b79a15d36e406937d98916a5d8941d3f17d0ec84d",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json",
+                  "pyproject.toml"
+                ],
+                "output_chars": 2969,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation",
+                  "repository_status"
+                ],
+                "command_sha256": "cf4d86825a85c9f2b21728ccc72a217ab081db216b5f1e2eb4e9fe4fa97bda17",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2432,
+                "exit_code": 0,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "6fdb4d0e9d5c8e1abff388c2356add25dc45930ff8aab57c0fc01a651a0a67cf",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 6,
+                "type": "command_execution",
+                "labels": [
+                  "unclassified"
+                ],
+                "command_sha256": "30316b027714080ccdc1927b72fe8b3e61f7c96242b868e2ac81c8d2e775fa13",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 615,
+                "exit_code": 1,
+                "failure_hints": [
+                  "permission"
+                ]
+              }
+            ]
+          },
+          "packet_chars": 1141,
+          "actual_source_changed": true
+        },
+        "pi_context": {
+          "status": "completed",
+          "usage": {
+            "input": 114881,
+            "output": 2641,
+            "cached": 103936,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d5f-7a5c-7ea0-8394-ae8f7f74e83b"
+          },
+          "duration_seconds": 99.388,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 4,
+            "assistant_messages": 4,
+            "assistant_message_chars": 2264,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "209f061f28651a713deb19decc48596c87421447c546ad5b7e81a8b00561668c",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py",
+                  "package.json"
+                ],
+                "output_chars": 3964,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "validation",
+                  "repository_status"
+                ],
+                "command_sha256": "5235556d7277e49f5b45172dfd6d73ec1f21d12828363cef8894f664c2f3d841",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "package.json"
+                ],
+                "output_chars": 1560,
+                "exit_code": 0,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "repository_status"
+                ],
+                "command_sha256": "7e1b8bca4d62138374ef337b452af0d379eff29f9f7b6ac0131eeb1dfa448396",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "repository_status"
+                ],
+                "command_sha256": "ed1fe6db32ed830364b4966efecf1590d0316277ab1afea63c5d6d8cc923ea30",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 670,
+                "exit_code": 0,
+                "failure_hints": [
+                  "permission"
+                ]
+              }
+            ]
+          },
+          "packet_chars": 5289,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "round": 8,
+      "order": [
+        "pi_context",
+        "budget_only"
+      ],
+      "source_hashes": {
+        "budget_only": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "pi_context": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+      "pi_context_chars": 3757,
+      "results": {
+        "pi_context": {
+          "status": "failed",
+          "usage": {
+            "input": 92483,
+            "output": 2112,
+            "cached": 69632,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d61-11c2-7240-9b76-50447d4f622f"
+          },
+          "duration_seconds": 82.488,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 2,
+            "assistant_messages": 3,
+            "assistant_message_chars": 1665,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "e1fe642d29c08e267a4a00ed58d784c6ef9feab0ff372ba84178eb37e606f111",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py",
+                  "package.json"
+                ],
+                "output_chars": 3124,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "1450d99e017eedb0bbafc7dce4f05afa2e223bab39e589b1411bca841f811196",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1793,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              }
+            ]
+          },
+          "packet_chars": 5289,
+          "actual_source_changed": true
+        },
+        "budget_only": {
+          "status": "completed",
+          "usage": {
+            "input": 130549,
+            "output": 3536,
+            "cached": 112896,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d62-5ce7-7d73-87bb-ab33f735129a"
+          },
+          "duration_seconds": 119.766,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 8,
+            "assistant_messages": 4,
+            "assistant_message_chars": 2109,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection",
+                  "environment"
+                ],
+                "command_sha256": "dd3b484469a512f8c70ecb82db9cb14cdd2165d1174721bba40c5f8330e22633",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2563,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "95c27fa76abb56a58e558e91c26ba81fa488ded8d4461cb8b5f984ebc5441b75",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json",
+                  "pyproject.toml"
+                ],
+                "output_chars": 2932,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "repository_status"
+                ],
+                "command_sha256": "471509c97b1b2d92bd7b1e3aecb8b277ed29420db32781d2124c28819657a8e1",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 156,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "6a7b2dbfac527d5c9cf3fcb5428ac8369bb0863aab6105d04ae0a5c2e59da0b3",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2365,
+                "exit_code": 1,
+                "failure_hints": [
+                  "permission",
+                  "test_failure"
+                ]
+              },
+              {
+                "sequence": 6,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "dbf28997d9b696a80d73e9564d94e05019fdc1d16f83deb7d2b09fcc08b582dd",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 268,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 7,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 8,
+                "type": "command_execution",
+                "labels": [
+                  "unclassified"
+                ],
+                "command_sha256": "bd94dbf35316e9011a261334e0daffb122ae8b21e0b9f7db86f13d978378b4e0",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 668,
+                "exit_code": 1,
+                "failure_hints": []
+              },
+              {
+                "sequence": 9,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "6a7b2dbfac527d5c9cf3fcb5428ac8369bb0863aab6105d04ae0a5c2e59da0b3",
+                "repeated_exact_command": true,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1058,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 10,
+                "type": "command_execution",
+                "labels": [
+                  "repository_status"
+                ],
+                "command_sha256": "471509c97b1b2d92bd7b1e3aecb8b277ed29420db32781d2124c28819657a8e1",
+                "repeated_exact_command": true,
+                "fixture_paths_mentioned": [],
+                "output_chars": 156,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 1141,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "round": 9,
+      "order": [
+        "budget_only",
+        "pi_context"
+      ],
+      "source_hashes": {
+        "budget_only": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "pi_context": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+      "pi_context_chars": 3757,
+      "results": {
+        "budget_only": {
+          "status": "completed",
+          "usage": {
+            "input": 126886,
+            "output": 2769,
+            "cached": 116992,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d64-3ff4-7733-9bc8-8061509b1a44"
+          },
+          "duration_seconds": 104.906,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 5,
+            "assistant_messages": 4,
+            "assistant_message_chars": 2209,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection",
+                  "environment"
+                ],
+                "command_sha256": "c248a46c3b090b88f8fe383d0ce1f7b2fc7b2a34df5e6adaeb893c5d9db64920",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2433,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "95c27fa76abb56a58e558e91c26ba81fa488ded8d4461cb8b5f984ebc5441b75",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json",
+                  "pyproject.toml"
+                ],
+                "output_chars": 2932,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "1450d99e017eedb0bbafc7dce4f05afa2e223bab39e589b1411bca841f811196",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1794,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "unclassified"
+                ],
+                "command_sha256": "fd3f7abf72faa0cc508469b5d886bb1eca6580c73bb3ec38f1104a885b7a1e2b",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 6,
+                "type": "command_execution",
+                "labels": [
+                  "unclassified"
+                ],
+                "command_sha256": "808b600fe03bbc89293d5d724112946a4abfa223c5b851ede1313860d9240167",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 272,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 1141,
+          "actual_source_changed": true
+        },
+        "pi_context": {
+          "status": "blocked",
+          "usage": {
+            "input": 74207,
+            "output": 2248,
+            "cached": 52480,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d65-e4d3-7d12-b9a6-0da83d9d9ff6"
+          },
+          "duration_seconds": 65.721,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 2,
+            "assistant_messages": 4,
+            "assistant_message_chars": 2113,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "7a21e1635b8008a490187d26cd1ae2c8530bdb33775a0f56c35dd0cf2b6a5997",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 3799,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "2ed95ff60cb6469e8948a843c46126d3f5ec5bc2548682bfc4848a8ff0623dd2",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1864,
+                "exit_code": 2,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              }
+            ]
+          },
+          "packet_chars": 5289,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "round": 10,
+      "order": [
+        "pi_context",
+        "budget_only"
+      ],
+      "source_hashes": {
+        "budget_only": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "pi_context": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+      "pi_context_chars": 3757,
+      "results": {
+        "pi_context": {
+          "status": "completed",
+          "usage": {
+            "input": 210410,
+            "output": 4582,
+            "cached": 169728,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d66-efc8-7061-8766-51f22dc7a50c"
+          },
+          "duration_seconds": 147.337,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 6,
+            "assistant_messages": 4,
+            "assistant_message_chars": 1964,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "9ba3b8291f078833d00d53219308edbd25030525b99596373c9c9d695979ac8e",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py",
+                  "package.json"
+                ],
+                "output_chars": 3970,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "03c6b74f2bad1a7eb798d8d76f2ac56dcfb5e8f412be24456b83f6c5407f10de",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "pyproject.toml"
+                ],
+                "output_chars": 1307,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "1450d99e017eedb0bbafc7dce4f05afa2e223bab39e589b1411bca841f811196",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1794,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation",
+                  "repository_status"
+                ],
+                "command_sha256": "89dd9bba1133c00bcedb89cf163a4cfdae28d35c0f911aa3497730bb34faf344",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py"
+                ],
+                "output_chars": 1914,
+                "exit_code": 0,
+                "failure_hints": [
+                  "permission",
+                  "test_failure"
+                ]
+              },
+              {
+                "sequence": 6,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 7,
+                "type": "command_execution",
+                "labels": [
+                  "validation",
+                  "repository_status"
+                ],
+                "command_sha256": "9a9164ce9f7af6fb867558729b3cfe532d47d5362a9f6c44f703007eb1c11422",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1914,
+                "exit_code": 0,
+                "failure_hints": [
+                  "permission",
+                  "test_failure"
+                ]
+              },
+              {
+                "sequence": 8,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 9,
+                "type": "command_execution",
+                "labels": [
+                  "validation",
+                  "repository_status"
+                ],
+                "command_sha256": "9a9164ce9f7af6fb867558729b3cfe532d47d5362a9f6c44f703007eb1c11422",
+                "repeated_exact_command": true,
+                "fixture_paths_mentioned": [],
+                "output_chars": 595,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 5289,
+          "actual_source_changed": true
+        },
+        "budget_only": {
+          "status": "completed",
+          "usage": {
+            "input": 108230,
+            "output": 2337,
+            "cached": 85760,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d69-39bd-7f12-9383-4acc383b64c7"
+          },
+          "duration_seconds": 104.728,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 4,
+            "assistant_messages": 4,
+            "assistant_message_chars": 1898,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection",
+                  "environment"
+                ],
+                "command_sha256": "60ef2147c19269cea1aab698890d933ab43bae52b80eac4d26bea20745bdc4ca",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 3401,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "97d0532ab1a209a092eb024a441c40bfda30ae26ee06626f0140fb81f89fe9ec",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 2972,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation",
+                  "repository_status"
+                ],
+                "command_sha256": "0111b3204492adb57fce85c1e654c121fc60d721f35d92517cf236af5a314156",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx"
+                ],
+                "output_chars": 1978,
+                "exit_code": 0,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation",
+                  "repository_status"
+                ],
+                "command_sha256": "65f608e66d2a6979a59da98bc66f6678ed2e31cef2644c7d440bd1b028fd7a47",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx"
+                ],
+                "output_chars": 1104,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 1141,
+          "actual_source_changed": true
+        }
+      }
+    }
+  ],
+  "limitations": [
+    "One implementation task family with repeated fresh fixtures.",
+    "Subscription quota conversion is unavailable.",
+    "Internal Codex reasoning rounds are not observable.",
+    "The context compiler is deterministic and uses no pre-task model call."
+  ]
+}

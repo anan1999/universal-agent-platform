@@ -12,7 +12,7 @@ from adaptive_agent.agents.registry import AgentRegistry
 from adaptive_agent.core.capabilities import Requirement, Risk
 from adaptive_agent.core.capability_resolver import CapabilityResolver
 from adaptive_agent.core.capability_router import CapabilityRouter
-from adaptive_agent.core.consumption import ConsumptionPolicy, consumption_policy
+from adaptive_agent.core.consumption import ConsumptionPolicy, ExecutionBudget, consumption_policy
 from adaptive_agent.core.evaluation import EvaluationKind, EvaluationRegistry
 from adaptive_agent.core.execution_planner import ExecutionPlan, ExecutionPlanner, ExecutionStrategy
 from adaptive_agent.core.goal_analyzer import GoalAnalysis, GoalAnalyzer
@@ -47,6 +47,7 @@ class Composition:
     provider_rationale: list[dict[str, Any]] = field(default_factory=list)
     mode: str = "universal"
     consumption: dict[str, Any] = field(default_factory=dict)
+    execution_budget: dict[str, Any] = field(default_factory=dict)
     execution_plan: ExecutionPlan | None = None
     project_intelligence: dict[str, Any] = field(default_factory=dict)
 
@@ -54,6 +55,7 @@ class Composition:
         return {"mode": self.mode, "analysis": self.analysis.to_dict(),
                 "team": self.team.to_dict(), "provider_rationale": list(self.provider_rationale),
                 "consumption": dict(self.consumption),
+                "execution_budget": dict(self.execution_budget),
                 "execution_plan": self.execution_plan.to_dict() if self.execution_plan else {},
                 "project_intelligence": dict(self.project_intelligence)}
 
@@ -66,13 +68,15 @@ class Orchestrator:
                  models: ModelRegistry | None = None,
                  provider_preference: Sequence[str] = ("auto",),
                  active_profiles: Sequence[str] = (),
-                 consumption_mode: str = "balanced"):
+                 consumption_mode: str = "balanced",
+                 execution_budget: ExecutionBudget | None = None):
         self.database = database
         self.events = events or EventBus(database)
         self.provider = provider
         self.provider_name = provider_name or getattr(provider, "id", None) or "mock"
         self.active_profiles = list(active_profiles)
         self.consumption_policy: ConsumptionPolicy = consumption_policy(consumption_mode)
+        self.execution_budget = execution_budget or ExecutionBudget()
 
         # V2 universal path.
         self.profiles = profiles or profile_registry()
@@ -184,10 +188,12 @@ class Orchestrator:
         for task in graph.tasks.values():
             task.metadata["project_intelligence"] = context
             task.metadata["allowed_files"] = list(context.get("relevant_paths", []))
+            task.metadata["execution_budget"] = self.execution_budget.to_dict()
         context["orchestration_wall_ms"] = round((time.perf_counter() - started) * 1000, 3)
         context["pre_task_ai_calls"] = 0
         return Composition(analysis, team, graph, rationale,
-                           consumption=self.consumption_policy.to_dict(), execution_plan=execution,
+                           consumption=self.consumption_policy.to_dict(),
+                           execution_budget=self.execution_budget.to_dict(), execution_plan=execution,
                            project_intelligence=context)
 
     @staticmethod
@@ -446,7 +452,8 @@ class Orchestrator:
                                       max_parallel_strong_agents=self.consumption_policy.max_parallel_strong_agents,
                                       max_escalations=self.consumption_policy.max_escalations_per_task,
                                       receipt_word_limit=self.consumption_policy.receipt_word_limit,
-                                      max_context_receipts=self.consumption_policy.max_context_receipts).run(graph)
+                                      max_context_receipts=self.consumption_policy.max_context_receipts,
+                                      execution_budget=self.execution_budget).run(graph)
         except asyncio.CancelledError:
             self.database.execute("UPDATE runs SET status='cancelled',completed_at=? WHERE id=?", (now_iso(), run_id))
             raise

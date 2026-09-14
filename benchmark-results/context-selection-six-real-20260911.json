@@ -1,0 +1,550 @@
+{
+  "mode": "real_tool_free_context_selection",
+  "model": "gpt-5.6-luna",
+  "script_sha256": "72fc09785bcc669534febe493bc26789d0e3667ebdc95ca1f2231a92008a527b",
+  "catalog_chars": 10002,
+  "planned_provider_attempts": 12,
+  "provider_attempts": 12,
+  "tasks": [
+    {
+      "round": 1,
+      "arm": "cold",
+      "order": [
+        "cold",
+        "selected"
+      ],
+      "context_kind": "full",
+      "context_chars": 10002,
+      "packet_chars": 10439,
+      "selection_ms": 0.0007,
+      "passed": true,
+      "status": "completed",
+      "error_code": null,
+      "summary_sha256": "23706685f3f43576af25ecb8b969dc8fe13e4f6357dbe004b9fb6425bf73e8e6",
+      "usage": {
+        "input": 16631,
+        "output": 82,
+        "cached": 0,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fb8-5ba1-7e31-b9c4-6c68b4fbac44"
+      },
+      "telemetry": {
+        "tool_calls": 0,
+        "assistant_messages": 1,
+        "assistant_message_chars": 182,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": []
+      },
+      "wall_seconds": 6.006
+    },
+    {
+      "round": 1,
+      "arm": "selected",
+      "order": [
+        "cold",
+        "selected"
+      ],
+      "context_kind": "full",
+      "context_chars": 10002,
+      "packet_chars": 10439,
+      "selection_ms": 0.0019,
+      "passed": true,
+      "status": "completed",
+      "error_code": null,
+      "summary_sha256": "23706685f3f43576af25ecb8b969dc8fe13e4f6357dbe004b9fb6425bf73e8e6",
+      "usage": {
+        "input": 16631,
+        "output": 79,
+        "cached": 9984,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fb8-72fd-7a11-ad62-a58882f5afe9"
+      },
+      "telemetry": {
+        "tool_calls": 0,
+        "assistant_messages": 1,
+        "assistant_message_chars": 182,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": []
+      },
+      "wall_seconds": 6.532
+    },
+    {
+      "round": 2,
+      "arm": "selected",
+      "order": [
+        "selected",
+        "cold"
+      ],
+      "context_kind": "selected",
+      "context_chars": 83,
+      "packet_chars": 520,
+      "selection_ms": 0.2208,
+      "passed": true,
+      "status": "completed",
+      "error_code": null,
+      "summary_sha256": "51b4ac97a707301d6bcb71e9eebeed1b48ce63818c39ce3c9d887af92331b58b",
+      "usage": {
+        "input": 13379,
+        "output": 62,
+        "cached": 0,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fb8-922c-7c71-9b82-df4d0a83a99d"
+      },
+      "telemetry": {
+        "tool_calls": 0,
+        "assistant_messages": 1,
+        "assistant_message_chars": 184,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": []
+      },
+      "wall_seconds": 7.785
+    },
+    {
+      "round": 2,
+      "arm": "cold",
+      "order": [
+        "selected",
+        "cold"
+      ],
+      "context_kind": "full",
+      "context_chars": 10002,
+      "packet_chars": 10439,
+      "selection_ms": 0.0054,
+      "passed": true,
+      "status": "completed",
+      "error_code": null,
+      "summary_sha256": "51b4ac97a707301d6bcb71e9eebeed1b48ce63818c39ce3c9d887af92331b58b",
+      "usage": {
+        "input": 16631,
+        "output": 84,
+        "cached": 9984,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fb8-ad5c-7df2-8eb0-029bc2f6a08e"
+      },
+      "telemetry": {
+        "tool_calls": 0,
+        "assistant_messages": 1,
+        "assistant_message_chars": 184,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": []
+      },
+      "wall_seconds": 8.585
+    },
+    {
+      "round": 3,
+      "arm": "cold",
+      "order": [
+        "cold",
+        "selected"
+      ],
+      "context_kind": "full",
+      "context_chars": 10002,
+      "packet_chars": 10439,
+      "selection_ms": 0.001,
+      "passed": true,
+      "status": "completed",
+      "error_code": null,
+      "summary_sha256": "81e7d2ea6d833be1de02dd58a89c1fb874bb4450054aa4b81209dbca81886c50",
+      "usage": {
+        "input": 16631,
+        "output": 61,
+        "cached": 0,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fb8-cfcb-76e0-95e2-6af9b3e1f32c"
+      },
+      "telemetry": {
+        "tool_calls": 0,
+        "assistant_messages": 1,
+        "assistant_message_chars": 180,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": []
+      },
+      "wall_seconds": 6.534
+    },
+    {
+      "round": 3,
+      "arm": "selected",
+      "order": [
+        "cold",
+        "selected"
+      ],
+      "context_kind": "selected",
+      "context_chars": 79,
+      "packet_chars": 516,
+      "selection_ms": 0.0199,
+      "passed": true,
+      "status": "completed",
+      "error_code": null,
+      "summary_sha256": "81e7d2ea6d833be1de02dd58a89c1fb874bb4450054aa4b81209dbca81886c50",
+      "usage": {
+        "input": 13378,
+        "output": 61,
+        "cached": 0,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fb8-e67e-75f3-b6e8-4b84a4572b05"
+      },
+      "telemetry": {
+        "tool_calls": 0,
+        "assistant_messages": 1,
+        "assistant_message_chars": 180,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": []
+      },
+      "wall_seconds": 6.236
+    },
+    {
+      "round": 4,
+      "arm": "selected",
+      "order": [
+        "selected",
+        "cold"
+      ],
+      "context_kind": "selected",
+      "context_chars": 85,
+      "packet_chars": 522,
+      "selection_ms": 0.0084,
+      "passed": true,
+      "status": "completed",
+      "error_code": null,
+      "summary_sha256": "ebc13338b83a3ad05566c27a072cefc1d787f9c26210c61859781501bc5487f0",
+      "usage": {
+        "input": 13378,
+        "output": 61,
+        "cached": 0,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fb8-feac-7b40-9d14-7d4ffbab551c"
+      },
+      "telemetry": {
+        "tool_calls": 0,
+        "assistant_messages": 1,
+        "assistant_message_chars": 186,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": []
+      },
+      "wall_seconds": 5.606
+    },
+    {
+      "round": 4,
+      "arm": "cold",
+      "order": [
+        "selected",
+        "cold"
+      ],
+      "context_kind": "full",
+      "context_chars": 10002,
+      "packet_chars": 10439,
+      "selection_ms": 0.0021,
+      "passed": true,
+      "status": "completed",
+      "error_code": null,
+      "summary_sha256": "ebc13338b83a3ad05566c27a072cefc1d787f9c26210c61859781501bc5487f0",
+      "usage": {
+        "input": 16631,
+        "output": 61,
+        "cached": 9984,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fb9-14b2-7631-a752-5524709436c2"
+      },
+      "telemetry": {
+        "tool_calls": 0,
+        "assistant_messages": 1,
+        "assistant_message_chars": 186,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": []
+      },
+      "wall_seconds": 7.687
+    },
+    {
+      "round": 5,
+      "arm": "cold",
+      "order": [
+        "cold",
+        "selected"
+      ],
+      "context_kind": "full",
+      "context_chars": 10002,
+      "packet_chars": 10439,
+      "selection_ms": 0.0009,
+      "passed": true,
+      "status": "completed",
+      "error_code": null,
+      "summary_sha256": "f35c2ef9dcc368dcc3f740609d3406efff29012062e35fe06cd5a862ec36decb",
+      "usage": {
+        "input": 16631,
+        "output": 61,
+        "cached": 0,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fb9-32bb-7fb0-8bf9-44c77e0c329e"
+      },
+      "telemetry": {
+        "tool_calls": 0,
+        "assistant_messages": 1,
+        "assistant_message_chars": 182,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": []
+      },
+      "wall_seconds": 5.342
+    },
+    {
+      "round": 5,
+      "arm": "selected",
+      "order": [
+        "cold",
+        "selected"
+      ],
+      "context_kind": "selected",
+      "context_chars": 81,
+      "packet_chars": 518,
+      "selection_ms": 0.0143,
+      "passed": true,
+      "status": "completed",
+      "error_code": null,
+      "summary_sha256": "f35c2ef9dcc368dcc3f740609d3406efff29012062e35fe06cd5a862ec36decb",
+      "usage": {
+        "input": 13378,
+        "output": 61,
+        "cached": 12032,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fb9-47b3-7420-8a34-2da8ca11c924"
+      },
+      "telemetry": {
+        "tool_calls": 0,
+        "assistant_messages": 1,
+        "assistant_message_chars": 182,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": []
+      },
+      "wall_seconds": 6.453
+    },
+    {
+      "round": 6,
+      "arm": "selected",
+      "order": [
+        "selected",
+        "cold"
+      ],
+      "context_kind": "selected",
+      "context_chars": 83,
+      "packet_chars": 520,
+      "selection_ms": 0.0111,
+      "passed": true,
+      "status": "completed",
+      "error_code": null,
+      "summary_sha256": "2662425c4789c4f6ea22c2d690af9274a51fe2a53dd729e5112cf07817d47f9f",
+      "usage": {
+        "input": 13379,
+        "output": 62,
+        "cached": 9984,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fb9-6100-7ad3-9257-95e6a5b976c5"
+      },
+      "telemetry": {
+        "tool_calls": 0,
+        "assistant_messages": 1,
+        "assistant_message_chars": 184,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": []
+      },
+      "wall_seconds": 5.768
+    },
+    {
+      "round": 6,
+      "arm": "cold",
+      "order": [
+        "selected",
+        "cold"
+      ],
+      "context_kind": "full",
+      "context_chars": 10002,
+      "packet_chars": 10439,
+      "selection_ms": 0.0013,
+      "passed": true,
+      "status": "completed",
+      "error_code": null,
+      "summary_sha256": "2662425c4789c4f6ea22c2d690af9274a51fe2a53dd729e5112cf07817d47f9f",
+      "usage": {
+        "input": 16631,
+        "output": 79,
+        "cached": 9984,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fb9-78fb-7692-b2ee-5b30afc89b31"
+      },
+      "telemetry": {
+        "tool_calls": 0,
+        "assistant_messages": 1,
+        "assistant_message_chars": 184,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": []
+      },
+      "wall_seconds": 8.405
+    }
+  ],
+  "cumulative": [
+    {
+      "cold": {
+        "quality_pass": true,
+        "input": 16631,
+        "output": 82,
+        "cached": 0,
+        "total_tokens": 16713,
+        "wall_seconds": 6.006
+      },
+      "selected": {
+        "quality_pass": true,
+        "input": 16631,
+        "output": 79,
+        "cached": 9984,
+        "total_tokens": 16710,
+        "wall_seconds": 6.532
+      },
+      "round": 1,
+      "lower_tokens_same_acceptance": true
+    },
+    {
+      "cold": {
+        "quality_pass": true,
+        "input": 33262,
+        "output": 166,
+        "cached": 9984,
+        "total_tokens": 33428,
+        "wall_seconds": 14.591
+      },
+      "selected": {
+        "quality_pass": true,
+        "input": 30010,
+        "output": 141,
+        "cached": 9984,
+        "total_tokens": 30151,
+        "wall_seconds": 14.317
+      },
+      "round": 2,
+      "lower_tokens_same_acceptance": true
+    },
+    {
+      "cold": {
+        "quality_pass": true,
+        "input": 49893,
+        "output": 227,
+        "cached": 9984,
+        "total_tokens": 50120,
+        "wall_seconds": 21.125
+      },
+      "selected": {
+        "quality_pass": true,
+        "input": 43388,
+        "output": 202,
+        "cached": 9984,
+        "total_tokens": 43590,
+        "wall_seconds": 20.553
+      },
+      "round": 3,
+      "lower_tokens_same_acceptance": true
+    },
+    {
+      "cold": {
+        "quality_pass": true,
+        "input": 66524,
+        "output": 288,
+        "cached": 19968,
+        "total_tokens": 66812,
+        "wall_seconds": 28.812
+      },
+      "selected": {
+        "quality_pass": true,
+        "input": 56766,
+        "output": 263,
+        "cached": 9984,
+        "total_tokens": 57029,
+        "wall_seconds": 26.159
+      },
+      "round": 4,
+      "lower_tokens_same_acceptance": true
+    },
+    {
+      "cold": {
+        "quality_pass": true,
+        "input": 83155,
+        "output": 349,
+        "cached": 19968,
+        "total_tokens": 83504,
+        "wall_seconds": 34.154
+      },
+      "selected": {
+        "quality_pass": true,
+        "input": 70144,
+        "output": 324,
+        "cached": 22016,
+        "total_tokens": 70468,
+        "wall_seconds": 32.612
+      },
+      "round": 5,
+      "lower_tokens_same_acceptance": true
+    },
+    {
+      "cold": {
+        "quality_pass": true,
+        "input": 99786,
+        "output": 428,
+        "cached": 29952,
+        "total_tokens": 100214,
+        "wall_seconds": 42.559
+      },
+      "selected": {
+        "quality_pass": true,
+        "input": 83523,
+        "output": 386,
+        "cached": 32000,
+        "total_tokens": 83909,
+        "wall_seconds": 38.38
+      },
+      "round": 6,
+      "lower_tokens_same_acceptance": true
+    }
+  ],
+  "limitations": [
+    "synthetic exact lookup, not repository implementation",
+    "selection is deterministic and task-keyed, not AI-authored learning",
+    "round one intentionally supplies full catalog to both arms",
+    "separate ephemeral provider instance per task",
+    "single alternating sequence; cache/model variation remains",
+    "cached is part of input; no subscription quota conversion",
+    "no tool calls or private reasoning measurement expected"
+  ],
+  "conclusion": "YES"
+}

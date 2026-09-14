@@ -21,6 +21,21 @@ import yaml
 from adaptive_agent.core.capabilities import normalize
 
 
+def compact_tool_output(output: str, limit: int) -> str:
+    """Bound tool context while retaining both setup and terminal evidence."""
+    if limit <= 0:
+        return ""
+    if len(output) <= limit:
+        return output
+    marker = "\n…[middle truncated; full output retained by the command owner]…\n"
+    if limit <= len(marker):
+        return output[-limit:]
+    available = max(0, limit - len(marker))
+    head = available // 3
+    tail = available - head
+    return output[:head] + marker + (output[-tail:] if tail else "")
+
+
 class ToolRisk(StrEnum):
     SAFE = "safe"              # read-only, no side effects
     LOW = "low"                # writes only inside the workspace
@@ -209,8 +224,7 @@ class ToolExecutor:
         except OSError as error:
             return ToolResult(spec.id, "failed", str(error), duration_seconds=time.monotonic() - started)
         output = ((completed.stdout or "") + (completed.stderr or "")).strip()
-        if len(output) > self.output_limit:
-            output = output[: self.output_limit] + "\n…[truncated]"
+        output = compact_tool_output(output, self.output_limit)
         status = "completed" if completed.returncode == 0 else "failed"
         summary = (f"{spec.name} succeeded." if status == "completed"
                    else f"{spec.name} exited {completed.returncode}.")

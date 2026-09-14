@@ -1,0 +1,262 @@
+{
+  "experiment": "unbounded_vs_explicit_budget",
+  "goal": "Add a GET /reports/monthly/{month} API endpoint that returns the selected month, total spending, and totals by category, then display that monthly total and category breakdown in the existing React dashboard. Preserve existing expense behavior and validate the work.",
+  "source_hashes": {
+    "unbounded": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+    "budgeted": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+  },
+  "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+  "model": "gpt-5.6-luna",
+  "reasoning": "low",
+  "order": [
+    "unbounded",
+    "budgeted"
+  ],
+  "budget": {
+    "provider_calls": 1,
+    "internal_tool_calls": 8,
+    "final_words": 250,
+    "outer_timeout_seconds": 300.0
+  },
+  "enforcement": {
+    "provider_calls": "hard by harness",
+    "wall_time": "hard by provider",
+    "internal_tool_calls": "advisory; Codex CLI exposes no per-run hard flag here",
+    "final_words": "prompt contract"
+  },
+  "limitations": [
+    "One ordered pair is evidence for this task, not a universal average.",
+    "Subscription quota conversion is unavailable; measured provider tokens are reported when exposed.",
+    "The Codex CLI child tool-call limit is advisory, while provider count and timeout are hard.",
+    "Tool calls are observable JSONL events; hidden reasoning rounds are not observable."
+  ],
+  "results": {
+    "unbounded": {
+      "status": "completed",
+      "usage": {
+        "input": 124604,
+        "output": 2627,
+        "cached": 100864,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fdf-ae5c-7782-9f48-1d1cd509faa6"
+      },
+      "duration_seconds": 92.326,
+      "quality": {
+        "passed": true,
+        "contract": "context-cache-monthly-v1",
+        "error": null,
+        "returncode": 0
+      },
+      "error": null,
+      "telemetry": {
+        "tool_calls": 5,
+        "assistant_messages": 3,
+        "assistant_message_chars": 1664,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": [
+          {
+            "sequence": 1,
+            "type": "command_execution",
+            "labels": [
+              "inspection"
+            ],
+            "command_sha256": "0f317cf153bb52cd5c1bd8114b26ddc874c765d3e0c77fb9fe4f80c0e8d5c8ed",
+            "repeated_exact_command": false,
+            "fixture_paths_mentioned": [],
+            "output_chars": 173,
+            "exit_code": 0,
+            "failure_hints": []
+          },
+          {
+            "sequence": 2,
+            "type": "command_execution",
+            "labels": [
+              "inspection"
+            ],
+            "command_sha256": "5245924c0db76d7d7ab929ee5b1edb647a2c283b990467768dd574d2ca504b01",
+            "repeated_exact_command": false,
+            "fixture_paths_mentioned": [
+              "package.json",
+              "pyproject.toml"
+            ],
+            "output_chars": 3114,
+            "exit_code": 0,
+            "failure_hints": []
+          },
+          {
+            "sequence": 3,
+            "type": "file_change",
+            "labels": [
+              "editing"
+            ],
+            "command_sha256": null,
+            "repeated_exact_command": false,
+            "fixture_paths_mentioned": [],
+            "output_chars": 0,
+            "exit_code": null,
+            "failure_hints": []
+          },
+          {
+            "sequence": 4,
+            "type": "command_execution",
+            "labels": [
+              "validation",
+              "repository_status"
+            ],
+            "command_sha256": "739698ee52a074b44423e8846279eb0aa4a98e29379e29f7fc3d5c323797436c",
+            "repeated_exact_command": false,
+            "fixture_paths_mentioned": [
+              "app/main.py",
+              "frontend/src/App.jsx",
+              "tests/test_expenses.py"
+            ],
+            "output_chars": 1892,
+            "exit_code": 1,
+            "failure_hints": [
+              "missing_dependency"
+            ]
+          },
+          {
+            "sequence": 5,
+            "type": "command_execution",
+            "labels": [
+              "inspection",
+              "repository_status"
+            ],
+            "command_sha256": "e95a26ea5e8297ce6d905f44e85e625821160156fe9dde295468e6467b7c0e5c",
+            "repeated_exact_command": false,
+            "fixture_paths_mentioned": [],
+            "output_chars": 3574,
+            "exit_code": 0,
+            "failure_hints": []
+          },
+          {
+            "sequence": 6,
+            "type": "command_execution",
+            "labels": [
+              "inspection",
+              "validation"
+            ],
+            "command_sha256": "e73df38d0217939fa29a9b92535134894432fcbf59f337eb823f78fd56101d57",
+            "repeated_exact_command": false,
+            "fixture_paths_mentioned": [],
+            "output_chars": 2868,
+            "exit_code": 1,
+            "failure_hints": [
+              "permission",
+              "test_failure"
+            ]
+          }
+        ]
+      },
+      "packet_chars": 679,
+      "actual_source_changed": true
+    },
+    "budgeted": {
+      "status": "completed",
+      "usage": {
+        "input": 87256,
+        "output": 2048,
+        "cached": 66560,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fe1-1d0a-7710-ae48-6cc98dfdfd80"
+      },
+      "duration_seconds": 66.166,
+      "quality": {
+        "passed": true,
+        "contract": "context-cache-monthly-v1",
+        "error": null,
+        "returncode": 0
+      },
+      "error": null,
+      "telemetry": {
+        "tool_calls": 3,
+        "assistant_messages": 3,
+        "assistant_message_chars": 1480,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": [
+          {
+            "sequence": 1,
+            "type": "command_execution",
+            "labels": [
+              "inspection",
+              "environment"
+            ],
+            "command_sha256": "408d8c70db10645d4fc42d2a977f5f127cf84ca081c4e3f7faebffc822a57ac7",
+            "repeated_exact_command": false,
+            "fixture_paths_mentioned": [],
+            "output_chars": 2366,
+            "exit_code": 0,
+            "failure_hints": []
+          },
+          {
+            "sequence": 2,
+            "type": "command_execution",
+            "labels": [
+              "inspection"
+            ],
+            "command_sha256": "95c27fa76abb56a58e558e91c26ba81fa488ded8d4461cb8b5f984ebc5441b75",
+            "repeated_exact_command": false,
+            "fixture_paths_mentioned": [
+              "package.json",
+              "pyproject.toml"
+            ],
+            "output_chars": 2932,
+            "exit_code": 0,
+            "failure_hints": []
+          },
+          {
+            "sequence": 3,
+            "type": "file_change",
+            "labels": [
+              "editing"
+            ],
+            "command_sha256": null,
+            "repeated_exact_command": false,
+            "fixture_paths_mentioned": [],
+            "output_chars": 0,
+            "exit_code": null,
+            "failure_hints": []
+          },
+          {
+            "sequence": 4,
+            "type": "command_execution",
+            "labels": [
+              "validation",
+              "repository_status"
+            ],
+            "command_sha256": "7478780cd755fd8ed44d561828f3de3f369d2e911fa152ef0a2058c6dd2e67b6",
+            "repeated_exact_command": false,
+            "fixture_paths_mentioned": [
+              "app/main.py",
+              "frontend/src/App.jsx"
+            ],
+            "output_chars": 2302,
+            "exit_code": 0,
+            "failure_hints": [
+              "missing_dependency"
+            ]
+          }
+        ]
+      },
+      "packet_chars": 1141,
+      "actual_source_changed": true
+    }
+  },
+  "comparison": {
+    "quality_equal_and_passed": true,
+    "token_delta": 37927,
+    "token_reduction_percent": 29.81,
+    "uncached_token_delta": 3623,
+    "uncached_token_reduction_percent": 13.74,
+    "tool_call_delta": 2,
+    "assistant_message_delta": 0
+  },
+  "conclusion": "Budget preserved quality and reduced measured tokens by 29.81%."
+}

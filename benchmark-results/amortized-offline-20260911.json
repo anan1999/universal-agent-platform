@@ -1,0 +1,506 @@
+{
+  "mode": "offline_oracle_smoke",
+  "model": "gpt-5.6-luna",
+  "script_sha256": "fc1f9cb51c62fd8f1389ee2d9ecee313c7cec61d59f64ebacc5dc5618c698c36",
+  "planned_ai_calls": 0,
+  "actual_ai_calls": 0,
+  "limitations": [
+    "synthetic small projects, one sequence per domain, no statistical claim",
+    "controller stores a literal policy excerpt only after acceptance, not general AI learning",
+    "initial task includes source discovery; memory storage/retrieval/check time included",
+    "document acceptance checks format and fact presence, not full semantic quality",
+    "no subscription quota conversion or private reasoning measurement",
+    "offline oracle has unavailable tokens and cannot establish savings"
+  ],
+  "domains": {
+    "code": {
+      "setup_seconds": 1.4844,
+      "tasks": [
+        {
+          "round": 1,
+          "arm": "cold",
+          "order": [
+            "cold",
+            "reuse"
+          ],
+          "passed": true,
+          "memory_hit": false,
+          "packet_chars": 353,
+          "usage": {
+            "source": "unavailable"
+          },
+          "telemetry": {},
+          "wall_seconds": 0.2824
+        },
+        {
+          "round": 1,
+          "arm": "reuse",
+          "order": [
+            "cold",
+            "reuse"
+          ],
+          "passed": true,
+          "memory_hit": false,
+          "packet_chars": 353,
+          "usage": {
+            "source": "unavailable"
+          },
+          "telemetry": {},
+          "wall_seconds": 0.3356
+        },
+        {
+          "round": 2,
+          "arm": "reuse",
+          "order": [
+            "reuse",
+            "cold"
+          ],
+          "passed": true,
+          "memory_hit": true,
+          "packet_chars": 564,
+          "usage": {
+            "source": "unavailable"
+          },
+          "telemetry": {},
+          "wall_seconds": 0.3424
+        },
+        {
+          "round": 2,
+          "arm": "cold",
+          "order": [
+            "reuse",
+            "cold"
+          ],
+          "passed": true,
+          "memory_hit": false,
+          "packet_chars": 350,
+          "usage": {
+            "source": "unavailable"
+          },
+          "telemetry": {},
+          "wall_seconds": 0.3146
+        },
+        {
+          "round": 3,
+          "arm": "cold",
+          "order": [
+            "cold",
+            "reuse"
+          ],
+          "passed": true,
+          "memory_hit": false,
+          "packet_chars": 349,
+          "usage": {
+            "source": "unavailable"
+          },
+          "telemetry": {},
+          "wall_seconds": 0.3444
+        },
+        {
+          "round": 3,
+          "arm": "reuse",
+          "order": [
+            "cold",
+            "reuse"
+          ],
+          "passed": true,
+          "memory_hit": true,
+          "packet_chars": 563,
+          "usage": {
+            "source": "unavailable"
+          },
+          "telemetry": {},
+          "wall_seconds": 0.3112
+        }
+      ],
+      "cumulative": [
+        {
+          "cold": {
+            "quality_pass": true,
+            "input": null,
+            "output": null,
+            "cached": null,
+            "total_tokens": null,
+            "wall_seconds": 0.2824
+          },
+          "reuse": {
+            "quality_pass": true,
+            "input": null,
+            "output": null,
+            "cached": null,
+            "total_tokens": null,
+            "wall_seconds": 0.3356
+          },
+          "round": 1,
+          "lower_cumulative_tokens_same_acceptance": null
+        },
+        {
+          "cold": {
+            "quality_pass": true,
+            "input": null,
+            "output": null,
+            "cached": null,
+            "total_tokens": null,
+            "wall_seconds": 0.597
+          },
+          "reuse": {
+            "quality_pass": true,
+            "input": null,
+            "output": null,
+            "cached": null,
+            "total_tokens": null,
+            "wall_seconds": 0.678
+          },
+          "round": 2,
+          "lower_cumulative_tokens_same_acceptance": null
+        },
+        {
+          "cold": {
+            "quality_pass": true,
+            "input": null,
+            "output": null,
+            "cached": null,
+            "total_tokens": null,
+            "wall_seconds": 0.9414
+          },
+          "reuse": {
+            "quality_pass": true,
+            "input": null,
+            "output": null,
+            "cached": null,
+            "total_tokens": null,
+            "wall_seconds": 0.9892
+          },
+          "round": 3,
+          "lower_cumulative_tokens_same_acceptance": null
+        }
+      ]
+    },
+    "document": {
+      "setup_seconds": 1.0992,
+      "tasks": [
+        {
+          "round": 1,
+          "arm": "cold",
+          "order": [
+            "cold",
+            "reuse"
+          ],
+          "passed": true,
+          "memory_hit": false,
+          "packet_chars": 453,
+          "usage": {
+            "source": "unavailable"
+          },
+          "telemetry": {},
+          "wall_seconds": 0.0103
+        },
+        {
+          "round": 1,
+          "arm": "reuse",
+          "order": [
+            "cold",
+            "reuse"
+          ],
+          "passed": true,
+          "memory_hit": false,
+          "packet_chars": 453,
+          "usage": {
+            "source": "unavailable"
+          },
+          "telemetry": {},
+          "wall_seconds": 0.0185
+        },
+        {
+          "round": 2,
+          "arm": "reuse",
+          "order": [
+            "reuse",
+            "cold"
+          ],
+          "passed": true,
+          "memory_hit": true,
+          "packet_chars": 655,
+          "usage": {
+            "source": "unavailable"
+          },
+          "telemetry": {},
+          "wall_seconds": 0.0192
+        },
+        {
+          "round": 2,
+          "arm": "cold",
+          "order": [
+            "reuse",
+            "cold"
+          ],
+          "passed": true,
+          "memory_hit": false,
+          "packet_chars": 453,
+          "usage": {
+            "source": "unavailable"
+          },
+          "telemetry": {},
+          "wall_seconds": 0.0117
+        },
+        {
+          "round": 3,
+          "arm": "cold",
+          "order": [
+            "cold",
+            "reuse"
+          ],
+          "passed": true,
+          "memory_hit": false,
+          "packet_chars": 453,
+          "usage": {
+            "source": "unavailable"
+          },
+          "telemetry": {},
+          "wall_seconds": 0.009
+        },
+        {
+          "round": 3,
+          "arm": "reuse",
+          "order": [
+            "cold",
+            "reuse"
+          ],
+          "passed": true,
+          "memory_hit": true,
+          "packet_chars": 655,
+          "usage": {
+            "source": "unavailable"
+          },
+          "telemetry": {},
+          "wall_seconds": 0.0249
+        }
+      ],
+      "cumulative": [
+        {
+          "cold": {
+            "quality_pass": true,
+            "input": null,
+            "output": null,
+            "cached": null,
+            "total_tokens": null,
+            "wall_seconds": 0.0103
+          },
+          "reuse": {
+            "quality_pass": true,
+            "input": null,
+            "output": null,
+            "cached": null,
+            "total_tokens": null,
+            "wall_seconds": 0.0185
+          },
+          "round": 1,
+          "lower_cumulative_tokens_same_acceptance": null
+        },
+        {
+          "cold": {
+            "quality_pass": true,
+            "input": null,
+            "output": null,
+            "cached": null,
+            "total_tokens": null,
+            "wall_seconds": 0.022
+          },
+          "reuse": {
+            "quality_pass": true,
+            "input": null,
+            "output": null,
+            "cached": null,
+            "total_tokens": null,
+            "wall_seconds": 0.0377
+          },
+          "round": 2,
+          "lower_cumulative_tokens_same_acceptance": null
+        },
+        {
+          "cold": {
+            "quality_pass": true,
+            "input": null,
+            "output": null,
+            "cached": null,
+            "total_tokens": null,
+            "wall_seconds": 0.031
+          },
+          "reuse": {
+            "quality_pass": true,
+            "input": null,
+            "output": null,
+            "cached": null,
+            "total_tokens": null,
+            "wall_seconds": 0.0626
+          },
+          "round": 3,
+          "lower_cumulative_tokens_same_acceptance": null
+        }
+      ]
+    },
+    "data": {
+      "setup_seconds": 1.1149,
+      "tasks": [
+        {
+          "round": 1,
+          "arm": "cold",
+          "order": [
+            "cold",
+            "reuse"
+          ],
+          "passed": true,
+          "memory_hit": false,
+          "packet_chars": 366,
+          "usage": {
+            "source": "unavailable"
+          },
+          "telemetry": {},
+          "wall_seconds": 0.0105
+        },
+        {
+          "round": 1,
+          "arm": "reuse",
+          "order": [
+            "cold",
+            "reuse"
+          ],
+          "passed": true,
+          "memory_hit": false,
+          "packet_chars": 366,
+          "usage": {
+            "source": "unavailable"
+          },
+          "telemetry": {},
+          "wall_seconds": 0.0164
+        },
+        {
+          "round": 2,
+          "arm": "reuse",
+          "order": [
+            "reuse",
+            "cold"
+          ],
+          "passed": true,
+          "memory_hit": true,
+          "packet_chars": 589,
+          "usage": {
+            "source": "unavailable"
+          },
+          "telemetry": {},
+          "wall_seconds": 0.0216
+        },
+        {
+          "round": 2,
+          "arm": "cold",
+          "order": [
+            "reuse",
+            "cold"
+          ],
+          "passed": true,
+          "memory_hit": false,
+          "packet_chars": 362,
+          "usage": {
+            "source": "unavailable"
+          },
+          "telemetry": {},
+          "wall_seconds": 0.008
+        },
+        {
+          "round": 3,
+          "arm": "cold",
+          "order": [
+            "cold",
+            "reuse"
+          ],
+          "passed": true,
+          "memory_hit": false,
+          "packet_chars": 360,
+          "usage": {
+            "source": "unavailable"
+          },
+          "telemetry": {},
+          "wall_seconds": 0.0066
+        },
+        {
+          "round": 3,
+          "arm": "reuse",
+          "order": [
+            "cold",
+            "reuse"
+          ],
+          "passed": true,
+          "memory_hit": true,
+          "packet_chars": 587,
+          "usage": {
+            "source": "unavailable"
+          },
+          "telemetry": {},
+          "wall_seconds": 0.019
+        }
+      ],
+      "cumulative": [
+        {
+          "cold": {
+            "quality_pass": true,
+            "input": null,
+            "output": null,
+            "cached": null,
+            "total_tokens": null,
+            "wall_seconds": 0.0105
+          },
+          "reuse": {
+            "quality_pass": true,
+            "input": null,
+            "output": null,
+            "cached": null,
+            "total_tokens": null,
+            "wall_seconds": 0.0164
+          },
+          "round": 1,
+          "lower_cumulative_tokens_same_acceptance": null
+        },
+        {
+          "cold": {
+            "quality_pass": true,
+            "input": null,
+            "output": null,
+            "cached": null,
+            "total_tokens": null,
+            "wall_seconds": 0.0185
+          },
+          "reuse": {
+            "quality_pass": true,
+            "input": null,
+            "output": null,
+            "cached": null,
+            "total_tokens": null,
+            "wall_seconds": 0.038
+          },
+          "round": 2,
+          "lower_cumulative_tokens_same_acceptance": null
+        },
+        {
+          "cold": {
+            "quality_pass": true,
+            "input": null,
+            "output": null,
+            "cached": null,
+            "total_tokens": null,
+            "wall_seconds": 0.0251
+          },
+          "reuse": {
+            "quality_pass": true,
+            "input": null,
+            "output": null,
+            "cached": null,
+            "total_tokens": null,
+            "wall_seconds": 0.057
+          },
+          "round": 3,
+          "lower_cumulative_tokens_same_acceptance": null
+        }
+      ]
+    }
+  }
+}

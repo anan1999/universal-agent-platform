@@ -175,6 +175,20 @@ agentctl run "<goal>" --consumption economy --dry-run --json
 Do not silently select `maximum`. A per-run `--consumption` override is safer than changing
 the global default for a single task.
 
+When the user states a budget, translate it into explicit run limits instead of relying only
+on prose. For example:
+
+```bash
+agentctl run "<goal>" --consumption economy --max-provider-calls 1 \
+  --max-provider-tool-calls 8 --max-provider-messages 5 \
+  --max-tool-calls 6 --max-retries 0 --max-tokens 12000 \
+  --max-output-tokens 2000 --budget-seconds 300
+```
+
+Never extend an exhausted budget automatically. Report completed evidence and remaining work.
+Codex JSONL executions are monitored live; other agentic provider adapters must not claim this
+capability unless they expose equivalent observable events and cancellation.
+
 ## 10. Continue in the current AI task
 
 This is the main entry point:
@@ -185,6 +199,9 @@ agentctl prepare "<the user's goal in one clear sentence>" --read --json
 
 Read the returned relevant context, then implement the task yourself. This command starts no AI
 provider. Use `agentctl check project_test` for compact deterministic validation when configured.
+Procedure memory is experimental and disabled by default; savings have not been shown.
+Only add `--experience` to `check` and `prepare` when explicitly testing procedure reuse.
+Always rerun checks for new changes. No past result proves current quality.
 If you learn a useful source-backed fact, save at most a short note:
 `agentctl remember <source-path> "<verified fact>"`. No new fact means no memory write.
 

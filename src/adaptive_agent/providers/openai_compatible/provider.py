@@ -133,6 +133,9 @@ class OpenAICompatibleProvider(AIProvider):
             "messages": [{"role": "user", "content": prompt}],
             "stream": False,
         }
+        budget = task.metadata.get("execution_budget", {})
+        if budget.get("max_output_tokens") is not None:
+            payload["max_tokens"] = int(budget["max_output_tokens"])
         if task.metadata.get("structured_output"):
             payload["response_format"] = {"type": "json_object"}
         try:

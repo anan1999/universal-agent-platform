@@ -1,0 +1,168 @@
+{
+  "mode": "real",
+  "model": "gpt-5.6-luna",
+  "script_sha256": "ddb3ccf44f89f61f008292ecb7dde12701c91e861252b99c7fcc57cdefacb671",
+  "planned_provider_attempts": 4,
+  "provider_attempts": 2,
+  "observed_completed_provider_turns": 2,
+  "limitations": [
+    "synthetic small projects, one sequence per domain, no statistical claim",
+    "controller stores a literal policy excerpt only after acceptance, not general AI learning",
+    "initial task includes source discovery; memory storage/retrieval/check time included",
+    "document acceptance checks format and fact presence, not full semantic quality",
+    "no subscription quota conversion or private reasoning measurement",
+    "offline oracle has unavailable tokens and cannot establish savings"
+  ],
+  "domains": {
+    "document": {
+      "setup_seconds": {
+        "cold": 0.5072,
+        "reuse": 0.4694
+      },
+      "tasks": [
+        {
+          "round": 1,
+          "arm": "cold",
+          "order": [
+            "cold",
+            "reuse"
+          ],
+          "passed": false,
+          "provider_status": "blocked",
+          "error_code": "CODEX_CAPABILITY_UNAVAILABLE",
+          "memory_hit": false,
+          "packet_chars": 460,
+          "usage": {
+            "input": 31176,
+            "output": 515,
+            "cached": 15104,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a08fa3-385f-7c51-8a44-f4fff672a604"
+          },
+          "telemetry": {
+            "tool_calls": 1,
+            "assistant_messages": 3,
+            "assistant_message_chars": 1398,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "06ab3429aac045a627606d8c69a73057da2a1e006b036a266da25a0e5aa8db50",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 644,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "wall_seconds": 22.3515
+        },
+        {
+          "round": 1,
+          "arm": "reuse",
+          "order": [
+            "cold",
+            "reuse"
+          ],
+          "passed": true,
+          "provider_status": "completed",
+          "error_code": null,
+          "memory_hit": false,
+          "packet_chars": 460,
+          "usage": {
+            "input": 63456,
+            "output": 667,
+            "cached": 45312,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a08fa3-8e18-7b63-9576-531bcf17d84e"
+          },
+          "telemetry": {
+            "tool_calls": 2,
+            "assistant_messages": 2,
+            "assistant_message_chars": 641,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "822d1718f66e2c39fcdda5e24b0287f8c41496a5407cb500faf6d896868f92ff",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 645,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "inspection",
+                  "repository_status"
+                ],
+                "command_sha256": "9bbcb94d26d368afe985e67b29e4bbd791aad56327cd9ff3b1e1ba5c69e4d8c7",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 253,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "wall_seconds": 36.9343
+        }
+      ],
+      "cumulative": [
+        {
+          "cold": {
+            "quality_pass": false,
+            "input": 31176,
+            "output": 515,
+            "cached": 15104,
+            "total_tokens": 31691,
+            "wall_seconds": 22.3515,
+            "wall_seconds_including_setup": 22.8587
+          },
+          "reuse": {
+            "quality_pass": true,
+            "input": 63456,
+            "output": 667,
+            "cached": 45312,
+            "total_tokens": 64123,
+            "wall_seconds": 36.9343,
+            "wall_seconds_including_setup": 37.4037
+          },
+          "round": 1,
+          "lower_cumulative_tokens_same_acceptance": null
+        }
+      ]
+    }
+  },
+  "stopped": "acceptance_failure_no_retry"
+}

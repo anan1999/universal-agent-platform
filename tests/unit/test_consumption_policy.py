@@ -5,7 +5,7 @@ import pytest
 from adaptive_agent.bootstrap import consumption_mode
 from adaptive_agent.cli import _dry_run, main
 from adaptive_agent.core.capabilities import Risk
-from adaptive_agent.core.consumption import ConsumptionMode, consumption_policy
+from adaptive_agent.core.consumption import ConsumptionMode, ExecutionBudget, consumption_policy
 from adaptive_agent.core.execution_packet import ExecutionPacketBuilder
 
 
@@ -96,3 +96,19 @@ def test_economy_keeps_deterministic_validation(monkeypatch, tmp_path):
     plan = _dry_run("Fix a simple Python arithmetic bug and run the existing test.",
                     "mock", consumption="economy")
     assert any(task["kind"] == "tool" and "test" in task["agent"] for task in plan["tasks"])
+
+
+def test_explicit_budget_is_validated_and_exposed_by_dry_run(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    budget = ExecutionBudget(max_provider_calls=1, max_provider_tool_calls=8,
+                             max_provider_messages=5, max_tool_calls=4, max_total_tokens=3000,
+                             max_output_tokens=500, max_retry_rounds=0,
+                             max_wall_seconds=60, verification_reserve_percent=25)
+    plan = _dry_run("Analyze a research question", "mock", execution_budget=budget)
+    assert plan["execution_budget"]["enabled"] is True
+    assert plan["execution_budget"]["max_provider_calls"] == 1
+    assert plan["execution_budget"]["max_provider_tool_calls"] == 8
+    assert plan["execution_budget"]["max_provider_messages"] == 5
+    assert plan["execution_budget"]["verification_reserve_percent"] == 25
+    with pytest.raises(ValueError, match="max_provider_calls"):
+        ExecutionBudget(max_provider_calls=-1)

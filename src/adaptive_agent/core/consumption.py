@@ -60,6 +60,55 @@ class ConsumptionPolicy:
         return data
 
 
+@dataclass(frozen=True, slots=True)
+class ExecutionBudget:
+    """Explicit per-run limits.
+
+    Provider/tool calls and wall time are hard orchestration limits. Token limits
+    are checked before and after provider calls; a single backend invocation can
+    exceed the remaining token allowance when that backend cannot stop mid-call.
+    """
+
+    max_provider_calls: int | None = None
+    max_provider_tool_calls: int | None = None
+    max_provider_messages: int | None = None
+    max_tool_calls: int | None = None
+    max_total_tokens: int | None = None
+    max_output_tokens: int | None = None
+    max_retry_rounds: int | None = None
+    max_wall_seconds: float | None = None
+    verification_reserve_percent: int = 20
+    on_exhausted: str = "stop_and_report"
+
+    def __post_init__(self) -> None:
+        integer_fields = (
+            "max_provider_calls", "max_provider_tool_calls", "max_provider_messages",
+            "max_tool_calls", "max_total_tokens",
+            "max_output_tokens", "max_retry_rounds",
+        )
+        for name in integer_fields:
+            value = getattr(self, name)
+            if value is not None and value < 0:
+                raise ValueError(f"{name} must be zero or greater")
+        if self.max_wall_seconds is not None and self.max_wall_seconds <= 0:
+            raise ValueError("max_wall_seconds must be greater than zero")
+        if not 0 <= self.verification_reserve_percent <= 90:
+            raise ValueError("verification_reserve_percent must be between 0 and 90")
+        if self.on_exhausted != "stop_and_report":
+            raise ValueError("on_exhausted must be 'stop_and_report'")
+
+    @property
+    def enabled(self) -> bool:
+        return any(value is not None for value in (
+            self.max_provider_calls, self.max_provider_tool_calls, self.max_provider_messages,
+            self.max_tool_calls, self.max_total_tokens,
+            self.max_output_tokens, self.max_retry_rounds, self.max_wall_seconds,
+        ))
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self) | {"enabled": self.enabled}
+
+
 POLICIES = {
     ConsumptionMode.ECONOMY: ConsumptionPolicy(
         ConsumptionMode.ECONOMY, 1, 1, 1, 1, 80, 2, 0.8, -1),

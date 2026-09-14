@@ -1,0 +1,99 @@
+{
+  "mode": "real",
+  "model": "gpt-5.6-luna",
+  "script_sha256": "2853e130552cf6ca446c814467dfc067affc266e484bac9b20edbaa56f9cd29a",
+  "planned_ai_calls": 4,
+  "actual_ai_calls": 2,
+  "limitations": [
+    "synthetic small projects, one sequence per domain, no statistical claim",
+    "controller stores a literal policy excerpt only after acceptance, not general AI learning",
+    "initial task includes source discovery; memory storage/retrieval/check time included",
+    "document acceptance checks format and fact presence, not full semantic quality",
+    "no subscription quota conversion or private reasoning measurement",
+    "offline oracle has unavailable tokens and cannot establish savings"
+  ],
+  "domains": {
+    "document": {
+      "setup_seconds": 1.7753,
+      "tasks": [
+        {
+          "round": 1,
+          "arm": "cold",
+          "order": [
+            "cold",
+            "reuse"
+          ],
+          "passed": false,
+          "memory_hit": false,
+          "packet_chars": 460,
+          "usage": {
+            "input": 0,
+            "output": 0,
+            "cached": 0,
+            "source": "unavailable",
+            "estimated": false
+          },
+          "telemetry": {
+            "tool_calls": 0,
+            "assistant_messages": 0,
+            "assistant_message_chars": 0,
+            "provider_turns": 0,
+            "internal_reasoning_rounds": null,
+            "actions": []
+          },
+          "wall_seconds": 1.084
+        },
+        {
+          "round": 1,
+          "arm": "reuse",
+          "order": [
+            "cold",
+            "reuse"
+          ],
+          "passed": false,
+          "memory_hit": false,
+          "packet_chars": 460,
+          "usage": {
+            "input": 0,
+            "output": 0,
+            "cached": 0,
+            "source": "unavailable",
+            "estimated": false
+          },
+          "telemetry": {
+            "tool_calls": 0,
+            "assistant_messages": 0,
+            "assistant_message_chars": 0,
+            "provider_turns": 0,
+            "internal_reasoning_rounds": null,
+            "actions": []
+          },
+          "wall_seconds": 1.1806
+        }
+      ],
+      "cumulative": [
+        {
+          "cold": {
+            "quality_pass": false,
+            "input": null,
+            "output": null,
+            "cached": null,
+            "total_tokens": null,
+            "wall_seconds": 1.084
+          },
+          "reuse": {
+            "quality_pass": false,
+            "input": null,
+            "output": null,
+            "cached": null,
+            "total_tokens": null,
+            "wall_seconds": 1.1806
+          },
+          "round": 1,
+          "lower_cumulative_tokens_same_acceptance": null
+        }
+      ]
+    }
+  },
+  "stopped": "acceptance_failure_no_retry"
+}

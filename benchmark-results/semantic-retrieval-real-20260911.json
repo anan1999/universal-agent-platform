@@ -1,0 +1,273 @@
+{
+  "mode": "semantic_multi_evidence",
+  "model": "gpt-5.6-luna",
+  "script_sha256": "1e9167db892759c509b1fc0bf1adc660c9ff8eab05160bee9c2b8b9f3b7d4b02",
+  "corpus_chars": 13542,
+  "corpus_chunks": 96,
+  "planned_provider_attempts": 6,
+  "provider_attempts": 4,
+  "problems": [
+    {
+      "name": "android_release",
+      "question": "For an Android production release, report the required approver, target API, crash-log retention days, and storage region.",
+      "expected": "security|35|21|eu-west-1"
+    },
+    {
+      "name": "survey_interpretation",
+      "question": "For the customer onboarding survey, report sample size, response percentage, stable source ID, and whether it establishes causation.",
+      "expected": "240|62|SURV-24|no"
+    },
+    {
+      "name": "invoice_policy",
+      "question": "For revenue aggregation, report included invoice status, whether approved zero values count, excluded statuses, FX timing, and rounding stage.",
+      "expected": "approved|yes|pending+refunded|transaction-date-close|after-category-aggregation"
+    }
+  ],
+  "tasks": [
+    {
+      "round": 1,
+      "problem": "android_release",
+      "question": "For an Android production release, report the required approver, target API, crash-log retention days, and storage region.",
+      "expected": "security|35|21|eu-west-1",
+      "arm": "full",
+      "order": [
+        "full",
+        "retrieved"
+      ],
+      "context_kind": "full",
+      "context_chars": 13542,
+      "packet_chars": 13983,
+      "selected_evidence": [],
+      "required_markers": [
+        "MOBILE-RELEASE",
+        "CRASH-LOGS"
+      ],
+      "selection_ms": 1.1497,
+      "passed": true,
+      "status": "completed",
+      "error_code": null,
+      "answer_sha256": "29c7b89a69467a8b2a525de341cfdc3733ca13cf655f4fa9ea454de58a4f32e7",
+      "usage": {
+        "input": 16800,
+        "output": 94,
+        "cached": 0,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fc0-42de-7972-861a-d6e0191b9db7"
+      },
+      "telemetry": {
+        "tool_calls": 0,
+        "assistant_messages": 1,
+        "assistant_message_chars": 176,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": []
+      },
+      "seconds": 6.741
+    },
+    {
+      "round": 1,
+      "problem": "android_release",
+      "question": "For an Android production release, report the required approver, target API, crash-log retention days, and storage region.",
+      "expected": "security|35|21|eu-west-1",
+      "arm": "retrieved",
+      "order": [
+        "full",
+        "retrieved"
+      ],
+      "context_kind": "full",
+      "context_chars": 13542,
+      "packet_chars": 13983,
+      "selected_evidence": [],
+      "required_markers": [
+        "MOBILE-RELEASE",
+        "CRASH-LOGS"
+      ],
+      "selection_ms": 0.6535,
+      "passed": true,
+      "status": "completed",
+      "error_code": null,
+      "answer_sha256": "29c7b89a69467a8b2a525de341cfdc3733ca13cf655f4fa9ea454de58a4f32e7",
+      "usage": {
+        "input": 16803,
+        "output": 87,
+        "cached": 9984,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fc0-5bf3-7641-8e2c-af7fcd76a38f"
+      },
+      "telemetry": {
+        "tool_calls": 0,
+        "assistant_messages": 1,
+        "assistant_message_chars": 176,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": []
+      },
+      "seconds": 6.757
+    },
+    {
+      "round": 2,
+      "problem": "survey_interpretation",
+      "question": "For the customer onboarding survey, report sample size, response percentage, stable source ID, and whether it establishes causation.",
+      "expected": "240|62|SURV-24|no",
+      "arm": "retrieved",
+      "order": [
+        "retrieved",
+        "full"
+      ],
+      "context_kind": "retrieved",
+      "context_chars": 322,
+      "packet_chars": 773,
+      "selected_evidence": [
+        {
+          "index": 2,
+          "score": 37.6367,
+          "matched_terms": [
+            "customer",
+            "onboarding",
+            "response",
+            "sample",
+            "source",
+            "stable",
+            "survey"
+          ],
+          "sha256": "737481237d0c5f80e2b2a34a095fc02a9a8df01a519f8b2a1673b71b7cb39b6f"
+        },
+        {
+          "index": 3,
+          "score": 15.3378,
+          "matched_terms": [
+            "causation",
+            "onboarding",
+            "survey"
+          ],
+          "sha256": "b5a8f14cc4ac7f5925ce11dc0264fff1963af6f175dcec3052018fd75207edfc"
+        }
+      ],
+      "required_markers": [
+        "SURVEY-SAMPLE",
+        "SURVEY-LIMIT"
+      ],
+      "selection_ms": 0.8567,
+      "passed": false,
+      "status": "completed",
+      "error_code": null,
+      "answer_sha256": "70540b7f824c4b1921ea8812f748864ee60133eea667f97f404161aa22248803",
+      "usage": {
+        "input": 13411,
+        "output": 106,
+        "cached": 0,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fc0-7690-7333-9cf0-5491abffc482"
+      },
+      "telemetry": {
+        "tool_calls": 0,
+        "assistant_messages": 1,
+        "assistant_message_chars": 251,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": []
+      },
+      "seconds": 6.708
+    },
+    {
+      "round": 2,
+      "problem": "survey_interpretation",
+      "question": "For the customer onboarding survey, report sample size, response percentage, stable source ID, and whether it establishes causation.",
+      "expected": "240|62|SURV-24|no",
+      "arm": "full",
+      "order": [
+        "retrieved",
+        "full"
+      ],
+      "context_kind": "full",
+      "context_chars": 13542,
+      "packet_chars": 13993,
+      "selected_evidence": [],
+      "required_markers": [
+        "SURVEY-SAMPLE",
+        "SURVEY-LIMIT"
+      ],
+      "selection_ms": 0.7291,
+      "passed": false,
+      "status": "completed",
+      "error_code": null,
+      "answer_sha256": "dca2107ae7b9e8bbaa856de8c4f8575e2f1069b8501d0b9f4e0e6096b06d265c",
+      "usage": {
+        "input": 16800,
+        "output": 89,
+        "cached": 0,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fc0-9114-7e30-ba54-520354802248"
+      },
+      "telemetry": {
+        "tool_calls": 0,
+        "assistant_messages": 1,
+        "assistant_message_chars": 242,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": []
+      },
+      "seconds": 10.256
+    }
+  ],
+  "cumulative": [
+    {
+      "full": {
+        "quality_pass": true,
+        "input": 16800,
+        "output": 94,
+        "cached": 0,
+        "total_tokens": 16894,
+        "seconds": 6.741
+      },
+      "retrieved": {
+        "quality_pass": true,
+        "input": 16803,
+        "output": 87,
+        "cached": 9984,
+        "total_tokens": 16890,
+        "seconds": 6.757
+      },
+      "round": 1,
+      "lower_tokens_same_acceptance": true
+    },
+    {
+      "full": {
+        "quality_pass": false,
+        "input": 33600,
+        "output": 183,
+        "cached": 0,
+        "total_tokens": 33783,
+        "seconds": 16.997
+      },
+      "retrieved": {
+        "quality_pass": false,
+        "input": 30214,
+        "output": 193,
+        "cached": 9984,
+        "total_tokens": 30407,
+        "seconds": 13.465
+      },
+      "round": 2,
+      "lower_tokens_same_acceptance": null
+    }
+  ],
+  "limitations": [
+    "synthetic knowledge base and exact-format answers",
+    "lexical retrieval only; no embeddings, model calls, or prior answer used for selection",
+    "first case sends full corpus to both arms; later retrieval is amortized",
+    "top four chunks may include distractors; selector evidence is recorded",
+    "tool-free reasoning does not prove repository-editing savings",
+    "single alternating sequence; model/cache variance remains",
+    "cached is included in input; no subscription conversion"
+  ],
+  "stopped": "acceptance_failure_no_retry"
+}

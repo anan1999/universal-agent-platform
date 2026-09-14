@@ -35,26 +35,43 @@ class ExecutionPacket:
     context_attribution: list[str] = field(default_factory=list)
     project_context: list[str] = field(default_factory=list)
     cached_file_summaries: list[str] = field(default_factory=list)
+    execution_budget: dict[str, object] = field(default_factory=dict)
 
     def render(self) -> str:
-        def section(name: str, values: list[str], fallback: str = "None") -> str:
-            body = "\n".join(f"- {value}" for value in values) if values else fallback
+        def section(name: str, values: list[str], fallback: str | None = None) -> str:
+            if not values and fallback is None:
+                return ""
+            body = "\n".join(f"- {value}" for value in values) if values else str(fallback)
             return f"{name}:\n{body}"
 
-        constraints = list(self.constraints)
-        constraints.extend([
+        stable_contract = [
             "You are a bounded child executor, not the top-level orchestrator.",
             "Do not invoke agentctl or any other agent-orchestration framework.",
             "Use only this packet and the workspace content the task actually needs.",
             "Do not inspect unrelated directories or include full logs in the response.",
-            f"Keep the final structured response within {self.max_output_words} words.",
             "Before returning, record only a stable project fact, explicit decision, reusable procedure, or canonical command that is likely to help a later session.",
             "Use an empty learning_evidence array when no stable reusable information was learned.",
             "Never invent learning evidence or include temporary debugging notes, generic advice, hidden reasoning, or transcripts.",
-        ])
+        ]
+        constraints = list(self.constraints)
+        constraints.append(f"Keep the final structured response within {self.max_output_words} words.")
         if self.read_only:
             constraints.append("Do not modify anything in the workspace.")
+        if self.execution_budget.get("enabled"):
+            budget = self.execution_budget
+            constraints.extend([
+                "This run has an externally enforced budget; treat it as a hard resource envelope.",
+                "Do the minimum sufficient inspection and avoid repeated status checks or self-dialogue.",
+                ("Budget: provider_calls={max_provider_calls}, provider_tool_calls={max_provider_tool_calls}, "
+                 "provider_messages={max_provider_messages}, tool_calls={max_tool_calls}, "
+                 "total_tokens={max_total_tokens}, output_tokens={max_output_tokens}, "
+                 "retries={max_retry_rounds}, wall_seconds={max_wall_seconds}."
+                 ).format(**budget),
+                f"Reserve {budget.get('verification_reserve_percent', 20)}% for final verification.",
+                "If the budget is insufficient, stop and report completed evidence and remaining work.",
+            ])
         sections = [
+            section("STABLE EXECUTION CONTRACT", stable_contract),
             f"ROLE:\n{self.role}",
             f"RESPONSIBILITY:\n{self.responsibility}" if self.responsibility else "",
             f"TASK:\n{self.task}",
@@ -132,6 +149,7 @@ class ExecutionPacketBuilder:
                 f"{item.get('path')}: {item.get('summary')}"
                 for item in intelligence.get("cached_files", [])
             ],
+            execution_budget=dict(task.metadata.get("execution_budget", {})),
         )
 
     def _summarize(self, receipt: Receipt) -> str:

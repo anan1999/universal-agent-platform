@@ -1,0 +1,198 @@
+{
+  "mode": "real_tool_free_context_selection",
+  "model": "gpt-5.6-luna",
+  "script_sha256": "0f7655213a116b5194153ad8725da45dc4c66aa168444806522471cc7f5c7129",
+  "catalog_chars": 10002,
+  "planned_provider_attempts": 4,
+  "provider_attempts": 4,
+  "tasks": [
+    {
+      "round": 1,
+      "arm": "cold",
+      "order": [
+        "cold",
+        "selected"
+      ],
+      "context_kind": "full",
+      "context_chars": 10002,
+      "packet_chars": 10439,
+      "selection_ms": 0.0004,
+      "passed": true,
+      "status": "completed",
+      "error_code": null,
+      "summary_sha256": "23706685f3f43576af25ecb8b969dc8fe13e4f6357dbe004b9fb6425bf73e8e6",
+      "usage": {
+        "input": 16628,
+        "output": 62,
+        "cached": 0,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fb4-9142-7d42-b6c4-b4f6254878b8"
+      },
+      "telemetry": {
+        "tool_calls": 0,
+        "assistant_messages": 1,
+        "assistant_message_chars": 182,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": []
+      },
+      "wall_seconds": 6.827
+    },
+    {
+      "round": 1,
+      "arm": "selected",
+      "order": [
+        "cold",
+        "selected"
+      ],
+      "context_kind": "full",
+      "context_chars": 10002,
+      "packet_chars": 10439,
+      "selection_ms": 0.0012,
+      "passed": true,
+      "status": "completed",
+      "error_code": null,
+      "summary_sha256": "23706685f3f43576af25ecb8b969dc8fe13e4f6357dbe004b9fb6425bf73e8e6",
+      "usage": {
+        "input": 16628,
+        "output": 62,
+        "cached": 0,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fb4-abb7-7260-bff3-9edd2459f580"
+      },
+      "telemetry": {
+        "tool_calls": 0,
+        "assistant_messages": 1,
+        "assistant_message_chars": 182,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": []
+      },
+      "wall_seconds": 5.591
+    },
+    {
+      "round": 2,
+      "arm": "selected",
+      "order": [
+        "selected",
+        "cold"
+      ],
+      "context_kind": "selected",
+      "context_chars": 83,
+      "packet_chars": 520,
+      "selection_ms": 0.0125,
+      "passed": true,
+      "status": "completed",
+      "error_code": null,
+      "summary_sha256": "51b4ac97a707301d6bcb71e9eebeed1b48ce63818c39ce3c9d887af92331b58b",
+      "usage": {
+        "input": 13376,
+        "output": 62,
+        "cached": 0,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fb4-c59b-7ba3-94c9-ba2cd2f0a498"
+      },
+      "telemetry": {
+        "tool_calls": 0,
+        "assistant_messages": 1,
+        "assistant_message_chars": 184,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": []
+      },
+      "wall_seconds": 6.925
+    },
+    {
+      "round": 2,
+      "arm": "cold",
+      "order": [
+        "selected",
+        "cold"
+      ],
+      "context_kind": "full",
+      "context_chars": 10002,
+      "packet_chars": 10439,
+      "selection_ms": 0.0044,
+      "passed": true,
+      "status": "completed",
+      "error_code": null,
+      "summary_sha256": "51b4ac97a707301d6bcb71e9eebeed1b48ce63818c39ce3c9d887af92331b58b",
+      "usage": {
+        "input": 16628,
+        "output": 62,
+        "cached": 0,
+        "source": "measured",
+        "estimated": false,
+        "invocation_count": 1,
+        "execution_id": "01a08fb4-e16a-75f0-9907-a7e087b4f39c"
+      },
+      "telemetry": {
+        "tool_calls": 0,
+        "assistant_messages": 1,
+        "assistant_message_chars": 184,
+        "provider_turns": 1,
+        "internal_reasoning_rounds": null,
+        "actions": []
+      },
+      "wall_seconds": 8.413
+    }
+  ],
+  "cumulative": [
+    {
+      "cold": {
+        "quality_pass": true,
+        "input": 16628,
+        "output": 62,
+        "cached": 0,
+        "total_tokens": 16690,
+        "wall_seconds": 6.827
+      },
+      "selected": {
+        "quality_pass": true,
+        "input": 16628,
+        "output": 62,
+        "cached": 0,
+        "total_tokens": 16690,
+        "wall_seconds": 5.591
+      },
+      "round": 1,
+      "lower_tokens_same_acceptance": false
+    },
+    {
+      "cold": {
+        "quality_pass": true,
+        "input": 33256,
+        "output": 124,
+        "cached": 0,
+        "total_tokens": 33380,
+        "wall_seconds": 15.24
+      },
+      "selected": {
+        "quality_pass": true,
+        "input": 30004,
+        "output": 124,
+        "cached": 0,
+        "total_tokens": 30128,
+        "wall_seconds": 12.516
+      },
+      "round": 2,
+      "lower_tokens_same_acceptance": true
+    }
+  ],
+  "limitations": [
+    "synthetic exact lookup, not repository implementation",
+    "selection is deterministic and task-keyed, not AI-authored learning",
+    "round one intentionally supplies full catalog to both arms",
+    "separate ephemeral provider instance per task",
+    "single alternating sequence; cache/model variation remains",
+    "cached is part of input; no subscription quota conversion",
+    "no tool calls or private reasoning measurement expected"
+  ],
+  "conclusion": "YES"
+}

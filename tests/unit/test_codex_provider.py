@@ -2,9 +2,12 @@ import asyncio
 import json
 import sys
 
+import pytest
+
 from adaptive_agent.core.execution_packet import ExecutionPacketBuilder
 from adaptive_agent.core.models import Receipt, Task
 from adaptive_agent.providers.codex import RESULT_SCHEMA, CodexCapabilities, CodexErrorCode, CodexProvider
+from adaptive_agent.providers.codex.provider import CodexEventBudget
 
 
 def test_capability_detection_from_fake_executable(tmp_path):
@@ -56,7 +59,7 @@ def test_real_provider_contract_with_fake_subprocess(tmp_path):
                                     supports_working_directory=True, supports_jsonl=True,
                                     supports_auto_approval=True)
     class FakeCodexProvider(CodexProvider):
-        async def _communicate(self, args, prompt, working_directory):
+        async def _communicate(self, args, prompt, working_directory, budget=None):
             assert args[-1] == "-"
             assert "--approve-for-me" in args
             assert "--sandbox" not in args
@@ -104,7 +107,7 @@ def test_policy_block_is_environment_failure_without_escalation(tmp_path):
                                     supports_jsonl=True)
 
     class BlockedCodexProvider(CodexProvider):
-        async def _communicate(self, args, prompt, working_directory):
+        async def _communicate(self, args, prompt, working_directory, budget=None):
             return 0, output.encode(), b""
 
     provider = BlockedCodexProvider(command_prefix=["fake-codex"], capabilities=capabilities)
@@ -112,3 +115,75 @@ def test_policy_block_is_environment_failure_without_escalation(tmp_path):
     receipt = asyncio.run(provider.execute(task))
     assert receipt.error_code == CodexErrorCode.CAPABILITY_UNAVAILABLE.value
     assert receipt.needs_escalation is False
+
+
+def test_live_event_budget_stops_before_accepting_an_extra_tool():
+    monitor = CodexEventBudget(max_tool_calls=2, max_assistant_messages=1)
+    completed = lambda kind: (json.dumps({"type": "item.completed", "item": {"type": kind}}) + "\n").encode()
+    started = lambda kind: (json.dumps({"type": "item.started", "item": {"type": kind}}) + "\n").encode()
+    assert monitor.observe(completed("command_execution")) is None
+    assert monitor.observe(completed("mcp_tool_call")) is None
+    reason = monitor.observe(started("web_search"))
+    assert reason == "provider tool-call budget exhausted at 2"
+    assert monitor.tool_calls == 2
+
+
+def test_live_message_budget_is_counted_without_reading_message_text():
+    monitor = CodexEventBudget(max_assistant_messages=1)
+    secret = "DO_NOT_PERSIST_SECRET"
+    line = lambda: (json.dumps({"type": "item.completed", "item": {
+        "type": "agent_message", "text": secret}}) + "\n").encode()
+    assert monitor.observe(line()) is None
+    reason = monitor.observe(line())
+    assert reason == "provider assistant-message budget exhausted at 2"
+    assert secret not in reason
+
+
+def test_streaming_subprocess_is_terminated_when_next_tool_exceeds_budget(monkeypatch, tmp_path):
+    class Input:
+        def write(self, value):
+            self.value = value
+        async def drain(self):
+            return None
+        def close(self):
+            return None
+
+    class Reader:
+        def __init__(self, lines=()):
+            self.lines = list(lines)
+        async def readline(self):
+            return self.lines.pop(0) if self.lines else b""
+        async def read(self):
+            return b"".join(self.lines)
+
+    class Process:
+        def __init__(self):
+            self.stdin = Input()
+            events = [
+                {"type": "item.completed", "item": {"type": "command_execution"}},
+                {"type": "item.completed", "item": {"type": "mcp_tool_call"}},
+                {"type": "item.started", "item": {"type": "web_search"}},
+            ]
+            self.stdout = Reader((json.dumps(event) + "\n").encode() for event in events)
+            self.stderr = Reader()
+            self.returncode = None
+            self.terminated = False
+        def terminate(self):
+            self.terminated = True
+            self.returncode = -15
+        def kill(self):
+            self.terminate()
+        async def wait(self):
+            return self.returncode
+
+    process = Process()
+    async def create(*args, **kwargs):
+        return process
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", create)
+    provider = CodexProvider(command_prefix=["fake"], capabilities=CodexCapabilities(
+        available=True, supports_noninteractive=True, supports_jsonl=True), timeout=5)
+    with pytest.raises(Exception, match="provider tool-call budget exhausted at 2") as error:
+        asyncio.run(provider._communicate(
+            ["fake"], "prompt", tmp_path, {"max_provider_tool_calls": 2}))
+    assert type(error.value).__name__ == "CodexBudgetExceeded"
+    assert process.terminated is True

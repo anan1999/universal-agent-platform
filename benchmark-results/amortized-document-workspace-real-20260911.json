@@ -1,0 +1,129 @@
+{
+  "mode": "real",
+  "model": "gpt-5.6-luna",
+  "script_sha256": "6736113298b02a6c17f6a1b369108c3666796a11af179b43d005d2fa088f28c5",
+  "planned_provider_attempts": 4,
+  "provider_attempts": 2,
+  "observed_completed_provider_turns": 2,
+  "limitations": [
+    "synthetic small projects, one sequence per domain, no statistical claim",
+    "controller stores a literal policy excerpt only after acceptance, not general AI learning",
+    "initial task includes source discovery; memory storage/retrieval/check time included",
+    "document acceptance checks format and fact presence, not full semantic quality",
+    "real mode retains bounded receipt summaries and is only for bundled synthetic fixtures",
+    "benchmark forces workspace-write sandbox but never bypasses sandbox",
+    "no subscription quota conversion or private reasoning measurement",
+    "offline oracle has unavailable tokens and cannot establish savings"
+  ],
+  "domains": {
+    "document": {
+      "setup_seconds": {
+        "cold": 0.5566,
+        "reuse": 0.6197
+      },
+      "tasks": [
+        {
+          "round": 1,
+          "arm": "cold",
+          "order": [
+            "cold",
+            "reuse"
+          ],
+          "passed": false,
+          "provider_status": "blocked",
+          "error_code": null,
+          "diagnostic": {
+            "status": "blocked",
+            "error_code": null,
+            "summary": "Could not complete the file update because workspace access is read-only and command execution was blocked.",
+            "uncertainty": "",
+            "needs_escalation": true
+          },
+          "memory_hit": false,
+          "packet_chars": 460,
+          "usage": {
+            "input": 53850,
+            "output": 702,
+            "cached": 38144,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a08fb1-1bb8-79f0-9de6-d4d96faa9610"
+          },
+          "telemetry": {
+            "tool_calls": 0,
+            "assistant_messages": 2,
+            "assistant_message_chars": 597,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": []
+          },
+          "wall_seconds": 23.8575
+        },
+        {
+          "round": 1,
+          "arm": "reuse",
+          "order": [
+            "cold",
+            "reuse"
+          ],
+          "passed": false,
+          "provider_status": "blocked",
+          "error_code": "CODEX_CAPABILITY_UNAVAILABLE",
+          "diagnostic": {
+            "status": "blocked",
+            "error_code": "CODEX_CAPABILITY_UNAVAILABLE",
+            "summary": "Unable to complete the file update because the current workspace is read-only and shell access was blocked by the environment policy. brief-1.md was not written; prior briefs and protected files were unchanged.",
+            "uncertainty": "The environment explicitly provides read-only filesystem access and rejected read commands before file inspection.",
+            "needs_escalation": false
+          },
+          "memory_hit": false,
+          "packet_chars": 460,
+          "usage": {
+            "input": 53897,
+            "output": 711,
+            "cached": 48128,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a08fb1-798f-7cb1-be20-5eb5f56606dd"
+          },
+          "telemetry": {
+            "tool_calls": 0,
+            "assistant_messages": 2,
+            "assistant_message_chars": 914,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": []
+          },
+          "wall_seconds": 24.1559
+        }
+      ],
+      "cumulative": [
+        {
+          "cold": {
+            "quality_pass": false,
+            "input": 53850,
+            "output": 702,
+            "cached": 38144,
+            "total_tokens": 54552,
+            "wall_seconds": 23.8575,
+            "wall_seconds_including_setup": 24.4141
+          },
+          "reuse": {
+            "quality_pass": false,
+            "input": 53897,
+            "output": 711,
+            "cached": 48128,
+            "total_tokens": 54608,
+            "wall_seconds": 24.1559,
+            "wall_seconds_including_setup": 24.7756
+          },
+          "round": 1,
+          "lower_cumulative_tokens_same_acceptance": null
+        }
+      ]
+    }
+  },
+  "stopped": "acceptance_failure_no_retry"
+}

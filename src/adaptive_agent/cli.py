@@ -20,6 +20,7 @@ from adaptive_agent.bootstrap import (
     setup as run_setup,
 )
 from adaptive_agent.core.artifacts import Artifact, ArtifactStore, ArtifactType
+from adaptive_agent.core.consumption import ExecutionBudget
 from adaptive_agent.core.models import Task, new_id
 from adaptive_agent.core.orchestrator import Orchestrator
 from adaptive_agent.git.worktree import WorktreeManager
@@ -48,6 +49,30 @@ from adaptive_agent.registry_view import (
     tools as registry_tools,
 )
 from adaptive_agent.runtime import RESOURCE_ROOT, database, event_bus, platform_home
+
+
+def _add_budget_arguments(command: argparse.ArgumentParser) -> None:
+    command.add_argument("--max-provider-calls", type=int)
+    command.add_argument("--max-provider-tool-calls", type=int)
+    command.add_argument("--max-provider-messages", type=int)
+    command.add_argument("--max-tool-calls", type=int)
+    command.add_argument("--max-tokens", type=int, dest="max_total_tokens")
+    command.add_argument("--max-output-tokens", type=int)
+    command.add_argument("--max-retries", type=int, dest="max_retry_rounds")
+    command.add_argument("--budget-seconds", type=float, dest="max_wall_seconds")
+    command.add_argument("--verification-reserve", type=int, default=20,
+                         dest="verification_reserve_percent")
+
+
+def _execution_budget(args: argparse.Namespace) -> ExecutionBudget:
+    return ExecutionBudget(**{
+        name: getattr(args, name, None) for name in (
+            "max_provider_calls", "max_provider_tool_calls", "max_provider_messages",
+            "max_tool_calls", "max_total_tokens",
+            "max_output_tokens", "max_retry_rounds", "max_wall_seconds",
+            "verification_reserve_percent",
+        )
+    })
 
 
 def parser() -> argparse.ArgumentParser:
@@ -93,6 +118,7 @@ def parser() -> argparse.ArgumentParser:
     run.add_argument("--explain", action="store_true", help="print the composition rationale and exit")
     run.add_argument("--consumption", choices=("economy", "balanced", "maximum"),
                      help="override the project consumption policy for this run")
+    _add_budget_arguments(run)
 
     orchestrate = commands.add_parser("orchestrate", help="explicitly delegate execution to a provider")
     orchestrate.add_argument("goal")
@@ -104,6 +130,7 @@ def parser() -> argparse.ArgumentParser:
     orchestrate.add_argument("--approve", action="append", default=[], metavar="GATE")
     orchestrate.add_argument("--consumption", choices=("economy", "balanced", "maximum"),
                              help="override the project consumption policy for this run")
+    _add_budget_arguments(orchestrate)
 
     status_command = commands.add_parser("status")
     status_command.add_argument("--json", action="store_true")
@@ -261,7 +288,8 @@ def _run_goal(goal: str, provider_name: str = "mock", delay: float = 0.02,
               timeout: float = 900, in_place: bool = False, entry_source: str = "cli",
               orchestration_owner: str = "universal-agent-platform", profiles: list[str] | None = None,
               approvals: list[str] | None = None,
-              consumption: str | None = None) -> tuple[str, str, str | None]:
+              consumption: str | None = None,
+              execution_budget: ExecutionBudget | None = None) -> tuple[str, str, str | None]:
     db = database()
     run_id = new_id("RUN")
     resolved = _resolve_provider(provider_name)
@@ -271,7 +299,7 @@ def _run_goal(goal: str, provider_name: str = "mock", delay: float = 0.02,
     orchestrator = _orchestrator(
         db, resolved, timeout, delay, profiles,
         provider_preference_override=[resolved] if provider_name != "auto" else None,
-        consumption_override=consumption)
+        consumption_override=consumption, execution_budget=execution_budget)
     try:
         completed_id = asyncio.run(orchestrator.run_goal(
             goal, project_id, str(workdir), run_id, info.name, info.type,
@@ -290,7 +318,8 @@ def _run_goal(goal: str, provider_name: str = "mock", delay: float = 0.02,
 def _orchestrator(db, provider_name: str, timeout: float = 900, delay: float = 0.02,
                   profiles: list[str] | None = None, provider=None,
                   provider_preference_override: list[str] | None = None,
-                  consumption_override: str | None = None) -> Orchestrator:
+                  consumption_override: str | None = None,
+                  execution_budget: ExecutionBudget | None = None) -> Orchestrator:
     cwd = Path.cwd()
     preference = provider_preference_override or project_provider_preference(cwd)
     if provider_preference_override is None and preference == ["auto"]:
@@ -300,11 +329,13 @@ def _orchestrator(db, provider_name: str, timeout: float = 900, delay: float = 0
                         provider_preference=preference,
                         active_profiles=profiles if profiles is not None else project_profiles(cwd),
                         consumption_mode=(consumption_override or project_consumption_mode(cwd)
-                                          or consumption_mode()))
+                                          or consumption_mode()),
+                        execution_budget=execution_budget)
 
 
 def _dry_run(goal: str, provider_name: str, profiles: list[str] | None = None,
-             consumption: str | None = None) -> dict:
+             consumption: str | None = None,
+             execution_budget: ExecutionBudget | None = None) -> dict:
     db = database()
     info = discover(Path.cwd())
     resolved = _resolve_provider(provider_name)
@@ -312,7 +343,7 @@ def _dry_run(goal: str, provider_name: str, profiles: list[str] | None = None,
     orchestrator = _orchestrator(
         db, resolved, profiles=profiles, provider=MockProvider(delay=0),
         provider_preference_override=[resolved] if provider_name != "auto" else None,
-        consumption_override=consumption)
+        consumption_override=consumption, execution_budget=execution_budget)
     composition = orchestrator.plan("RUN-DRYRUN", goal, working_directory=str(Path.cwd()),
                                     project_name=info.name, project_type=info.type,
                                     project_signals=info.signals,
@@ -323,6 +354,7 @@ def _dry_run(goal: str, provider_name: str, profiles: list[str] | None = None,
         "mode": composition.mode,
         "provider": resolved,
         "consumption": composition.consumption,
+        "execution_budget": composition.execution_budget,
         "project": {"name": info.name, "type": info.type, "path": str(Path.cwd()),
                     "recommended_profiles": info.recommended_profiles},
         "analysis": composition.analysis.to_dict(),
@@ -594,7 +626,8 @@ def main(argv: list[str] | None = None) -> int:
             run_id, status, worktree = _run_goal(args.goal, args.provider, timeout=args.timeout,
                                                  in_place=args.in_place, entry_source="codex_parent",
                                                  profiles=selected_profiles, approvals=args.approve,
-                                                 consumption=args.consumption)
+                                                 consumption=args.consumption,
+                                                 execution_budget=_execution_budget(args))
         except (RuntimeError, ValueError) as error:
             print(f"Run preparation failed: {error}", file=sys.stderr)
             return 2
@@ -608,13 +641,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "run":
         if args.dry_run or args.explain:
             print(json.dumps(_dry_run(args.goal, args.provider, selected_profiles,
-                                      args.consumption), indent=2))
+                                      args.consumption, _execution_budget(args)), indent=2))
             return 0
         try:
             run_id, status, worktree = _run_goal(args.goal, args.provider, timeout=args.timeout,
                                                  in_place=args.in_place, profiles=selected_profiles,
                                                  approvals=args.approve,
-                                                 consumption=args.consumption)
+                                                 consumption=args.consumption,
+                                                 execution_budget=_execution_budget(args))
         except (RuntimeError, ValueError) as error:
             print(f"Run preparation failed: {error}", file=sys.stderr)
             return 2

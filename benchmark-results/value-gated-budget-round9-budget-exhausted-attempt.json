@@ -1,0 +1,2892 @@
+{
+  "experiment": "budget_only_vs_pi_progressive_context_ten_round",
+  "goal": "Add a GET /reports/monthly/{month} API endpoint that returns the selected month, total spending, and totals by category, then display that monthly total and category breakdown in the existing React dashboard. Preserve existing expense behavior and validate the work.",
+  "model": "gpt-5.6-luna",
+  "reasoning": "low",
+  "context_budget_chars": 4000,
+  "context_strategy": "value_gated",
+  "summary": {
+    "rounds_completed": 9,
+    "all_quality_equal_and_passed": true,
+    "pi_total_token_win_rounds": 6,
+    "pi_uncached_token_win_rounds": 6,
+    "median_total_token_reduction_percent": 17.26,
+    "median_uncached_token_reduction_percent": 16.43,
+    "median_time_reduction_percent": 11.88,
+    "pooled": {
+      "budget_only": {
+        "tokens": 1174691,
+        "uncached_tokens": 212131,
+        "tool_calls": 43,
+        "assistant_messages": 37,
+        "assistant_message_chars": 17405,
+        "seconds": 1013.516
+      },
+      "pi_context": {
+        "tokens": 870964,
+        "uncached_tokens": 151348,
+        "tool_calls": 39,
+        "assistant_messages": 34,
+        "assistant_message_chars": 17308,
+        "seconds": 910.977
+      }
+    },
+    "pooled_total_token_reduction_percent": 25.86,
+    "pooled_uncached_token_reduction_percent": 28.65,
+    "pooled_tool_call_reduction_percent": 9.3,
+    "pooled_message_reduction_percent": 8.11,
+    "pooled_message_char_reduction_percent": 0.56,
+    "pooled_time_reduction_percent": 10.12,
+    "rows": [
+      {
+        "round": 1,
+        "order": [
+          "budget_only",
+          "pi_context"
+        ],
+        "quality_equal_and_passed": true,
+        "token_reduction_percent": 37.82,
+        "uncached_reduction_percent": 69.59,
+        "tool_call_delta": -1,
+        "message_delta": 1,
+        "seconds_reduction_percent": 40.76,
+        "budget_only": {
+          "tokens": 177311,
+          "uncached_tokens": 51103,
+          "tool_calls": 5,
+          "assistant_messages": 5,
+          "assistant_message_chars": 2282
+        },
+        "pi_context": {
+          "tokens": 110258,
+          "uncached_tokens": 15538,
+          "tool_calls": 6,
+          "assistant_messages": 4,
+          "assistant_message_chars": 2240
+        }
+      },
+      {
+        "round": 2,
+        "order": [
+          "pi_context",
+          "budget_only"
+        ],
+        "quality_equal_and_passed": true,
+        "token_reduction_percent": 17.26,
+        "uncached_reduction_percent": 59.89,
+        "tool_call_delta": -1,
+        "message_delta": 0,
+        "seconds_reduction_percent": 17.3,
+        "budget_only": {
+          "tokens": 109924,
+          "uncached_tokens": 28260,
+          "tool_calls": 4,
+          "assistant_messages": 4,
+          "assistant_message_chars": 2311
+        },
+        "pi_context": {
+          "tokens": 90950,
+          "uncached_tokens": 11334,
+          "tool_calls": 5,
+          "assistant_messages": 4,
+          "assistant_message_chars": 1604
+        }
+      },
+      {
+        "round": 3,
+        "order": [
+          "budget_only",
+          "pi_context"
+        ],
+        "quality_equal_and_passed": true,
+        "token_reduction_percent": 0.42,
+        "uncached_reduction_percent": -5.03,
+        "tool_call_delta": -1,
+        "message_delta": 2,
+        "seconds_reduction_percent": 0.63,
+        "budget_only": {
+          "tokens": 109899,
+          "uncached_tokens": 11083,
+          "tool_calls": 4,
+          "assistant_messages": 5,
+          "assistant_message_chars": 2190
+        },
+        "pi_context": {
+          "tokens": 109432,
+          "uncached_tokens": 11640,
+          "tool_calls": 5,
+          "assistant_messages": 3,
+          "assistant_message_chars": 1317
+        }
+      },
+      {
+        "round": 4,
+        "order": [
+          "pi_context",
+          "budget_only"
+        ],
+        "quality_equal_and_passed": true,
+        "token_reduction_percent": -24.83,
+        "uncached_reduction_percent": 31.28,
+        "tool_call_delta": -1,
+        "message_delta": -1,
+        "seconds_reduction_percent": -2.68,
+        "budget_only": {
+          "tokens": 89118,
+          "uncached_tokens": 22558,
+          "tool_calls": 3,
+          "assistant_messages": 4,
+          "assistant_message_chars": 1952
+        },
+        "pi_context": {
+          "tokens": 111246,
+          "uncached_tokens": 15502,
+          "tool_calls": 4,
+          "assistant_messages": 5,
+          "assistant_message_chars": 3186
+        }
+      },
+      {
+        "round": 5,
+        "order": [
+          "budget_only",
+          "pi_context"
+        ],
+        "quality_equal_and_passed": true,
+        "token_reduction_percent": -49.5,
+        "uncached_reduction_percent": -69.38,
+        "tool_call_delta": -4,
+        "message_delta": -2,
+        "seconds_reduction_percent": -48.5,
+        "budget_only": {
+          "tokens": 90662,
+          "uncached_tokens": 24102,
+          "tool_calls": 3,
+          "assistant_messages": 3,
+          "assistant_message_chars": 1429
+        },
+        "pi_context": {
+          "tokens": 135543,
+          "uncached_tokens": 40823,
+          "tool_calls": 7,
+          "assistant_messages": 5,
+          "assistant_message_chars": 2288
+        }
+      },
+      {
+        "round": 6,
+        "order": [
+          "pi_context",
+          "budget_only"
+        ],
+        "quality_equal_and_passed": true,
+        "token_reduction_percent": 33.83,
+        "uncached_reduction_percent": 4.48,
+        "tool_call_delta": 0,
+        "message_delta": 1,
+        "seconds_reduction_percent": 16.89,
+        "budget_only": {
+          "tokens": 136791,
+          "uncached_tokens": 15703,
+          "tool_calls": 4,
+          "assistant_messages": 4,
+          "assistant_message_chars": 1806
+        },
+        "pi_context": {
+          "tokens": 90520,
+          "uncached_tokens": 15000,
+          "tool_calls": 4,
+          "assistant_messages": 3,
+          "assistant_message_chars": 1282
+        }
+      },
+      {
+        "round": 7,
+        "order": [
+          "budget_only",
+          "pi_context"
+        ],
+        "quality_equal_and_passed": true,
+        "token_reduction_percent": -1.15,
+        "uncached_reduction_percent": -9.1,
+        "tool_call_delta": 3,
+        "message_delta": -1,
+        "seconds_reduction_percent": 11.88,
+        "budget_only": {
+          "tokens": 109585,
+          "uncached_tokens": 13841,
+          "tool_calls": 8,
+          "assistant_messages": 4,
+          "assistant_message_chars": 2114
+        },
+        "pi_context": {
+          "tokens": 110845,
+          "uncached_tokens": 15101,
+          "tool_calls": 5,
+          "assistant_messages": 5,
+          "assistant_message_chars": 2512
+        }
+      },
+      {
+        "round": 8,
+        "order": [
+          "pi_context",
+          "budget_only"
+        ],
+        "quality_equal_and_passed": true,
+        "token_reduction_percent": 43.42,
+        "uncached_reduction_percent": 16.43,
+        "tool_call_delta": 4,
+        "message_delta": -1,
+        "seconds_reduction_percent": 33.59,
+        "budget_only": {
+          "tokens": 198259,
+          "uncached_tokens": 31603,
+          "tool_calls": 7,
+          "assistant_messages": 4,
+          "assistant_message_chars": 1771
+        },
+        "pi_context": {
+          "tokens": 112170,
+          "uncached_tokens": 26410,
+          "tool_calls": 3,
+          "assistant_messages": 5,
+          "assistant_message_chars": 2879
+        }
+      },
+      {
+        "round": 9,
+        "order": [
+          "budget_only",
+          "pi_context"
+        ],
+        "quality_equal_and_passed": true,
+        "token_reduction_percent": 100.0,
+        "uncached_reduction_percent": 100.0,
+        "tool_call_delta": 5,
+        "message_delta": 4,
+        "seconds_reduction_percent": -10.74,
+        "budget_only": {
+          "tokens": 153142,
+          "uncached_tokens": 13878,
+          "tool_calls": 5,
+          "assistant_messages": 4,
+          "assistant_message_chars": 1550
+        },
+        "pi_context": {
+          "tokens": 0,
+          "uncached_tokens": 0,
+          "tool_calls": 0,
+          "assistant_messages": 0,
+          "assistant_message_chars": 0
+        }
+      }
+    ]
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "order": [
+        "budget_only",
+        "pi_context"
+      ],
+      "source_hashes": {
+        "budget_only": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "pi_context": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+      "pi_context_chars": 851,
+      "context_value_gate": {
+        "enabled": true,
+        "selected_excerpts": 0,
+        "deferred_excerpts": 4,
+        "decisions": [
+          {
+            "path": "app/main.py",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 432,
+            "expected_saved_tokens": 0,
+            "net_tokens": -432,
+            "confidence": 0.0
+          },
+          {
+            "path": "frontend/src/App.jsx",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 113,
+            "expected_saved_tokens": 0,
+            "net_tokens": -113,
+            "confidence": 0.0
+          },
+          {
+            "path": "frontend/src/main.jsx",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 43,
+            "expected_saved_tokens": 0,
+            "net_tokens": -43,
+            "confidence": 0.0
+          },
+          {
+            "path": "tests/test_expenses.py",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 107,
+            "expected_saved_tokens": 0,
+            "net_tokens": -107,
+            "confidence": 0.0
+          }
+        ]
+      },
+      "results": {
+        "budget_only": {
+          "status": "completed",
+          "usage": {
+            "input": 173409,
+            "output": 3902,
+            "cached": 126208,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d76-8ee6-76b3-9b9b-339a2fdb9984"
+          },
+          "duration_seconds": 138.705,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 5,
+            "assistant_messages": 5,
+            "assistant_message_chars": 2282,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection",
+                  "environment"
+                ],
+                "command_sha256": "af56b3f437029b69be9031a15f3e90fbdd54b02f0d0f782675d9899d2906a592",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2348,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "6274b207673a50f3c15c9956587f0e14bf0a38b9081692d3ba2651441e22c6dc",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json",
+                  "pyproject.toml"
+                ],
+                "output_chars": 3114,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation",
+                  "repository_status"
+                ],
+                "command_sha256": "6a27bec6076bfcefc287f8fe59dba5a6d975f37e799ee020ddca5dd093f48dfd",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1831,
+                "exit_code": 0,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation",
+                  "environment",
+                  "repository_status"
+                ],
+                "command_sha256": "b2ea9ea6ca2244c1be32e4d5f9284ba6c742b61d1d419342aef7365334119bd9",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2115,
+                "exit_code": 0,
+                "failure_hints": [
+                  "permission",
+                  "test_failure"
+                ]
+              },
+              {
+                "sequence": 6,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 7,
+                "type": "command_execution",
+                "labels": [
+                  "validation",
+                  "repository_status"
+                ],
+                "command_sha256": "c644b0642b00d9acd2f29e546cd239c5864eef6659ca69b3d60974659de26e43",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 595,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 1141,
+          "actual_source_changed": true
+        },
+        "pi_context": {
+          "status": "blocked",
+          "usage": {
+            "input": 107835,
+            "output": 2423,
+            "cached": 94720,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d78-b5ad-7f11-881f-65f63c34905b"
+          },
+          "duration_seconds": 82.168,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 6,
+            "assistant_messages": 4,
+            "assistant_message_chars": 2240,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "3bc37c376d1eb201dd607c4678bdb138f7509d16eb78c0962523b32a906b94c6",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py",
+                  "package.json"
+                ],
+                "output_chars": 3075,
+                "exit_code": 1,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "cf070f44ecfb17405e91166fa48593fbb874f18b0502841e189e5438b42b33a5",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 585,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "134529f90308d3bdfcfee620283cd58a42d91eafa7f964aad00187d989a4f465",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1505,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "repository_status"
+                ],
+                "command_sha256": "9556ee016075e491b4d4a952015fc20008c25a5db35a3a8996bd8ec3404ef7be",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx"
+                ],
+                "output_chars": 136,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 6,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "dbf28997d9b696a80d73e9564d94e05019fdc1d16f83deb7d2b09fcc08b582dd",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 268,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 7,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "2ee1b4b9030da5c0edb0c27e7a99a849bdd69e7835b03080082833b51cc33bed",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "package.json",
+                  "pyproject.toml"
+                ],
+                "output_chars": 3500,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 2311,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "round": 2,
+      "order": [
+        "pi_context",
+        "budget_only"
+      ],
+      "source_hashes": {
+        "budget_only": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "pi_context": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+      "pi_context_chars": 851,
+      "context_value_gate": {
+        "enabled": true,
+        "selected_excerpts": 0,
+        "deferred_excerpts": 4,
+        "decisions": [
+          {
+            "path": "app/main.py",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 432,
+            "expected_saved_tokens": 0,
+            "net_tokens": -432,
+            "confidence": 0.0
+          },
+          {
+            "path": "frontend/src/App.jsx",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 113,
+            "expected_saved_tokens": 0,
+            "net_tokens": -113,
+            "confidence": 0.0
+          },
+          {
+            "path": "frontend/src/main.jsx",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 43,
+            "expected_saved_tokens": 0,
+            "net_tokens": -43,
+            "confidence": 0.0
+          },
+          {
+            "path": "tests/test_expenses.py",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 107,
+            "expected_saved_tokens": 0,
+            "net_tokens": -107,
+            "confidence": 0.0
+          }
+        ]
+      },
+      "results": {
+        "pi_context": {
+          "status": "completed",
+          "usage": {
+            "input": 88656,
+            "output": 2294,
+            "cached": 79616,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d7a-0542-7ad1-add8-30a574f49185"
+          },
+          "duration_seconds": 83.74,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 5,
+            "assistant_messages": 4,
+            "assistant_message_chars": 1604,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "b7c84be21196b13e78d32ab89a412693fd8b77fbae1438be583c95d6031334e1",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py"
+                ],
+                "output_chars": 2741,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "repository_status"
+                ],
+                "command_sha256": "d51902db22ea733e06e949143cb295155bb8b8abbf5aa1fb574981a87dcb1043",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx"
+                ],
+                "output_chars": 0,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "dbf28997d9b696a80d73e9564d94e05019fdc1d16f83deb7d2b09fcc08b582dd",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 268,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "134529f90308d3bdfcfee620283cd58a42d91eafa7f964aad00187d989a4f465",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1505,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 6,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "ef1bc7b5a4a66f134bbd1cad4e023825c4e99d3f766f5491684ef8080c859d0f",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 2311,
+          "actual_source_changed": true
+        },
+        "budget_only": {
+          "status": "completed",
+          "usage": {
+            "input": 107560,
+            "output": 2364,
+            "cached": 81664,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d7b-558c-7793-b50a-2b6d863261db"
+          },
+          "duration_seconds": 101.256,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 4,
+            "assistant_messages": 4,
+            "assistant_message_chars": 2311,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "f184bea173835c771078f8e1454f0b367118390a332ffa91fbe16d1c70cffebb",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 3105,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "cd65ddeefd2e00465ca8461b967528455194ee31da74f0504e163d58125a8d6c",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 3050,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "1450d99e017eedb0bbafc7dce4f05afa2e223bab39e589b1411bca841f811196",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1796,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation",
+                  "repository_status"
+                ],
+                "command_sha256": "44e5099cad31de5c20ec999de66ca6b5fb7a6c42882a49121b464ae119788d4c",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 751,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 1141,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "round": 3,
+      "order": [
+        "budget_only",
+        "pi_context"
+      ],
+      "source_hashes": {
+        "budget_only": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "pi_context": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+      "pi_context_chars": 851,
+      "context_value_gate": {
+        "enabled": true,
+        "selected_excerpts": 0,
+        "deferred_excerpts": 4,
+        "decisions": [
+          {
+            "path": "app/main.py",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 432,
+            "expected_saved_tokens": 0,
+            "net_tokens": -432,
+            "confidence": 0.0
+          },
+          {
+            "path": "frontend/src/App.jsx",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 113,
+            "expected_saved_tokens": 0,
+            "net_tokens": -113,
+            "confidence": 0.0
+          },
+          {
+            "path": "frontend/src/main.jsx",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 43,
+            "expected_saved_tokens": 0,
+            "net_tokens": -43,
+            "confidence": 0.0
+          },
+          {
+            "path": "tests/test_expenses.py",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 107,
+            "expected_saved_tokens": 0,
+            "net_tokens": -107,
+            "confidence": 0.0
+          }
+        ]
+      },
+      "results": {
+        "budget_only": {
+          "status": "completed",
+          "usage": {
+            "input": 107391,
+            "output": 2508,
+            "cached": 98816,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d7c-f36f-7fe1-beac-c7f89309480c"
+          },
+          "duration_seconds": 96.294,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 4,
+            "assistant_messages": 5,
+            "assistant_message_chars": 2190,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection",
+                  "environment"
+                ],
+                "command_sha256": "2ccbbaab1c59ea723755510b4a4db3235f979cc4fcd3bb98033bf947cb21a6a7",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2383,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "1e752e6387d64c263ceb6ffb4dc145f46e3a2aa332afd625351123d470cc6123",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json",
+                  "pyproject.toml"
+                ],
+                "output_chars": 3158,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "7be055735fac202ca172807987fe7ed17d5799ac3aab11eaf95d68cace7580d9",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1506,
+                "exit_code": 2,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "19713e73b97ffd7e16da07951d86bc6ee876f379e6a5fc75d5ba448703836d01",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 983,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              }
+            ]
+          },
+          "packet_chars": 1141,
+          "actual_source_changed": true
+        },
+        "pi_context": {
+          "status": "completed",
+          "usage": {
+            "input": 106911,
+            "output": 2521,
+            "cached": 97792,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d7e-7548-7313-9af2-f60eb6997e95"
+          },
+          "duration_seconds": 95.685,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 5,
+            "assistant_messages": 3,
+            "assistant_message_chars": 1317,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "93e0f8066ba5dbf2c00b9618a7d58b2674698a388fd79643f675afaa8c6cc291",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py"
+                ],
+                "output_chars": 2613,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "dbf28997d9b696a80d73e9564d94e05019fdc1d16f83deb7d2b09fcc08b582dd",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 268,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "134529f90308d3bdfcfee620283cd58a42d91eafa7f964aad00187d989a4f465",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "dbf28997d9b696a80d73e9564d94e05019fdc1d16f83deb7d2b09fcc08b582dd",
+                "repeated_exact_command": true,
+                "fixture_paths_mentioned": [],
+                "output_chars": 268,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 6,
+                "type": "command_execution",
+                "labels": [
+                  "validation",
+                  "repository_status"
+                ],
+                "command_sha256": "f230d3c4b32f182c2d4f29c0a001f44c29bf48c45a5032953db78bd463df3880",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py"
+                ],
+                "output_chars": 136,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 2311,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "round": 4,
+      "order": [
+        "pi_context",
+        "budget_only"
+      ],
+      "source_hashes": {
+        "budget_only": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "pi_context": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+      "pi_context_chars": 851,
+      "context_value_gate": {
+        "enabled": true,
+        "selected_excerpts": 0,
+        "deferred_excerpts": 4,
+        "decisions": [
+          {
+            "path": "app/main.py",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 432,
+            "expected_saved_tokens": 0,
+            "net_tokens": -432,
+            "confidence": 0.0
+          },
+          {
+            "path": "frontend/src/App.jsx",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 113,
+            "expected_saved_tokens": 0,
+            "net_tokens": -113,
+            "confidence": 0.0
+          },
+          {
+            "path": "frontend/src/main.jsx",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 43,
+            "expected_saved_tokens": 0,
+            "net_tokens": -43,
+            "confidence": 0.0
+          },
+          {
+            "path": "tests/test_expenses.py",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 107,
+            "expected_saved_tokens": 0,
+            "net_tokens": -107,
+            "confidence": 0.0
+          }
+        ]
+      },
+      "results": {
+        "pi_context": {
+          "status": "completed",
+          "usage": {
+            "input": 108791,
+            "output": 2455,
+            "cached": 95744,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d7f-fb6f-7a12-a2fd-b443d1dcbe36"
+          },
+          "duration_seconds": 101.466,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 4,
+            "assistant_messages": 5,
+            "assistant_message_chars": 3186,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "47deb199a62166e80d4307b847df7a5d116530052c9b5be8860899f0950c3fc0",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py",
+                  "package.json"
+                ],
+                "output_chars": 3152,
+                "exit_code": 1,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "inspection",
+                  "validation"
+                ],
+                "command_sha256": "8e5795ecf0e540d3c83cb7e1e0cfc302a6d9fe5fc69d4a8c164bbf61acd095ec",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 2458,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "fd3376ebc799d012608ebca22b4ba67cf2cb878c3cebdb71422cb7c2906e6807",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1790,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "unclassified"
+                ],
+                "command_sha256": "1b01a7efce070d221c0e2076d06a308c39227984fe26736cce19e1e2053e8190",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 2311,
+          "actual_source_changed": true
+        },
+        "budget_only": {
+          "status": "failed",
+          "usage": {
+            "input": 86966,
+            "output": 2152,
+            "cached": 66560,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d81-8db8-7da2-a7b1-402cac036db7"
+          },
+          "duration_seconds": 98.818,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 3,
+            "assistant_messages": 4,
+            "assistant_message_chars": 1952,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection",
+                  "environment"
+                ],
+                "command_sha256": "b312fecb54413b0bf31330cdba8ea6d5b4c7703d07d0ed93ce9dd44d5b692b58",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2257,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "87971a0ac35718937492212712cd8c68810884309e340346947ae9c21ec05411",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 3020,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation",
+                  "repository_status"
+                ],
+                "command_sha256": "f27184325e57a3809eb065fee8010fb015e478d09887526281b4f5e8c6adb91a",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx"
+                ],
+                "output_chars": 1898,
+                "exit_code": 0,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              }
+            ]
+          },
+          "packet_chars": 1141,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "round": 5,
+      "order": [
+        "budget_only",
+        "pi_context"
+      ],
+      "source_hashes": {
+        "budget_only": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "pi_context": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+      "pi_context_chars": 851,
+      "context_value_gate": {
+        "enabled": true,
+        "selected_excerpts": 0,
+        "deferred_excerpts": 4,
+        "decisions": [
+          {
+            "path": "app/main.py",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 432,
+            "expected_saved_tokens": 0,
+            "net_tokens": -432,
+            "confidence": 0.0
+          },
+          {
+            "path": "frontend/src/App.jsx",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 113,
+            "expected_saved_tokens": 0,
+            "net_tokens": -113,
+            "confidence": 0.0
+          },
+          {
+            "path": "frontend/src/main.jsx",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 43,
+            "expected_saved_tokens": 0,
+            "net_tokens": -43,
+            "confidence": 0.0
+          },
+          {
+            "path": "tests/test_expenses.py",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 107,
+            "expected_saved_tokens": 0,
+            "net_tokens": -107,
+            "confidence": 0.0
+          }
+        ]
+      },
+      "results": {
+        "budget_only": {
+          "status": "completed",
+          "usage": {
+            "input": 88432,
+            "output": 2230,
+            "cached": 66560,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d83-1f0b-70e1-becb-2c61b7c9f7f6"
+          },
+          "duration_seconds": 81.207,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 3,
+            "assistant_messages": 3,
+            "assistant_message_chars": 1429,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection",
+                  "environment"
+                ],
+                "command_sha256": "fdee254889a22d59ff8fe34156ccd8d8abde7869d5b6e4cf5ab214f7c2647a28",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 3219,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "cd65ddeefd2e00465ca8461b967528455194ee31da74f0504e163d58125a8d6c",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 3050,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation",
+                  "repository_status"
+                ],
+                "command_sha256": "d739df78f8ec63f14b9f5e720c6b8af4a5b0c03c3eb2b644d509fd6c076a1d7a",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1970,
+                "exit_code": 0,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              }
+            ]
+          },
+          "packet_chars": 1141,
+          "actual_source_changed": true
+        },
+        "pi_context": {
+          "status": "completed",
+          "usage": {
+            "input": 131946,
+            "output": 3597,
+            "cached": 94720,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d84-63f1-7d51-8e47-daae33516a8d"
+          },
+          "duration_seconds": 120.592,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 7,
+            "assistant_messages": 5,
+            "assistant_message_chars": 2288,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "2a756e076100b60ae72e5f67b3f7aaec36382af27541448af5e0981eb1f9f09c",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py"
+                ],
+                "output_chars": 2742,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "dbf28997d9b696a80d73e9564d94e05019fdc1d16f83deb7d2b09fcc08b582dd",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 268,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "3529076036f88f5ea4cacdc68e53489df8ec363d79d1d6d0481645dbb578fd4f",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "unclassified"
+                ],
+                "command_sha256": "f69abcfb1cef859a9a9367d91203ccd9c2aa33c23a368e8c30e1497f18eea85a",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2315,
+                "exit_code": 1,
+                "failure_hints": [
+                  "permission"
+                ]
+              },
+              {
+                "sequence": 6,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "dbf28997d9b696a80d73e9564d94e05019fdc1d16f83deb7d2b09fcc08b582dd",
+                "repeated_exact_command": true,
+                "fixture_paths_mentioned": [],
+                "output_chars": 268,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 7,
+                "type": "command_execution",
+                "labels": [
+                  "repository_status"
+                ],
+                "command_sha256": "439da89bde9b21169fce69c11546c1ec8d6c4cebb1434f0aaee46735d3955e08",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx"
+                ],
+                "output_chars": 276,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 8,
+                "type": "command_execution",
+                "labels": [
+                  "inspection",
+                  "repository_status"
+                ],
+                "command_sha256": "bb760b5b30ee89d3881ff9e18e29b3ebab1f0ff5b041af6452ea9f5290449878",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx"
+                ],
+                "output_chars": 1424,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 2311,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "round": 6,
+      "order": [
+        "pi_context",
+        "budget_only"
+      ],
+      "source_hashes": {
+        "budget_only": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "pi_context": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+      "pi_context_chars": 851,
+      "context_value_gate": {
+        "enabled": true,
+        "selected_excerpts": 0,
+        "deferred_excerpts": 4,
+        "decisions": [
+          {
+            "path": "app/main.py",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 432,
+            "expected_saved_tokens": 0,
+            "net_tokens": -432,
+            "confidence": 0.0
+          },
+          {
+            "path": "frontend/src/App.jsx",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 113,
+            "expected_saved_tokens": 0,
+            "net_tokens": -113,
+            "confidence": 0.0
+          },
+          {
+            "path": "frontend/src/main.jsx",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 43,
+            "expected_saved_tokens": 0,
+            "net_tokens": -43,
+            "confidence": 0.0
+          },
+          {
+            "path": "tests/test_expenses.py",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 107,
+            "expected_saved_tokens": 0,
+            "net_tokens": -107,
+            "confidence": 0.0
+          }
+        ]
+      },
+      "results": {
+        "pi_context": {
+          "status": "completed",
+          "usage": {
+            "input": 88386,
+            "output": 2134,
+            "cached": 75520,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d86-4a67-7280-ae3d-00c6590d207a"
+          },
+          "duration_seconds": 90.643,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 4,
+            "assistant_messages": 3,
+            "assistant_message_chars": 1282,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "b7c84be21196b13e78d32ab89a412693fd8b77fbae1438be583c95d6031334e1",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py"
+                ],
+                "output_chars": 2741,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "dbf28997d9b696a80d73e9564d94e05019fdc1d16f83deb7d2b09fcc08b582dd",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 268,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "134529f90308d3bdfcfee620283cd58a42d91eafa7f964aad00187d989a4f465",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1505,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation",
+                  "repository_status"
+                ],
+                "command_sha256": "e01935e5cf318772c399751ffba4d4238d35512b4824df8e535a85324f5fb341",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx"
+                ],
+                "output_chars": 595,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 2311,
+          "actual_source_changed": true
+        },
+        "budget_only": {
+          "status": "completed",
+          "usage": {
+            "input": 133368,
+            "output": 3423,
+            "cached": 121088,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d87-b6b9-7120-8b26-04d4b94eda18"
+          },
+          "duration_seconds": 109.069,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 4,
+            "assistant_messages": 4,
+            "assistant_message_chars": 1806,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "638520ea477682d4a7edd169ed8e4df43cb46053bd8d1595f7ce0bfb2e4c9606",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 4149,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "185ab385301ac20cda0fc0c2746a604ae3ce26b2147b099830e09a52a1b4cc70",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json",
+                  "pyproject.toml"
+                ],
+                "output_chars": 3197,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "1450d99e017eedb0bbafc7dce4f05afa2e223bab39e589b1411bca841f811196",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1796,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "4e3b4af66fc03879c36dfcb3e144e7538e2937e11bb6fab7f5f0122210029dc4",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1918,
+                "exit_code": 0,
+                "failure_hints": [
+                  "permission",
+                  "test_failure"
+                ]
+              }
+            ]
+          },
+          "packet_chars": 1141,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "round": 7,
+      "order": [
+        "budget_only",
+        "pi_context"
+      ],
+      "source_hashes": {
+        "budget_only": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "pi_context": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+      "pi_context_chars": 851,
+      "context_value_gate": {
+        "enabled": true,
+        "selected_excerpts": 0,
+        "deferred_excerpts": 4,
+        "decisions": [
+          {
+            "path": "app/main.py",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 432,
+            "expected_saved_tokens": 0,
+            "net_tokens": -432,
+            "confidence": 0.0
+          },
+          {
+            "path": "frontend/src/App.jsx",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 113,
+            "expected_saved_tokens": 0,
+            "net_tokens": -113,
+            "confidence": 0.0
+          },
+          {
+            "path": "frontend/src/main.jsx",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 43,
+            "expected_saved_tokens": 0,
+            "net_tokens": -43,
+            "confidence": 0.0
+          },
+          {
+            "path": "tests/test_expenses.py",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 107,
+            "expected_saved_tokens": 0,
+            "net_tokens": -107,
+            "confidence": 0.0
+          }
+        ]
+      },
+      "results": {
+        "budget_only": {
+          "status": "completed",
+          "usage": {
+            "input": 106896,
+            "output": 2689,
+            "cached": 95744,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d89-7260-7461-a136-f28f05ab3ec1"
+          },
+          "duration_seconds": 103.466,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 8,
+            "assistant_messages": 4,
+            "assistant_message_chars": 2114,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection",
+                  "environment"
+                ],
+                "command_sha256": "6309f22aac8d4bd282ad5699063a7e27cb5dbb3bbd9151235e8e99e46a24a6ee",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2622,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "95c27fa76abb56a58e558e91c26ba81fa488ded8d4461cb8b5f984ebc5441b75",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json",
+                  "pyproject.toml"
+                ],
+                "output_chars": 2932,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "repository_status"
+                ],
+                "command_sha256": "d51902db22ea733e06e949143cb295155bb8b8abbf5aa1fb574981a87dcb1043",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx"
+                ],
+                "output_chars": 0,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "dbf28997d9b696a80d73e9564d94e05019fdc1d16f83deb7d2b09fcc08b582dd",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 268,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 6,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "6a7b2dbfac527d5c9cf3fcb5428ac8369bb0863aab6105d04ae0a5c2e59da0b3",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 7,
+                "type": "command_execution",
+                "labels": [
+                  "repository_status"
+                ],
+                "command_sha256": "22392bf20293c8cb4b81876b90a827700f1b259ef144f32798ef5ba295785dc9",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 136,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 8,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "dbf28997d9b696a80d73e9564d94e05019fdc1d16f83deb7d2b09fcc08b582dd",
+                "repeated_exact_command": true,
+                "fixture_paths_mentioned": [],
+                "output_chars": 268,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 9,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "2ce9a87d0513ac3d811d2dc791efda5335cc47433956fd9a3da97f54b7ee1386",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 1141,
+          "actual_source_changed": true
+        },
+        "pi_context": {
+          "status": "completed",
+          "usage": {
+            "input": 108309,
+            "output": 2536,
+            "cached": 95744,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d8b-0baa-7a42-a586-1bd189cfec83"
+          },
+          "duration_seconds": 91.173,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 5,
+            "assistant_messages": 5,
+            "assistant_message_chars": 2512,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "fe343bf10cfa3e904fd32c2b84d74738be8cd76ae1b8eb3d2ff8b6eb6ed6d92b",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py"
+                ],
+                "output_chars": 2810,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "134529f90308d3bdfcfee620283cd58a42d91eafa7f964aad00187d989a4f465",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1505,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "dbf28997d9b696a80d73e9564d94e05019fdc1d16f83deb7d2b09fcc08b582dd",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 268,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation",
+                  "repository_status"
+                ],
+                "command_sha256": "80ce288f3088e142249c1e2d2ac29c573f2e1302c4fab6b0989f1d4777faf64f",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx"
+                ],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 6,
+                "type": "command_execution",
+                "labels": [
+                  "repository_status"
+                ],
+                "command_sha256": "34002980eabc6cea51c1bb2c33beed654f351ba64f5bdd015bb25886aad3e5a4",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py"
+                ],
+                "output_chars": 0,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 2311,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "round": 8,
+      "order": [
+        "pi_context",
+        "budget_only"
+      ],
+      "source_hashes": {
+        "budget_only": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "pi_context": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+      "pi_context_chars": 851,
+      "context_value_gate": {
+        "enabled": true,
+        "selected_excerpts": 0,
+        "deferred_excerpts": 4,
+        "decisions": [
+          {
+            "path": "app/main.py",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 432,
+            "expected_saved_tokens": 0,
+            "net_tokens": -432,
+            "confidence": 0.0
+          },
+          {
+            "path": "frontend/src/App.jsx",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 113,
+            "expected_saved_tokens": 0,
+            "net_tokens": -113,
+            "confidence": 0.0
+          },
+          {
+            "path": "frontend/src/main.jsx",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 43,
+            "expected_saved_tokens": 0,
+            "net_tokens": -43,
+            "confidence": 0.0
+          },
+          {
+            "path": "tests/test_expenses.py",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 107,
+            "expected_saved_tokens": 0,
+            "net_tokens": -107,
+            "confidence": 0.0
+          }
+        ]
+      },
+      "results": {
+        "pi_context": {
+          "status": "blocked",
+          "usage": {
+            "input": 109343,
+            "output": 2827,
+            "cached": 85760,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d9a-d3d6-73d3-b96c-4e03e26dffcb"
+          },
+          "duration_seconds": 104.513,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 3,
+            "assistant_messages": 5,
+            "assistant_message_chars": 2879,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "b7c84be21196b13e78d32ab89a412693fd8b77fbae1438be583c95d6031334e1",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py"
+                ],
+                "output_chars": 2741,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "134529f90308d3bdfcfee620283cd58a42d91eafa7f964aad00187d989a4f465",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1505,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "1b6e04b3d4146ec5345f89f404a5d4492595645658b162363bb43701f20cf880",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1916,
+                "exit_code": 1,
+                "failure_hints": [
+                  "permission",
+                  "test_failure"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 2311,
+          "actual_source_changed": true
+        },
+        "budget_only": {
+          "status": "completed",
+          "usage": {
+            "input": 194036,
+            "output": 4223,
+            "cached": 166656,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d9c-78d7-7e80-915a-0f75e919b2c5"
+          },
+          "duration_seconds": 157.375,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 7,
+            "assistant_messages": 4,
+            "assistant_message_chars": 1771,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection",
+                  "environment"
+                ],
+                "command_sha256": "c58fd48df18b253e7995dbeb6244a049b21aba23408f2778de5b47c3747155f0",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2513,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "d0c1ad75856e8fc1156ae3d3416fea1abab51288102293a0594575eaf4cf782a",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 2839,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "78ffbbca473c86259e7553f2f8678988092d14ec95ad7a1523659186d9e2ed7a",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 6,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "2ad6daa2286bcbec66c7271e1b698a5cb206082c1b80976dd3cf98cf87a9856a",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2315,
+                "exit_code": 1,
+                "failure_hints": [
+                  "permission"
+                ]
+              },
+              {
+                "sequence": 7,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "3eeb6cb8717f1edf56e3d419dce41db548f46f645323dcc37bade33900a6daa9",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2315,
+                "exit_code": 1,
+                "failure_hints": [
+                  "permission"
+                ]
+              },
+              {
+                "sequence": 8,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "2679dbec7d7a6ea45bcf30d75d4e6351c6d52a0e86b33921e35c82f0a53d3f36",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 658,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 9,
+                "type": "command_execution",
+                "labels": [
+                  "repository_status"
+                ],
+                "command_sha256": "958d69f7f8c1dff09de238ecadfe35f31ddf08d51fd924c523aeadbfe4c5346f",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx"
+                ],
+                "output_chars": 136,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 1141,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "round": 9,
+      "order": [
+        "budget_only",
+        "pi_context"
+      ],
+      "source_hashes": {
+        "budget_only": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "pi_context": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "acceptance_sha256": "532a724625dacfed3603722bc851e65efc4b36a03c49861bbd15bde75dd4a18f",
+      "pi_context_chars": 851,
+      "context_value_gate": {
+        "enabled": true,
+        "selected_excerpts": 0,
+        "deferred_excerpts": 4,
+        "decisions": [
+          {
+            "path": "app/main.py",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 432,
+            "expected_saved_tokens": 0,
+            "net_tokens": -432,
+            "confidence": 0.0
+          },
+          {
+            "path": "frontend/src/App.jsx",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 113,
+            "expected_saved_tokens": 0,
+            "net_tokens": -113,
+            "confidence": 0.0
+          },
+          {
+            "path": "frontend/src/main.jsx",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 43,
+            "expected_saved_tokens": 0,
+            "net_tokens": -43,
+            "confidence": 0.0
+          },
+          {
+            "path": "tests/test_expenses.py",
+            "selected": false,
+            "reason": "insufficient source-linked savings evidence",
+            "load_tokens": 107,
+            "expected_saved_tokens": 0,
+            "net_tokens": -107,
+            "confidence": 0.0
+          }
+        ]
+      },
+      "results": {
+        "budget_only": {
+          "status": "completed",
+          "usage": {
+            "input": 150203,
+            "output": 2939,
+            "cached": 139264,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09d9e-ef70-7081-abbb-1ff2d2a35683"
+          },
+          "duration_seconds": 127.326,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 5,
+            "assistant_messages": 4,
+            "assistant_message_chars": 1550,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "203ce3e497f47ae8b5ba8416e4116f8e1248c1b7495e97c56b44632e8e42efd6",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2492,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "95c27fa76abb56a58e558e91c26ba81fa488ded8d4461cb8b5f984ebc5441b75",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json",
+                  "pyproject.toml"
+                ],
+                "output_chars": 2932,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "dfd90a33307ffed97388576be957ae80580c83ecdf704627da87a19d24f48eb9",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1978,
+                "exit_code": 2,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "033d7bae46dbcef379582ff39c4699000c7afb14b9e21419718978d8368108ed",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2746,
+                "exit_code": 1,
+                "failure_hints": [
+                  "permission",
+                  "missing_dependency",
+                  "test_failure"
+                ]
+              },
+              {
+                "sequence": 6,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 7,
+                "type": "command_execution",
+                "labels": [
+                  "validation",
+                  "environment"
+                ],
+                "command_sha256": "caad63f694fea510af9a63ffdf0b3d8d3c4044d69adc5491c2eb4f04d91a3860",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1104,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 1141,
+          "actual_source_changed": true
+        },
+        "pi_context": {
+          "status": "failed",
+          "usage": {
+            "input": 0,
+            "output": 0,
+            "cached": 0,
+            "source": "unavailable",
+            "estimated": false
+          },
+          "duration_seconds": 140.997,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": "BUDGET_EXHAUSTED",
+          "telemetry": {},
+          "packet_chars": 2311,
+          "actual_source_changed": true
+        }
+      },
+      "infrastructure_failure": {
+        "arm": "pi_context",
+        "error": "BUDGET_EXHAUSTED",
+        "summary": "provider assistant-message budget exhausted at 6; observed tool_calls=5, assistant_messages=6."
+      }
+    }
+  ],
+  "limitations": [
+    "One implementation task family with repeated fresh fixtures.",
+    "Subscription quota conversion is unavailable.",
+    "Internal Codex reasoning rounds are not observable.",
+    "The context compiler is deterministic and uses no pre-task model call."
+  ]
+}
