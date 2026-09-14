@@ -1,0 +1,83 @@
+{
+  "environment": {
+    "uap": "2.3.1",
+    "commit": "6cc5b001cc3d96a798e3d0a9b4c1fc8255fb1013",
+    "provider": "codex",
+    "model": "gpt-6-astra",
+    "reasoning": "low",
+    "task": "Add a GET /reports/monthly/{month} API endpoint that returns the selected month, total spending, and totals by category, then display that monthly total and category breakdown in the existing React dashboard. Preserve existing expense behavior and validate the work.",
+    "source_hash": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+  },
+  "baseline": {
+    "status": "failed",
+    "provider": "codex",
+    "model": "gpt-6-astra",
+    "input_tokens": 0,
+    "cached_input_tokens": 0,
+    "non_cached_input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0,
+    "token_source": "unavailable",
+    "duration_seconds": 900.094,
+    "ai_invocations": 1,
+    "files_read": "UNAVAILABLE",
+    "files_changed": [],
+    "error": "CODEX_TIMEOUT",
+    "quality": {
+      "passed": true,
+      "contract": "context-cache-monthly-v1",
+      "error": null,
+      "returncode": 0
+    }
+  },
+  "uap": {
+    "status": "failed",
+    "provider": "codex",
+    "model": "gpt-6-astra",
+    "input_tokens": 0,
+    "cached_input_tokens": 0,
+    "non_cached_input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0,
+    "token_source": "unavailable",
+    "duration_seconds": 900.094,
+    "ai_invocations": 1,
+    "files_read": "UNAVAILABLE",
+    "files_changed": [],
+    "error": "CODEX_TIMEOUT",
+    "quality": {
+      "passed": true,
+      "contract": "context-cache-monthly-v1",
+      "error": null,
+      "returncode": 0
+    },
+    "project_context_chars": 613,
+    "relevant_paths": [
+      "app/",
+      "frontend/"
+    ],
+    "pre_task_ai_calls": 0,
+    "orchestration_wall_ms": 7091.286
+  },
+  "same_uap_execution_path": true,
+  "only_variable": "reusable_context_enabled",
+  "disabled": {
+    "reusable_context_enabled": false
+  },
+  "enabled": {
+    "reusable_context_enabled": true
+  },
+  "asset_creation": {
+    "ai_invocations": 0,
+    "duration_seconds": 0.218
+  },
+  "equal_quality": true,
+  "decision_evidence": {
+    "measured_tokens": false,
+    "fewer_tokens": false,
+    "equal_tokens": false,
+    "materially_faster_10_percent": false
+  },
+  "conclusion": "INCONCLUSIVE",
+  "claim": "no benefit claim is supported by this pair"
+}
