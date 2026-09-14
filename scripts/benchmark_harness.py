@@ -83,7 +83,7 @@ class PreparedFixture:
         if destination.exists():
             shutil.rmtree(destination)
         destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(source, destination)
+        shutil.copytree(source, destination, ignore=shutil.ignore_patterns(*IGNORED_PARTS))
 
 
 class Checkpoints:
@@ -99,6 +99,11 @@ class Checkpoints:
         return path
 
     def completed(self, task_id: str, arm: str, signature: str) -> dict[str, Any] | None:
+        result = self.load(task_id, arm, signature)
+        return result if result is not None and result.get("status") == "completed" else None
+
+    def load(self, task_id: str, arm: str, signature: str) -> dict[str, Any] | None:
+        """Load any matching terminal result for offline re-analysis."""
         path = self.root / task_id / f"{arm}.json"
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
@@ -109,9 +114,7 @@ class Checkpoints:
                 or payload.get("terminal") is not True):
             return None
         result = payload.get("result")
-        if not isinstance(result, dict) or result.get("status") != "completed":
-            return None
-        return result
+        return result if isinstance(result, dict) else None
 
 
 def experiment_signature(payload: dict[str, Any]) -> str:

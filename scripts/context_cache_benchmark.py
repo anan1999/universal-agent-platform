@@ -37,6 +37,8 @@ def arguments() -> argparse.Namespace:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--execute", action="store_true",
                         help="confirm real provider calls (two calls per selected task)")
+    parser.add_argument("--reanalyze", action="store_true",
+                        help="rerun acceptance and reports from checkpoints with zero provider calls")
     parser.add_argument("--task", choices=(*TASKS, "all"), default="large")
     parser.add_argument("--resume", action="store_true",
                         help="reuse matching, acceptance-passing arm checkpoints")
@@ -61,7 +63,7 @@ def source_hash(root: Path) -> str:
 
 def seed(destination: Path) -> None:
     """Compatibility helper; real runs use the workspace's prepared fixture."""
-    fixture = PreparedFixture(FIXTURE, destination.parent / ".prepared-fixture")
+    fixture = PreparedFixture(FIXTURE, destination.parent)
     fixture.prepare()
     fixture._replace_tree(fixture.prepared, destination)
 
@@ -238,6 +240,65 @@ def _pair(spec: dict[str, Any], baseline: dict[str, Any], uap: dict[str, Any]) -
     }
 
 
+def reanalyze(args: argparse.Namespace) -> dict[str, Any]:
+    """Re-evaluate durable artifacts after an acceptance/reporting correction."""
+    workspace = args.workspace.resolve()
+    fixture = PreparedFixture(FIXTURE, workspace)
+    prepared = fixture.prepare()
+    checkpoints = Checkpoints(workspace)
+    try:
+        previous_environment = json.loads(args.output.read_text(encoding="utf-8")).get("environment", {})
+    except (OSError, ValueError, json.JSONDecodeError):
+        previous_environment = {}
+    execution_commit = (previous_environment.get("execution_commit")
+                        or previous_environment.get("commit"))
+    if not execution_commit:
+        execution_commit = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True,
+            text=True, check=False).stdout.strip() or "unknown"
+    pairs: list[dict[str, Any]] = []
+    for spec in selected_tasks(args):
+        arms: dict[str, dict[str, Any]] = {}
+        for arm in ("disabled", "enabled"):
+            signature = _signature(args, spec, prepared["source_hash"], arm)
+            result = checkpoints.load(spec["id"], arm, signature)
+            root = workspace / "runs" / spec["id"] / arm
+            if result is None or not root.is_dir():
+                raise SystemExit(f"No matching checkpoint for {spec['id']}/{arm}.")
+            quality = acceptance(root, spec["id"])
+            result = {**result, "quality": quality,
+                      "status": ("completed" if result.get("provider_status") == "completed"
+                                 and quality["passed"] else "failed")}
+            checkpoints.save(spec["id"], arm, signature, result)
+            arms[arm] = result
+        pairs.append(_pair(spec, arms["disabled"], arms["enabled"]))
+    historical_calls = sum(
+        int(pair[arm].get("ai_invocations", 0) or 0)
+        for pair in pairs for arm in ("baseline", "uap"))
+    payload = {
+        "suite": SUITE["suite"], "schema_version": SUITE["schema_version"],
+        "environment": {"uap": __version__, "execution_commit": execution_commit,
+                        "provider": args.provider, "model": args.model,
+                        "reasoning": args.reasoning, "source_hash": prepared["source_hash"]},
+        "prepared_fixture": prepared, "same_uap_execution_path": True,
+        "only_variable": "reusable_context_enabled", "provider_calls": 0,
+        "historical_provider_calls": historical_calls, "pairs": pairs,
+        "summary": {"selected_tasks": len(pairs), "reanalyze_provider_calls": 0,
+                    "historical_provider_calls": historical_calls,
+                    "conclusive_pairs": sum(p["conclusion"] != "INCONCLUSIVE" for p in pairs),
+                    "yes": sum(p["conclusion"] == "YES" for p in pairs),
+                    "no": sum(p["conclusion"] == "NO" for p in pairs),
+                    "inconclusive": sum(p["conclusion"] == "INCONCLUSIVE" for p in pairs)},
+    }
+    if len(pairs) == 1:
+        payload.update(pairs[0])
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.report.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    args.report.write_text(render(payload), encoding="utf-8")
+    return payload
+
+
 async def execute(args: argparse.Namespace) -> dict[str, Any]:
     registry = providers()
     if args.provider == "mock" or args.provider not in registry or not registry.get(args.provider).implemented:
@@ -260,6 +321,7 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
         pairs.append(_pair(spec, baseline, uap))
         partial = {
             "suite": SUITE["suite"], "environment": {"uap": __version__, "commit": commit,
+            "execution_commit": commit,
             "provider": args.provider, "model": args.model, "reasoning": args.reasoning,
             "source_hash": prepared["source_hash"]}, "prepared_fixture": prepared,
             "same_uap_execution_path": True, "only_variable": "reusable_context_enabled",
@@ -271,12 +333,16 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
     conclusive = [pair for pair in pairs if pair["conclusion"] != "INCONCLUSIVE"]
     payload = {
         "suite": SUITE["suite"], "schema_version": SUITE["schema_version"],
-        "environment": {"uap": __version__, "commit": commit, "provider": args.provider,
+        "environment": {"uap": __version__, "commit": commit, "execution_commit": commit,
+                        "provider": args.provider,
                         "model": args.model, "reasoning": args.reasoning,
                         "source_hash": prepared["source_hash"]},
         "prepared_fixture": prepared, "same_uap_execution_path": True,
         "only_variable": "reusable_context_enabled", "pairs": pairs,
         "summary": {"selected_tasks": len(pairs), "provider_calls_max": len(pairs) * 2,
+                    "provider_calls_actual": sum(
+                        not pair[arm].get("resumed", False)
+                        for pair in pairs for arm in ("baseline", "uap")),
                     "conclusive_pairs": len(conclusive),
                     "yes": sum(pair["conclusion"] == "YES" for pair in pairs),
                     "no": sum(pair["conclusion"] == "NO" for pair in pairs),
@@ -303,6 +369,20 @@ def render(payload: dict[str, Any]) -> str:
             f"{'PASS' if baseline['quality']['passed'] else 'FAIL'} | "
             f"{'PASS' if uap['quality']['passed'] else 'FAIL'} | {baseline_tokens} | {uap_tokens} | "
             f"{pair['conclusion']} |")
+    for pair in payload["pairs"]:
+        lines.extend(["", f"## {pair['task_id']} detail", ""])
+        for label, key in (("Baseline", "baseline"), ("UAP", "uap")):
+            row = pair[key]
+            lines.append(
+                f"- {label}: provider `{row['provider_status']}`, acceptance "
+                f"`{'PASS' if row['quality']['passed'] else 'FAIL'}`, token source "
+                f"`{row['token_source']}`, duration {row['duration_seconds']}s, "
+                f"non-cached input {row['non_cached_input_tokens']}, cached input "
+                f"{row['cached_input_tokens']}, output {row['output_tokens']}, tools "
+                f"{row['provider_tool_calls'] if row['provider_tool_calls'] is not None else 'UNAVAILABLE'}, "
+                f"messages {row['provider_messages'] if row['provider_messages'] is not None else 'UNAVAILABLE'}, "
+                f"error `{row['error'] or 'none'}`.")
+        lines.append(f"- Conclusion: `{pair['conclusion']}` — {pair['claim']}.")
     lines.extend(["", "A token comparison is conclusive only when both arms pass acceptance and both "
                   "providers report complete measured usage. Partial timeout telemetry is retained but never "
                   "counted as proof of savings.", ""])
@@ -313,6 +393,9 @@ def main() -> int:
     args = arguments()
     if args.dry_run:
         print(json.dumps(dry_run(args), indent=2))
+        return 0
+    if args.reanalyze:
+        print(json.dumps(reanalyze(args), indent=2))
         return 0
     if not args.execute:
         raise SystemExit("Use --dry-run or explicitly pass --execute for real provider calls.")

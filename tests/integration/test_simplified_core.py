@@ -210,3 +210,21 @@ def test_context_cache_keeps_shared_benchmark_task_constructor(tmp_path):
     assert built.title == "Small goal"
     assert built.metadata["working_directory"] == str(tmp_path)
     assert built.metadata["model"] == "model-x"
+
+
+def test_small_acceptance_allows_semantically_equivalent_wire_keys(tmp_path):
+    variants = [
+        ("count", "total"),
+        ("expense_count", "total_spending"),
+    ]
+    for index, (count_key, total_key) in enumerate(variants):
+        project = tmp_path / f"variant-{index}"
+        context_cache_benchmark.seed(project)
+        source = project / "app" / "main.py"
+        source.write_text(source.read_text(encoding="utf-8") + f'''\n\n@app.get("/reports/summary")
+def report_summary():
+    with connect() as database:
+        row = database.execute("SELECT COUNT(*) AS count, COALESCE(SUM(amount), 0) AS total FROM expenses").fetchone()
+    return {{"{count_key}": row["count"], "{total_key}": row["total"]}}
+''', encoding="utf-8")
+        assert context_cache_benchmark.acceptance(project, "small")["passed"] is True

@@ -47,8 +47,11 @@ def evaluate(project: Path, task_id: str = "large") -> dict:
                 response = client.get("/reports/summary")
                 assert response.status_code == 200, response.text
                 body = response.json()
-                assert body["expense_count"] == 3
-                assert body["total"] == 114.5
+                # The goal specifies meanings, not JSON wire-key spellings.
+                count = body.get("expense_count", body.get("count"))
+                total = body.get("total", body.get("total_spending"))
+                assert count == 3
+                assert total == 114.5
             else:
                 _monthly(client)
         if task_id == "large":

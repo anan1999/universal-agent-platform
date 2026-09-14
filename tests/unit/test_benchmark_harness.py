@@ -34,6 +34,18 @@ def test_materialized_arms_start_identical_and_are_isolated(tmp_path):
     assert (enabled / "app.py").read_text(encoding="utf-8") == "original\n"
 
 
+def test_prepared_fixture_excludes_runtime_cache_even_when_source_contains_it(tmp_path):
+    source = tmp_path / "fixture"
+    cache = source / "app" / "__pycache__"
+    cache.mkdir(parents=True)
+    (source / "app" / "main.py").write_text("value = 1\n", encoding="utf-8")
+    (cache / "main.pyc").write_bytes(b"runtime-only")
+    prepared = PreparedFixture(source, tmp_path / "bench")
+    prepared.prepare()
+    assert (prepared.prepared / "app" / "main.py").is_file()
+    assert not (prepared.prepared / "app" / "__pycache__").exists()
+
+
 def test_checkpoint_only_resumes_matching_completed_arm(tmp_path):
     checkpoints = Checkpoints(tmp_path)
     signature = experiment_signature({"task": "small", "model": "test"})
@@ -42,6 +54,7 @@ def test_checkpoint_only_resumes_matching_completed_arm(tmp_path):
     assert checkpoints.completed("small", "enabled", "different") is None
     checkpoints.save("small", "disabled", signature, {"status": "failed"})
     assert checkpoints.completed("small", "disabled", signature) is None
+    assert checkpoints.load("small", "disabled", signature)["status"] == "failed"
 
 
 def test_atomic_checkpoint_leaves_no_temporary_file(tmp_path):

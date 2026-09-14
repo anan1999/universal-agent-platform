@@ -49,6 +49,12 @@ python scripts/context_cache_benchmark.py --execute --task all --provider codex 
 
 `--resume` 只重用 signature 完全相同、provider 已完成且 acceptance 再次通過的 arm。失敗、規格變更、模型變更、timeout 變更或 fixture hash 變更都不會被誤當成可重用成功結果。
 
+若只修正 acceptance 或報表邏輯，不需要重跑模型。`--reanalyze` 會從 durable checkpoint 重新驗收現有 artifact，本次 provider 呼叫固定為 0；報表另保留建立這些 checkpoint 時的 historical provider call 數：
+
+```bash
+python scripts/context_cache_benchmark.py --reanalyze --task small --provider codex --resume
+```
+
 ## 判讀規則
 
 只有兩個 arm 都通過 acceptance，而且兩邊都是完整的 provider-measured token usage，才允許輸出 `YES` 或 `NO`。超時前收到的用量會以 `partial_measured` 保存，但只能診斷成本，不能證明節省。未知用量永遠不等於 0。

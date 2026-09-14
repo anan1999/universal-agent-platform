@@ -1,0 +1,200 @@
+{
+  "suite": "reuse-first-scale-v1",
+  "schema_version": 1,
+  "environment": {
+    "uap": "2.3.1",
+    "execution_commit": "6c041ff1582b18b03184eee56545f21877603ef3",
+    "provider": "codex",
+    "model": "gpt-6-astra",
+    "reasoning": "low",
+    "source_hash": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+  },
+  "prepared_fixture": {
+    "source_hash": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+    "prepared_path": "prepared/base",
+    "reused": true
+  },
+  "same_uap_execution_path": true,
+  "only_variable": "reusable_context_enabled",
+  "provider_calls": 0,
+  "historical_provider_calls": 2,
+  "pairs": [
+    {
+      "task_id": "small",
+      "scale": 1,
+      "goal": "Add a GET /reports/summary API endpoint that returns the expense count and total spending. Preserve existing expense behavior and validate the work.",
+      "acceptance_contract": "context-cache-summary-v1",
+      "baseline": {
+        "provider_status": "completed",
+        "provider": "codex",
+        "model": "gpt-6-astra",
+        "input_tokens": 89280,
+        "cached_input_tokens": 81920,
+        "non_cached_input_tokens": 7360,
+        "output_tokens": 1515,
+        "total_tokens": 90795,
+        "token_source": "measured",
+        "usage_complete": true,
+        "duration_seconds": 83.453,
+        "ai_invocations": 1,
+        "provider_tool_calls": 5,
+        "provider_messages": 3,
+        "files_read": "UNAVAILABLE",
+        "files_changed": [
+          "app/main.py",
+          "tests/test_expenses.py",
+          "README.md"
+        ],
+        "error": null,
+        "status": "completed",
+        "quality": {
+          "passed": true,
+          "contract": "context-cache-summary-v1",
+          "error": null,
+          "returncode": 0
+        },
+        "post_source_hash": "3e57b46af647f5d34065451d7ffc3077f80498b40ddf6149541a54603e53a41c",
+        "resumed": false,
+        "project_context_chars": 0,
+        "relevant_paths": [],
+        "pre_task_ai_calls": 0,
+        "orchestration_wall_ms": 10954.036
+      },
+      "uap": {
+        "provider_status": "failed",
+        "provider": "codex",
+        "model": "gpt-6-astra",
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "non_cached_input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0,
+        "token_source": "unavailable",
+        "usage_complete": false,
+        "duration_seconds": 300.093,
+        "ai_invocations": 1,
+        "provider_tool_calls": null,
+        "provider_messages": null,
+        "files_read": "UNAVAILABLE",
+        "files_changed": [],
+        "error": "CODEX_TIMEOUT",
+        "status": "failed",
+        "quality": {
+          "passed": true,
+          "contract": "context-cache-summary-v1",
+          "error": null,
+          "returncode": 0
+        },
+        "post_source_hash": "8df0a3432cf80297168c61f88fca3782ea1da1f32ef56676718dbf412501607d",
+        "resumed": false,
+        "project_context_chars": 608,
+        "relevant_paths": [
+          "app/"
+        ],
+        "pre_task_ai_calls": 0,
+        "orchestration_wall_ms": 10435.82
+      },
+      "equal_quality": true,
+      "decision_evidence": {
+        "measured_complete_tokens": false,
+        "fewer_tokens": false,
+        "equal_tokens": false,
+        "materially_faster_10_percent": false
+      },
+      "conclusion": "INCONCLUSIVE",
+      "claim": "no benefit claim is supported by this pair"
+    }
+  ],
+  "summary": {
+    "selected_tasks": 1,
+    "reanalyze_provider_calls": 0,
+    "historical_provider_calls": 2,
+    "conclusive_pairs": 0,
+    "yes": 0,
+    "no": 0,
+    "inconclusive": 1
+  },
+  "task_id": "small",
+  "scale": 1,
+  "goal": "Add a GET /reports/summary API endpoint that returns the expense count and total spending. Preserve existing expense behavior and validate the work.",
+  "acceptance_contract": "context-cache-summary-v1",
+  "baseline": {
+    "provider_status": "completed",
+    "provider": "codex",
+    "model": "gpt-6-astra",
+    "input_tokens": 89280,
+    "cached_input_tokens": 81920,
+    "non_cached_input_tokens": 7360,
+    "output_tokens": 1515,
+    "total_tokens": 90795,
+    "token_source": "measured",
+    "usage_complete": true,
+    "duration_seconds": 83.453,
+    "ai_invocations": 1,
+    "provider_tool_calls": 5,
+    "provider_messages": 3,
+    "files_read": "UNAVAILABLE",
+    "files_changed": [
+      "app/main.py",
+      "tests/test_expenses.py",
+      "README.md"
+    ],
+    "error": null,
+    "status": "completed",
+    "quality": {
+      "passed": true,
+      "contract": "context-cache-summary-v1",
+      "error": null,
+      "returncode": 0
+    },
+    "post_source_hash": "3e57b46af647f5d34065451d7ffc3077f80498b40ddf6149541a54603e53a41c",
+    "resumed": false,
+    "project_context_chars": 0,
+    "relevant_paths": [],
+    "pre_task_ai_calls": 0,
+    "orchestration_wall_ms": 10954.036
+  },
+  "uap": {
+    "provider_status": "failed",
+    "provider": "codex",
+    "model": "gpt-6-astra",
+    "input_tokens": 0,
+    "cached_input_tokens": 0,
+    "non_cached_input_tokens": 0,
+    "output_tokens": 0,
+    "total_tokens": 0,
+    "token_source": "unavailable",
+    "usage_complete": false,
+    "duration_seconds": 300.093,
+    "ai_invocations": 1,
+    "provider_tool_calls": null,
+    "provider_messages": null,
+    "files_read": "UNAVAILABLE",
+    "files_changed": [],
+    "error": "CODEX_TIMEOUT",
+    "status": "failed",
+    "quality": {
+      "passed": true,
+      "contract": "context-cache-summary-v1",
+      "error": null,
+      "returncode": 0
+    },
+    "post_source_hash": "8df0a3432cf80297168c61f88fca3782ea1da1f32ef56676718dbf412501607d",
+    "resumed": false,
+    "project_context_chars": 608,
+    "relevant_paths": [
+      "app/"
+    ],
+    "pre_task_ai_calls": 0,
+    "orchestration_wall_ms": 10435.82
+  },
+  "equal_quality": true,
+  "decision_evidence": {
+    "measured_complete_tokens": false,
+    "fewer_tokens": false,
+    "equal_tokens": false,
+    "materially_faster_10_percent": false
+  },
+  "conclusion": "INCONCLUSIVE",
+  "claim": "no benefit claim is supported by this pair"
+}
