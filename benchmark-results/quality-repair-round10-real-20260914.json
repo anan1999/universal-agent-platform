@@ -1,0 +1,374 @@
+{
+  "experiment": "single_bounded_quality_repair_replay",
+  "goal": "Add a GET /reports/monthly/{month} API endpoint that returns the selected month, total spending, and totals by category, then display that monthly total and category breakdown in the existing React dashboard. Preserve existing expense behavior and validate the work.",
+  "failed_source_hash": "d8ca31084db55b6789c3f8a8ec613126a65f10c14dee740f13f2b371e1f94a1c",
+  "repair_source_hash": "be72d031e0943615a221fa2334383e7b2c633592618b9bdb98b84828aef08edf",
+  "model": "gpt-5.6-luna",
+  "initial_quality": {
+    "passed": false,
+    "contract": "context-cache-monthly-v1",
+    "error": "AssertionError: Path parameters cannot have a default value",
+    "returncode": 1
+  },
+  "repair_evidence": {
+    "error": "AssertionError: Path parameters cannot have a default value",
+    "excerpts": [
+      {
+        "path": "app/main.py",
+        "sha256": "20e1c6aa78a77f4817916d653b55dc926a180eb0dd07f901581e551d66110aaa",
+        "content": "from __future__ import annotations\n\nimport sqlite3\nfrom datetime import date\nfrom pathlib import Path\n\nfrom fastapi import FastAPI, HTTPException, Path\nfrom pydantic import BaseModel, Field\n\n\nDATABASE = Path(__file__).resolve().parents[1] / \"expenses.sqlite3\"\napp = FastAPI(title=\"Pocket Expense\")\n\n\nclass ExpenseIn(BaseModel):\n    amount: float = Field(gt=0)\n    category: str = Field(min_length=1)\n    description: str = \"\"\n    date: date\n\n\nclass MonthlyReport(BaseModel):\n    month: str\n    total: float\n    categories: dict[str, float]\n\n\ndef connect() -> sqlite3.Connection:\n    database = sqlite3.connect(DATABASE)\n    database.row_factory = sqlite3.Row\n    database.execute(\n        \"CREATE TABLE IF NOT EXISTS expenses (\"\n        \"id INTEGER PRIMARY KEY, amount REAL NOT NULL, category TEXT NOT NULL, \"\n        \"description TEXT NOT NULL, date TEXT NOT NULL)\"\n    )\n    return database\n\n\n@app.post(\"/expenses\", status_code=201)\ndef create_expense(expense: ExpenseIn):\n    with connect() as database:\n        cursor = database.execute(\n            \"INSERT INTO expenses(amount,category,description,date) VALUES(?,?,?,?)\",\n            (expense.amount, expense.category, expense.description, expense.date.isoformat()),\n        )\n        row = database.execute(\"SELECT * FROM expenses WHERE id=?\", (cursor.lastrowid,)).fetchone()\n    return dict(row)\n\n\n@app.get(\"/expenses\")\ndef list_expenses():\n    with connect() as database:\n        return [dict(row) for row in database.execute(\"SELECT * FROM expenses ORDER BY date DESC, id DESC\")]\n\n\n@app.get(\"/reports/monthly/{month}\", response_model=Monthl"
+      }
+    ],
+    "skipped_paths": [],
+    "context_chars": 1659,
+    "max_context_chars": 2400
+  },
+  "control": {
+    "status": "completed",
+    "usage": {
+      "input": 145733,
+      "output": 2721,
+      "cached": 104960,
+      "source": "measured",
+      "estimated": false,
+      "invocation_count": 1,
+      "execution_id": "01a09da8-bd28-76a2-9aff-d92c9ab868cb"
+    },
+    "duration_seconds": 107.907,
+    "quality": {
+      "passed": true,
+      "contract": "context-cache-monthly-v1",
+      "error": null,
+      "returncode": 0
+    },
+    "error": null,
+    "telemetry": {
+      "tool_calls": 6,
+      "assistant_messages": 5,
+      "assistant_message_chars": 2654,
+      "provider_turns": 1,
+      "internal_reasoning_rounds": null,
+      "actions": [
+        {
+          "sequence": 1,
+          "type": "command_execution",
+          "labels": [
+            "inspection",
+            "environment"
+          ],
+          "command_sha256": "fe3665067a202d8a0c8fb66955f6c17c6f5b5c56dc0ae7ddb5e94fc2a24afc63",
+          "repeated_exact_command": false,
+          "fixture_paths_mentioned": [],
+          "output_chars": 2366,
+          "exit_code": 0,
+          "failure_hints": []
+        },
+        {
+          "sequence": 2,
+          "type": "command_execution",
+          "labels": [
+            "inspection"
+          ],
+          "command_sha256": "97d0532ab1a209a092eb024a441c40bfda30ae26ee06626f0140fb81f89fe9ec",
+          "repeated_exact_command": false,
+          "fixture_paths_mentioned": [
+            "package.json"
+          ],
+          "output_chars": 2972,
+          "exit_code": 0,
+          "failure_hints": []
+        },
+        {
+          "sequence": 3,
+          "type": "file_change",
+          "labels": [
+            "editing"
+          ],
+          "command_sha256": null,
+          "repeated_exact_command": false,
+          "fixture_paths_mentioned": [],
+          "output_chars": 0,
+          "exit_code": null,
+          "failure_hints": []
+        },
+        {
+          "sequence": 4,
+          "type": "command_execution",
+          "labels": [
+            "validation"
+          ],
+          "command_sha256": "134529f90308d3bdfcfee620283cd58a42d91eafa7f964aad00187d989a4f465",
+          "repeated_exact_command": false,
+          "fixture_paths_mentioned": [],
+          "output_chars": 1507,
+          "exit_code": 1,
+          "failure_hints": [
+            "missing_dependency"
+          ]
+        },
+        {
+          "sequence": 5,
+          "type": "command_execution",
+          "labels": [
+            "validation"
+          ],
+          "command_sha256": "6521ae382da17c856fc8458a61923a54efc36a005e0d783068a457106abf43a1",
+          "repeated_exact_command": false,
+          "fixture_paths_mentioned": [],
+          "output_chars": 595,
+          "exit_code": 0,
+          "failure_hints": []
+        },
+        {
+          "sequence": 6,
+          "type": "command_execution",
+          "labels": [
+            "validation"
+          ],
+          "command_sha256": "dbf28997d9b696a80d73e9564d94e05019fdc1d16f83deb7d2b09fcc08b582dd",
+          "repeated_exact_command": false,
+          "fixture_paths_mentioned": [],
+          "output_chars": 268,
+          "exit_code": 1,
+          "failure_hints": [
+            "missing_dependency"
+          ]
+        },
+        {
+          "sequence": 7,
+          "type": "command_execution",
+          "labels": [
+            "unclassified"
+          ],
+          "command_sha256": "5d02b747c15c25a7ddcb6ab79ca5c00559e73dcfc41846f9459a3d1811cb0601",
+          "repeated_exact_command": false,
+          "fixture_paths_mentioned": [],
+          "output_chars": 0,
+          "exit_code": null,
+          "failure_hints": []
+        }
+      ]
+    },
+    "packet_chars": 1141,
+    "actual_source_changed": true
+  },
+  "initial_experimental": {
+    "status": "completed",
+    "usage": {
+      "input": 86987,
+      "output": 2195,
+      "cached": 49408,
+      "source": "measured",
+      "estimated": false,
+      "invocation_count": 1,
+      "execution_id": "01a09da7-74ee-7460-819f-4b248207a177"
+    },
+    "duration_seconds": 81.048,
+    "quality": {
+      "passed": false,
+      "contract": "context-cache-monthly-v1",
+      "error": "AssertionError: Path parameters cannot have a default value",
+      "returncode": 1
+    },
+    "error": null,
+    "telemetry": {
+      "tool_calls": 3,
+      "assistant_messages": 3,
+      "assistant_message_chars": 1328,
+      "provider_turns": 1,
+      "internal_reasoning_rounds": null,
+      "actions": [
+        {
+          "sequence": 1,
+          "type": "command_execution",
+          "labels": [
+            "inspection"
+          ],
+          "command_sha256": "b7c84be21196b13e78d32ab89a412693fd8b77fbae1438be583c95d6031334e1",
+          "repeated_exact_command": false,
+          "fixture_paths_mentioned": [
+            "app/main.py",
+            "frontend/src/App.jsx",
+            "tests/test_expenses.py"
+          ],
+          "output_chars": 2741,
+          "exit_code": 0,
+          "failure_hints": []
+        },
+        {
+          "sequence": 2,
+          "type": "command_execution",
+          "labels": [
+            "inspection"
+          ],
+          "command_sha256": "10df98e50ad84c6a87243ec25ab3c935fcf15d4225fca64db78d5bdcc0308546",
+          "repeated_exact_command": false,
+          "fixture_paths_mentioned": [
+            "package.json",
+            "pyproject.toml"
+          ],
+          "output_chars": 313,
+          "exit_code": 0,
+          "failure_hints": []
+        },
+        {
+          "sequence": 3,
+          "type": "file_change",
+          "labels": [
+            "editing"
+          ],
+          "command_sha256": null,
+          "repeated_exact_command": false,
+          "fixture_paths_mentioned": [],
+          "output_chars": 0,
+          "exit_code": null,
+          "failure_hints": []
+        },
+        {
+          "sequence": 4,
+          "type": "command_execution",
+          "labels": [
+            "validation"
+          ],
+          "command_sha256": "1ed3dca353e472b608306bef779454d7008d47a9a6d9641a8362fb4df35645e3",
+          "repeated_exact_command": false,
+          "fixture_paths_mentioned": [
+            "package.json"
+          ],
+          "output_chars": 1565,
+          "exit_code": 1,
+          "failure_hints": [
+            "missing_dependency"
+          ]
+        }
+      ]
+    },
+    "packet_chars": 2311,
+    "actual_source_changed": true
+  },
+  "repair": {
+    "status": "completed",
+    "usage": {
+      "input": 102059,
+      "output": 989,
+      "cached": 94720,
+      "source": "measured",
+      "estimated": false,
+      "invocation_count": 1,
+      "execution_id": "01a09db6-50fd-7340-b737-b65e1796f9f8"
+    },
+    "duration_seconds": 62.502,
+    "quality": {
+      "passed": true,
+      "contract": "context-cache-monthly-v1",
+      "error": null,
+      "returncode": 0
+    },
+    "error": null,
+    "telemetry": {
+      "tool_calls": 3,
+      "assistant_messages": 1,
+      "assistant_message_chars": 435,
+      "provider_turns": 1,
+      "internal_reasoning_rounds": null,
+      "actions": [
+        {
+          "sequence": 1,
+          "type": "command_execution",
+          "labels": [
+            "inspection"
+          ],
+          "command_sha256": "ff4d8314e1cb14733884024bb6be9c23931dff18af52264614b664f15d0c7110",
+          "repeated_exact_command": false,
+          "fixture_paths_mentioned": [
+            "app/main.py"
+          ],
+          "output_chars": 2496,
+          "exit_code": 0,
+          "failure_hints": []
+        },
+        {
+          "sequence": 2,
+          "type": "file_change",
+          "labels": [
+            "editing"
+          ],
+          "command_sha256": null,
+          "repeated_exact_command": false,
+          "fixture_paths_mentioned": [],
+          "output_chars": 0,
+          "exit_code": null,
+          "failure_hints": []
+        },
+        {
+          "sequence": 3,
+          "type": "command_execution",
+          "labels": [
+            "unclassified"
+          ],
+          "command_sha256": "75a9d34f066b222b99e903518e197e225961dd6a43d4cf4904535d37da58d4e3",
+          "repeated_exact_command": false,
+          "fixture_paths_mentioned": [],
+          "output_chars": 760,
+          "exit_code": 1,
+          "failure_hints": [
+            "test_failure"
+          ]
+        },
+        {
+          "sequence": 4,
+          "type": "file_change",
+          "labels": [
+            "editing"
+          ],
+          "command_sha256": null,
+          "repeated_exact_command": false,
+          "fixture_paths_mentioned": [],
+          "output_chars": 0,
+          "exit_code": null,
+          "failure_hints": []
+        },
+        {
+          "sequence": 5,
+          "type": "command_execution",
+          "labels": [
+            "unclassified"
+          ],
+          "command_sha256": "75a9d34f066b222b99e903518e197e225961dd6a43d4cf4904535d37da58d4e3",
+          "repeated_exact_command": true,
+          "fixture_paths_mentioned": [],
+          "output_chars": 3,
+          "exit_code": 0,
+          "failure_hints": []
+        }
+      ]
+    },
+    "packet_chars": 2727
+  },
+  "combined": {
+    "usage": {
+      "input": 189046,
+      "output": 3184,
+      "cached": 144128,
+      "source": "measured",
+      "invocation_count": 2
+    },
+    "telemetry": {
+      "tool_calls": 6,
+      "assistant_messages": 4,
+      "assistant_message_chars": 1763
+    }
+  },
+  "comparison": {
+    "quality_closed": true,
+    "total_token_reduction_percent": -29.49,
+    "uncached_token_reduction_percent": -10.59,
+    "tool_call_delta": 0,
+    "assistant_message_delta": 1,
+    "decision": "REJECT_COST"
+  },
+  "limitations": [
+    "One observed failure replay; not a fresh randomized pair.",
+    "Subscription quota conversion and hidden reasoning rounds are unavailable."
+  ]
+}
