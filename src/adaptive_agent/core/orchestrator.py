@@ -226,7 +226,7 @@ class Orchestrator:
         if not provider_id:
             return "unsupported"
         try:
-            provider = (self.provider if provider_id == self.provider_name
+            provider = (self.provider if getattr(self.provider, "id", None) == provider_id
                         else self.provider_registry.instance(provider_id))
             value = str(getattr(provider, "provider_tool_budget_enforcement", "unsupported"))
             return value if value in {"hard", "soft_guidance", "unsupported"} else "unsupported"

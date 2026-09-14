@@ -12,7 +12,6 @@ from statistics import median
 from typing import Any
 
 from adaptive_agent.core.goal_analyzer import GoalAnalysis
-from adaptive_agent.project.experience import OperationExperience
 
 
 POLICY_VERSION = "v0"
@@ -140,7 +139,9 @@ class AdaptiveToolBudgetStore:
         return hashlib.sha256(serialized.encode()).hexdigest()[:20]
 
     def fingerprint(self) -> str | None:
-        return OperationExperience(self.root).fingerprint()
+        # Project identity only: pair-level input_signature provides content
+        # comparability. Budget decisions must not scan repository files.
+        return hashlib.sha256(str(self.root).casefold().encode()).hexdigest()
 
     def _connect(self):
         if not self.path.resolve().is_relative_to(self.root):
