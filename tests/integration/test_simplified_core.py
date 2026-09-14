@@ -187,4 +187,19 @@ def test_context_cache_benchmark_dry_run_is_one_pair_and_quota_free(tmp_path):
     assert result["disabled"]["reusable_context_enabled"] is False
     assert result["enabled"]["reusable_context_enabled"] is True
     assert result["asset_creation"]["ai_invocations"] == 0
-    assert context_cache_benchmark.acceptance(tmp_path / "pair" / "baseline")["passed"] is False
+    assert context_cache_benchmark.acceptance(
+        tmp_path / "pair" / "runs" / "large" / "disabled")["passed"] is False
+
+
+def test_context_cache_scale_suite_reuses_prepared_fixture_and_is_quota_free(tmp_path):
+    args = SimpleNamespace(workspace=tmp_path / "suite", output=tmp_path / "first.json", task="all")
+    first = context_cache_benchmark.dry_run(args)
+    args.output = tmp_path / "second.json"
+    second = context_cache_benchmark.dry_run(args)
+    assert [row["task_id"] for row in first["tasks"]] == ["small", "medium", "large"]
+    assert [row["scale"] for row in first["tasks"]] == [1, 2, 3]
+    assert all(row["ready"] for row in first["tasks"])
+    assert first["provider_calls"] == second["provider_calls"] == 0
+    assert first["prepared_fixture"]["reused"] is False
+    assert second["prepared_fixture"]["reused"] is True
+    assert len({row["source_hash"] for row in first["tasks"]}) == 1
