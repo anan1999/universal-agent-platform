@@ -111,14 +111,23 @@ def dry_run(args: argparse.Namespace) -> dict[str, Any]:
     baseline, uap = workspace / "baseline", workspace / "uap"
     seed(baseline)
     seed(uap)
+    initialize_context_only(baseline)
+    started = time.monotonic()
     initialize_context_only(uap)
+    creation_seconds = time.monotonic() - started
     context = ProjectContextIndex(uap).select(GOAL)
     payload = {"ready": source_hash(baseline) == source_hash(uap),
                "same_source_hash": source_hash(baseline),
                "pre_task_ai_calls": context.pre_task_ai_calls,
                "project_context_chars": context.context_chars,
                "relevant_paths": context.relevant_paths,
-               "baseline_has_index": False, "uap_has_index": True,
+               "baseline_has_index": True, "uap_has_index": True,
+               "same_uap_execution_path": True,
+               "only_variable": "reusable_context_enabled",
+               "disabled": {"reusable_context_enabled": False},
+               "enabled": {"reusable_context_enabled": True},
+               "asset_creation": {"ai_invocations": 0,
+                                  "duration_seconds": round(creation_seconds, 6)},
                "provider_calls": 0}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, indent=2), encoding="utf-8")
@@ -141,12 +150,26 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
     baseline, uap = workspace / "baseline", workspace / "uap"
     seed(baseline)
     seed(uap)
+    initialize_context_only(baseline)
+    creation_started = time.monotonic()
     initialize_context_only(uap)
+    asset_creation = {"ai_invocations": 0,
+                      "duration_seconds": round(time.monotonic() - creation_started, 6)}
     baseline_hash, uap_hash = source_hash(baseline), source_hash(uap)
     if baseline_hash != uap_hash:
         raise SystemExit("Baseline and UAP application source differ before execution.")
 
-    baseline_task = task(baseline, args.model, args.reasoning)
+    baseline_composition = Orchestrator(
+        Database(workspace / "disabled-plan.db"), baseline_provider,
+        provider_name=args.provider, reuse_context=False).compose(
+            "RUN-CONTEXT-DISABLED", GOAL, str(baseline), "Pocket Expense", "benchmark")
+    baseline_tasks = [item for item in baseline_composition.graph.tasks.values()
+                      if item.kind is TaskKind.AGENT]
+    if len(baseline_tasks) != 1:
+        raise SystemExit(f"Disabled arm must produce exactly one AI task, got {len(baseline_tasks)}")
+    baseline_task = baseline_tasks[0]
+    baseline_task.metadata["model"] = args.model
+    baseline_task.reasoning = args.reasoning
     baseline_packet = ExecutionPacketBuilder().build(
         baseline_task, baseline, "Pocket Expense", "benchmark")
     started = time.monotonic()
@@ -154,7 +177,8 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
     baseline_metrics = receipt_metrics(baseline_receipt, time.monotonic() - started)
 
     db = Database(workspace / "uap-plan.db")
-    composition = Orchestrator(db, uap_provider, provider_name=args.provider).compose(
+    composition = Orchestrator(
+        db, uap_provider, provider_name=args.provider, reuse_context=True).compose(
         "RUN-CONTEXT-PAIR", GOAL, str(uap), "Pocket Expense", "benchmark")
     agent_tasks = [item for item in composition.graph.tasks.values() if item.kind is TaskKind.AGENT]
     if len(agent_tasks) != 1:
@@ -163,8 +187,7 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
     uap_task.metadata["model"] = args.model
     uap_task.reasoning = args.reasoning
     uap_packet = ExecutionPacketBuilder().build(
-        uap_task, uap, "Pocket Expense", "benchmark",
-        allowed_files=list(composition.project_intelligence.get("relevant_paths", [])))
+        uap_task, uap, "Pocket Expense", "benchmark")
     started = time.monotonic()
     uap_receipt = await uap_provider.execute(uap_task, packet=uap_packet)
     uap_metrics = receipt_metrics(uap_receipt, time.monotonic() - started)
@@ -194,6 +217,11 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
                 "relevant_paths": composition.project_intelligence.get("relevant_paths", []),
                 "pre_task_ai_calls": composition.project_intelligence.get("pre_task_ai_calls", 0),
                 "orchestration_wall_ms": composition.project_intelligence.get("orchestration_wall_ms")},
+        "same_uap_execution_path": True,
+        "only_variable": "reusable_context_enabled",
+        "disabled": {"reusable_context_enabled": False},
+        "enabled": {"reusable_context_enabled": True},
+        "asset_creation": asset_creation,
         "equal_quality": equal_quality,
         "decision_evidence": {"measured_tokens": measured, "fewer_tokens": fewer_tokens,
                               "equal_tokens": equal_tokens,

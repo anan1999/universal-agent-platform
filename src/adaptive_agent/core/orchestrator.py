@@ -74,7 +74,8 @@ class Orchestrator:
                  consumption_mode: str = "balanced",
                  execution_budget: ExecutionBudget | None = None,
                  adaptive_tool_budget: bool = False,
-                 adaptive_budget_mode: str | None = None):
+                 adaptive_budget_mode: str | None = None,
+                 reuse_context: bool = True):
         self.database = database
         self.events = events or EventBus(database)
         self.provider = provider
@@ -84,6 +85,7 @@ class Orchestrator:
         self.execution_budget = execution_budget or ExecutionBudget()
         self.adaptive_budget_mode = adaptive_budget_mode or ("auto" if adaptive_tool_budget else None)
         self.adaptive_tool_budget = self.adaptive_budget_mode is not None
+        self.reuse_context = bool(reuse_context)
 
         # V2 universal path.
         self.profiles = profiles or profile_registry()
@@ -156,9 +158,17 @@ class Orchestrator:
         allowed_scope: list[str] = []
         denied_scope: list[str] = []
         if intelligence_root and (Path(intelligence_root) / ".agent").is_dir():
-            context = ProjectContextIndex(Path(intelligence_root)).select(goal).to_dict()
             allowed_scope, denied_scope = project_access_scope(Path(intelligence_root))
-            if self._experimental("UAP_EXPERIMENTAL_HEAVY_LEARNING"):
+            if self.reuse_context:
+                context = ProjectContextIndex(Path(intelligence_root)).select(goal).to_dict()
+            else:
+                context.update({
+                    "reason": "reusable context disabled for controlled comparison",
+                    "reuse_miss_reason": "DISABLED",
+                    "targeted_exploration_allowed": True,
+                })
+            if (self.reuse_context
+                    and self._experimental("UAP_EXPERIMENTAL_HEAVY_LEARNING")):
                 legacy = ProjectIntelligenceStore(Path(intelligence_root)).select(
                     goal, analysis.capabilities, record_reuse=record_intelligence)
                 legacy_value = legacy.to_dict()
