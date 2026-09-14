@@ -594,7 +594,6 @@ def main(argv: list[str] | None = None) -> int:
         from adaptive_agent.project.direct import main as direct_main
         return direct_main(arguments)
     args = parser().parse_args(argv)
-    db = database()
     selected_profiles = ([item.strip() for item in args.profiles.split(",") if item.strip()]
                          if getattr(args, "profiles", None) else None)
 
@@ -641,6 +640,8 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(payload, indent=2) if args.json
               else f"Cleared {cleared} adaptive budget family record(s).")
         return 0
+
+    db = database()
 
     if args.command == "setup":
         result = run_setup(auto=args.auto, non_interactive=args.non_interactive)

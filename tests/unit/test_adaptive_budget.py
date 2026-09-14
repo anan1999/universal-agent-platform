@@ -228,6 +228,8 @@ def test_three_real_scheduler_acceptances_apply_cap_on_the_next_run(tmp_path):
 def test_budget_cli_status_explain_and_targeted_reset(monkeypatch, tmp_path, capsys):
     store = initialized(tmp_path)
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("adaptive_agent.cli.database", lambda: (_ for _ in ()).throw(
+        AssertionError("budget CLI must not initialize the global platform database")))
     goal = "Build a FastAPI endpoint"
     current = _budget_analysis(goal, tmp_path)
     for _ in range(3):
