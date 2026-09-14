@@ -1,5 +1,8 @@
 # Adaptive provider tool budgets
 
+> Historical pre-v0 experiment. Its cap-4/cap-3 rules are not used by the current policy.
+> See [Adaptive Budget Policy v0](adaptive-budget-v0.md) for supported behavior and commands.
+
 This opt-in experiment targets a narrow source of subscription-AI overhead: a capable agent
 continuing to inspect or converse with itself after comparable tasks have repeatedly passed an
 external quality contract. It does not assume that shorter prompts or fewer tools always mean

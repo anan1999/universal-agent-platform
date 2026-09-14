@@ -363,17 +363,22 @@ agentctl agents | skills | skill | tools | profiles | providers | models
 
 ### Experimental adaptive tool budget
 
-For repeated, comparable tasks, opt in with:
+Policy v0 is opt-in and has only two effective choices: preserve the current NORMAL budget, or
+use the REDUCED six-provider-tool envelope. Select a mode explicitly:
 
 ```bash
-agentctl run "<goal>" --adaptive-provider-tool-budget
+agentctl run "<goal>" --budget normal
+agentctl run "<goal>" --budget reduced
+agentctl run "<goal>" --budget auto
 ```
 
-The normal budget is preserved until the same project environment and task family pass at least
-three controller-owned acceptance runs with measured provider cost. Cap 6 requires the observed
-tools to fit. Caps 4 and 3 additionally require the preceding stage's median total and uncached
-tokens not to worsen, and its observed tools to fit the next cap. Any declared acceptance failure
-resets that family's evidence. An explicit `--max-provider-tool-calls` always wins.
+The legacy `--adaptive-provider-tool-budget` flag remains an alias for `--budget auto`. Without
+either flag, the existing execution path is unchanged. AUTO requires at least two independent,
+measured NORMAL/REDUCED pairs with the same task family, artifact, complexity, provider, resolved
+model, reasoning, source input, and external acceptance contract. It stays NORMAL on unknown or
+high-complexity work, incomplete measurement, synthetic evidence, recent reduced-quality failure,
+an uncached-cost regression above 20%, or a provider that cannot enforce a hard limit. AUTO never
+selects 4 or 3.
 
 Ordinary tests are not assumed to cover a new requirement. A project command contributes adaptive
 evidence only when the user deliberately marks it as an acceptance contract:
@@ -386,16 +391,16 @@ commands:
     acceptance: true
 ```
 
-The local database stores only task/environment hashes, accepted and measured sample counts,
-bounded numeric cost metrics, effective caps, and timestamps—never prompts, model prose, command
-output, or secrets. Current real-provider evidence is promising but limited to one software task family; see
-[`docs/adaptive-tool-budgets.md`](docs/adaptive-tool-budgets.md).
+The local database stores structured comparison metadata and numeric measurements—never prompts,
+model prose, command output, or secrets. Ordinary unpaired observations are retained but cannot
+masquerade as controlled evidence. See [`docs/adaptive-budget-v0.md`](docs/adaptive-budget-v0.md).
 
 Inspect or revoke the local evidence without invoking an AI provider:
 
 ```bash
 agentctl budget status
-agentctl budget explain "<goal>"
+agentctl budget explain "<goal>" --mode auto --provider codex \
+  --model <resolved-model> --reasoning low --normal-limit 8 --enforcement hard
 agentctl budget reset "<goal>"   # one comparable family
 agentctl budget reset --all      # explicit current-environment reset
 ```
