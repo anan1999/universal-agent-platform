@@ -16,7 +16,11 @@ class ExecutionPacket:
     project_type: str
     working_directory: Path
     dependency_receipts: list[str] = field(default_factory=list)
+    #: Backward-compatible explicit permission scope. Never populated from retrieval hints.
     allowed_files: list[str] = field(default_factory=list)
+    suggested_paths: list[str] = field(default_factory=list)
+    allowed_scope: list[str] = field(default_factory=list)
+    denied_scope: list[str] = field(default_factory=list)
     required_skills: list[str] = field(default_factory=list)
     skill_context: list[str] = field(default_factory=list)
     loaded_references: list[str] = field(default_factory=list)
@@ -35,6 +39,10 @@ class ExecutionPacket:
     context_attribution: list[str] = field(default_factory=list)
     project_context: list[str] = field(default_factory=list)
     cached_file_summaries: list[str] = field(default_factory=list)
+    relevant_constraints: list[str] = field(default_factory=list)
+    source_references: list[str] = field(default_factory=list)
+    stale_or_unavailable_items: list[str] = field(default_factory=list)
+    targeted_exploration_allowed: bool = True
     execution_budget: dict[str, object] = field(default_factory=dict)
 
     def render(self) -> str:
@@ -48,6 +56,7 @@ class ExecutionPacket:
             "You are a bounded child executor, not the top-level orchestrator.",
             "Do not invoke agentctl or any other agent-orchestration framework.",
             "Use only this packet and the workspace content the task actually needs.",
+            "Navigation suggestions do not restrict exploration inside the authorized scope.",
             "Do not inspect unrelated directories or include full logs in the response.",
             "Before returning, record only a stable project fact, explicit decision, reusable procedure, or canonical command that is likely to help a later session.",
             "Use an empty learning_evidence array when no stable reusable information was learned.",
@@ -77,10 +86,13 @@ class ExecutionPacket:
             f"TASK:\n{self.task}",
             f"PROJECT:\n{self.project_name} ({self.project_type})",
             f"EXPECTED ARTIFACT:\n{self.artifact_type}" if self.artifact_type != "unknown" else "",
-            section("COMPACT PROJECT INDEX", self.project_context),
-            section("VALID CACHED FILE SUMMARIES", self.cached_file_summaries),
+            section("RELEVANT PROJECT FACTS", self.project_context),
             section("DEPENDENCY RECEIPTS", self.dependency_receipts),
-            section("ALLOWED SCOPE", self.allowed_files, "Minimize the workspace scope required by the task."),
+            section("SUGGESTED PATHS", self.suggested_paths,
+                    "No reusable navigation hit; perform targeted exploration as needed."),
+            section("ALLOWED SCOPE", self.allowed_scope,
+                    "Use the executor's existing workspace authorization; suggestions do not narrow it."),
+            section("DENIED SCOPE", self.denied_scope),
             section("REQUIRED SKILLS", self.required_skills),
             section("SELECTED SKILL PROCEDURES", self.skill_context),
             section("LOADED SKILL REFERENCES", self.loaded_references),
@@ -90,6 +102,9 @@ class ExecutionPacket:
             section("REUSED PROJECT SKILLS", self.project_skills),
             section("REUSED AGENT ROLE CONTEXT", self.agent_role_context),
             section("PROJECT CONTEXT ATTRIBUTION", self.context_attribution),
+            section("SOURCE REFERENCES", self.source_references),
+            section("STALE OR UNAVAILABLE ASSETS", self.stale_or_unavailable_items),
+            section("RELEVANT PROJECT CONSTRAINTS", self.relevant_constraints),
             section("CONSTRAINTS", constraints),
             "EXPECTED OUTPUT:\nReturn one JSON object matching the supplied schema. Confidence is a workflow signal: high, medium, low, or unknown. The learning_evidence field is required; apply the evidence gate above before choosing items or an empty array.",
         ]
@@ -112,9 +127,7 @@ class ExecutionPacketBuilder:
         intelligence = task.metadata.get("project_intelligence", {})
         intelligence_items = list(intelligence.get("items", []))
         project_index = intelligence.get("project_index", {})
-        architecture = project_index.get("architecture", {}) if isinstance(project_index, dict) else {}
         commands = project_index.get("commands", {}) if isinstance(project_index, dict) else {}
-        important_paths = project_index.get("important_paths", {}) if isinstance(project_index, dict) else {}
         parent_validation = sorted({str(item) for item in
                                     task.metadata.get("parent_validation_tools", [])})
         packet_constraints = (list(constraints) if constraints is not None
@@ -123,42 +136,59 @@ class ExecutionPacketBuilder:
             packet_constraints.append(
                 "Do not run project-wide validation in this task; the scheduler runs: "
                 + ", ".join(parent_validation) + ".")
+        def unique(values) -> list[str]:
+            return list(dict.fromkeys(str(value) for value in values if str(value).strip()))
+
         def summaries(kind: str) -> list[str]:
             return [f"{item['id']}: {item['summary']}" +
                     (f"\n{item['detail']}" if item.get("detail") else "")
                     for item in intelligence_items if item.get("kind") == kind]
+        loaded = list(loaded_skills or [])
+        loaded_skill_ids = {item.manifest.id for item in loaded}
+        project_skill_context = [value for value in summaries("skill")
+                                 if value.split(":", 1)[0] not in loaded_skill_ids]
+        active_decisions = unique([
+            *intelligence.get("relevant_decisions", []), *summaries("decision")])
+        relevant_constraints = unique(intelligence.get("relevant_constraints", []))
+        facts = unique([*intelligence.get("relevant_project_facts", []), *summaries("knowledge")])
+        explicit_allowed = (list(allowed_files) if allowed_files is not None
+                            else list(task.metadata.get("allowed_scope", [])))
         return ExecutionPacket(
             role=task.owner.replace("_", " ").title(),
             task=f"{task.title}\nOverall goal: {task.metadata.get('goal', task.title)}",
             project_name=project_name, project_type=project_type,
             working_directory=Path(working_directory).resolve(), dependency_receipts=summarized,
-            allowed_files=allowed_files or list(task.metadata.get("allowed_files", [])),
+            allowed_files=explicit_allowed,
+            suggested_paths=unique(task.metadata.get(
+                "suggested_paths", intelligence.get("suggested_paths", intelligence.get("relevant_paths", [])))),
+            allowed_scope=unique(explicit_allowed),
+            denied_scope=unique(task.metadata.get("denied_scope", [])),
             required_skills=required_skills or list(task.metadata.get("required_skills", task.required_capabilities)),
-            skill_context=[item.to_context() for item in (loaded_skills or [])],
+            skill_context=[item.to_context() for item in loaded],
             loaded_references=[f"{item.manifest.id}:{name}"
-                               for item in (loaded_skills or []) for name in item.references],
+                               for item in loaded for name in item.references],
             constraints=packet_constraints,
             read_only=inferred_read_only if read_only is None else read_only,
             artifact_type=getattr(task, "artifact_type", "unknown"),
             responsibility=str(task.metadata.get("responsibility", "")),
-            project_knowledge=summaries("knowledge"),
-            active_decisions=summaries("decision"),
+            project_knowledge=[],
+            active_decisions=active_decisions,
             known_issues=summaries("known_issue"),
-            project_skills=summaries("skill"),
+            project_skills=project_skill_context,
             agent_role_context=summaries("agent"),
             context_attribution=[f"{item.get('id')}: {', '.join(item.get('evidence', []))}"
                                  for item in intelligence_items],
-            project_context=[
-                f"Architecture: {', '.join(f'{key}={value}' for key, value in architecture.items()) or 'unknown'}",
-                f"Important paths: {', '.join(f'{key}={value}' for key, value in important_paths.items()) or 'none'}",
-                *([] if parent_validation else [
-                    f"Validated commands: {', '.join(f'{key}={value}' for key, value in commands.items()) or 'none'}"
-                ]),
-            ] if project_index else [],
-            cached_file_summaries=[
-                f"{item.get('path')}: {item.get('summary')}"
-                for item in intelligence.get("cached_files", [])
-            ],
+            project_context=unique([
+                *facts,
+                *([] if parent_validation or not commands else [
+                    f"Validated commands: {', '.join(f'{key}={value}' for key, value in commands.items())}"])
+            ]),
+            cached_file_summaries=[],
+            relevant_constraints=relevant_constraints,
+            source_references=unique(intelligence.get("source_references", [])),
+            stale_or_unavailable_items=unique(intelligence.get("stale_or_unavailable_items", [])),
+            targeted_exploration_allowed=bool(
+                intelligence.get("targeted_exploration_allowed", True)),
             execution_budget=dict(task.metadata.get("execution_budget", {})),
         )
 

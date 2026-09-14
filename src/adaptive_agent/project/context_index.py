@@ -67,17 +67,33 @@ class ProjectContext:
     estimated_tokens: int = 0
     pre_task_ai_calls: int = 0
     budgets: dict[str, int] = field(default_factory=lambda: dict(CONTEXT_BUDGETS))
+    suggested_paths: list[str] = field(default_factory=list)
+    relevant_project_facts: list[str] = field(default_factory=list)
+    relevant_constraints: list[str] = field(default_factory=list)
+    relevant_decisions: list[str] = field(default_factory=list)
+    selected_skills: list[str] = field(default_factory=list)
+    source_references: list[str] = field(default_factory=list)
+    stale_or_unavailable_items: list[str] = field(default_factory=list)
+    reuse_miss_reason: str | None = None
+    targeted_exploration_allowed: bool = True
+
+    @property
+    def reuse_hits(self) -> int:
+        return len(self.cached_files)
 
     def to_dict(self) -> dict[str, Any]:
         value = asdict(self)
+        value["suggested_paths"] = list(self.suggested_paths or self.relevant_paths)
         # Compatibility keys keep older API/receipt readers functional without
         # activating the legacy intelligence lifecycle.
         value.update({"temperature": "warm" if self.project_index else "cold",
-                      "reason": "compact project index routed relevant paths",
+                      "reason": "compact project index selected reusable navigation assets",
                       "items": [], "stale_items": [], "reuse_hits": len(self.cached_files),
                       "rediscovery_count": int(self.discovery_performed),
                       "loaded_detail_paths": [], "selected_only_count": len(self.cached_files),
-                      "reuse_miss_reason": None, "typed_reuse_hits": {}, "stale_count": 0,
+                      "reuse_miss_reason": self.reuse_miss_reason,
+                      "typed_reuse_hits": {},
+                      "stale_count": len(self.stale_or_unavailable_items),
                       "historical_items": [], "skipped_items": []})
         return value
 
@@ -165,10 +181,12 @@ class ProjectContextIndex:
         self.root = Path(project_root).resolve()
         self.path = self.root / ".agent" / "project-index.json"
         self.cache = FileSummaryCache(self.root)
+        self._last_load_issue: str | None = None
 
     def initialize(self) -> dict[str, Any]:
         if self.path.exists():
             return self.load()
+        self._last_load_issue = "project_index_missing"
         value = self._discover()
         self._write(value)
         return value
@@ -179,24 +197,52 @@ class ProjectContextIndex:
         try:
             value = json.loads(self.path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
+            self._last_load_issue = "project_index_invalid"
             value = self._discover()
             self._write(value)
         return value
 
     def select(self, goal: str) -> ProjectContext:
+        self._last_load_issue = None
         discovery = not self.path.exists()
         index = self.initialize()
+        discovery = discovery or self._last_load_issue is not None
         relevant = self.relevant_paths(goal, index)
+        cached_before = set(self.cache._read()["files"])
         cached = []
         relevant_terms = _terms(" ".join(relevant)) | _terms(goal)
         for entry in self.cache.entries():
             if _terms(str(entry.get("path", "")) + " " + str(entry.get("summary", ""))) & relevant_terms:
                 cached.append(entry)
+        stale_cache = sorted(cached_before - {str(item.get("path")) for item in self.cache.entries()})
         serialized = json.dumps(index, ensure_ascii=False, separators=(",", ":"))
         cache_text = json.dumps(cached, ensure_ascii=False, separators=(",", ":"))
         context_chars = len(serialized) + len(cache_text) + sum(map(len, relevant))
-        return ProjectContext(index, relevant, cached, discovery, context_chars,
-                              max(1, (context_chars + 3) // 4), 0)
+        project = index.get("project", {}) if isinstance(index.get("project"), dict) else {}
+        architecture = index.get("architecture", {}) if isinstance(index.get("architecture"), dict) else {}
+        facts = ([str(project.get("summary"))] if project.get("summary") else [])
+        facts.extend(f"{key}: {value}" for key, value in architecture.items())
+        facts.extend(f"{item.get('path')}: {item.get('summary')}" for item in cached)
+        constraints = [str(item) for item in index.get("constraints", []) if str(item).strip()]
+        decisions = [str(item) for item in index.get("decisions", []) if str(item).strip()]
+        skills = [str(item) for item in index.get("skills", []) if str(item).strip()]
+        sources = [".agent/project-index.json"]
+        sources.extend(str(item) for item in index.get("sources", []) if str(item).strip())
+        sources.extend(str(item.get("path")) for item in cached if item.get("path"))
+        unavailable = ([self._last_load_issue] if self._last_load_issue else [])
+        unavailable.extend(f"cached_file_changed:{path}" for path in stale_cache)
+        miss = ("CACHE_INVALID" if self._last_load_issue == "project_index_invalid"
+                else "NOT_FOUND" if discovery and not cached else None)
+        return ProjectContext(
+            project_index=index, relevant_paths=relevant, cached_files=cached,
+            discovery_performed=discovery, context_chars=context_chars,
+            estimated_tokens=max(1, (context_chars + 3) // 4), pre_task_ai_calls=0,
+            suggested_paths=relevant, relevant_project_facts=list(dict.fromkeys(facts)),
+            relevant_constraints=list(dict.fromkeys(constraints)),
+            relevant_decisions=list(dict.fromkeys(decisions)), selected_skills=skills,
+            source_references=list(dict.fromkeys(sources)),
+            stale_or_unavailable_items=unavailable, reuse_miss_reason=miss,
+            targeted_exploration_allowed=True)
 
     def relevant_paths(self, goal: str, index: dict[str, Any] | None = None) -> list[str]:
         index = index or self.load()
@@ -225,7 +271,7 @@ class ProjectContextIndex:
             values = changes.get(section)
             if isinstance(values, dict):
                 data.setdefault(section, {}).update({str(k): str(v) for k, v in values.items() if v})
-        for section in ("constraints", "decisions", "skills"):
+        for section in ("constraints", "decisions", "skills", "sources"):
             values = changes.get(section)
             if isinstance(values, list):
                 current = data.setdefault(section, [])
@@ -300,7 +346,7 @@ class ProjectContextIndex:
                             "summary": self._summary(architecture)},
                 "architecture": architecture, "important_paths": important,
                 "commands": commands, "constraints": constraints,
-                "decisions": [], "skills": skills[:20],
+                "decisions": [], "skills": skills[:20], "sources": [],
                 "discovery": {"files_inspected": files, "top_level_directories": directories},
                 "last_verified_commit": self._commit()}
 

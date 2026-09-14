@@ -168,7 +168,9 @@ class CodexProvider(AIProvider):
     kind = ProviderKind.CLI
     implemented = True
     execution_mode = ExecutionMode.AGENTIC_LOCAL
-    provider_tool_budget_enforcement = "hard"
+    # JSONL reports that a tool has started; termination is reactive and is not
+    # evidence of a provider-native pre-execution hard limit.
+    provider_tool_budget_enforcement = "observed_reactive"
 
     def __init__(self, executable: str | None = None, timeout: float = 900.0,
                  command_prefix: Sequence[str] | None = None, capabilities: CodexCapabilities | None = None):

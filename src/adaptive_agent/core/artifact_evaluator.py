@@ -38,7 +38,7 @@ class DeclaredArtifactEvaluator:
     def evaluate(self, task: Task, receipt: Receipt, workspace: Path) -> ArtifactQuality:
         required_files = list(task.metadata.get("required_artifacts", []))
         required_sections = list(task.metadata.get("required_sections", []))
-        failures, evidence = [], []
+        failures, evidence, artifact_text = [], [], []
         for relative in required_files:
             target = (workspace / relative).resolve()
             if workspace.resolve() not in target.parents and target != workspace.resolve():
@@ -47,12 +47,18 @@ class DeclaredArtifactEvaluator:
                 failures.append(f"missing artifact: {relative}")
             else:
                 evidence.append(f"artifact exists: {relative}")
-        combined = "\n".join([receipt.summary, *receipt.findings])
+                try:
+                    artifact_text.append(target.read_text(encoding="utf-8", errors="replace"))
+                except OSError:
+                    failures.append(f"unreadable artifact: {relative}")
+        combined = "\n".join(artifact_text)
         for section in required_sections:
-            if section.lower() not in combined.lower():
-                failures.append(f"missing required section: {section}")
+            if not required_files:
+                failures.append(f"cannot verify required section without artifact files: {section}")
+            elif section.lower() not in combined.lower():
+                failures.append(f"missing required section in artifacts: {section}")
             else:
-                evidence.append(f"required section present: {section}")
+                evidence.append(f"required section present in artifact: {section}")
         passed = not failures
         return ArtifactQuality(passed, 1.0 if passed else 0.0,
                                1.0 if passed else 0.0, deterministic_validation=True,

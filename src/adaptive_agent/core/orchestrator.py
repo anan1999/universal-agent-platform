@@ -28,6 +28,7 @@ from adaptive_agent.intelligence.project import ContextSelection, IntelligenceDi
 from adaptive_agent.observability.event_bus import EventBus
 from adaptive_agent.profiles.registry import WorkProfileRegistry, profile_registry
 from adaptive_agent.project.context_index import ProjectContextIndex
+from adaptive_agent.project.adapter import project_access_scope
 from adaptive_agent.project.adaptive_budget import AdaptiveToolBudgetStore, BudgetObservation
 from adaptive_agent.providers.base import AIProvider
 from adaptive_agent.providers.registry import ProviderRegistry, providers as provider_registry
@@ -108,23 +109,26 @@ class Orchestrator:
         return ContextSelection(**{key: value[key] for key in allowed if key in value})
 
     @staticmethod
-    def _stable_index_changes(evidence: list[dict[str, Any]]) -> dict[str, Any]:
-        changes: dict[str, Any] = {"commands": {}, "constraints": [], "decisions": []}
+    def _stable_index_changes(evidence: list[dict[str, Any]], root: Path) -> dict[str, Any]:
+        changes: dict[str, Any] = {
+            "commands": {}, "constraints": [], "decisions": [], "sources": []}
         for item in evidence:
             kind = str(item.get("type", "")).lower()
             summary = str(item.get("summary", "")).strip()
-            validation = str(item.get("validation", "")).lower()
             expected_reuse = int(item.get("expected_reuse", 0) or 0)
             tags = {str(value).lower() for value in item.get("tags", [])}
-            if not summary or validation not in {"validated", "measured"} or expected_reuse < 2:
+            related_paths = [str(value) for value in item.get("related_paths", [])]
+            source_backed = bool(item.get("evidence")) and bool(related_paths)
+            for relative in related_paths:
+                target = (root / relative).resolve()
+                if not target.is_relative_to(root.resolve()) or not target.is_file():
+                    source_backed = False
+                    break
+            if not summary or expected_reuse < 2 or not source_backed:
                 continue
+            changes["sources"].extend(related_paths)
             if kind == "decision":
                 changes["decisions"].append(summary)
-            elif kind in {"command", "validated_command"}:
-                command = str(item.get("detail", "")).strip()
-                if command and len(command) <= 240:
-                    name = (sorted(tags)[0] if tags else "validated_command").replace("-", "_")
-                    changes["commands"][name] = command
             elif kind in {"project_fact", "validated_project_fact"} and "constraint" in tags:
                 changes["constraints"].append(summary)
         return changes
@@ -149,8 +153,11 @@ class Orchestrator:
             "skipped_items": [],
         }
         intelligence_root = intelligence_directory or working_directory
+        allowed_scope: list[str] = []
+        denied_scope: list[str] = []
         if intelligence_root and (Path(intelligence_root) / ".agent").is_dir():
             context = ProjectContextIndex(Path(intelligence_root)).select(goal).to_dict()
+            allowed_scope, denied_scope = project_access_scope(Path(intelligence_root))
             if self._experimental("UAP_EXPERIMENTAL_HEAVY_LEARNING"):
                 legacy = ProjectIntelligenceStore(Path(intelligence_root)).select(
                     goal, analysis.capabilities, record_reuse=record_intelligence)
@@ -191,6 +198,7 @@ class Orchestrator:
         graph = self.universal_planner.plan(run_id, goal, analysis, team, execution)
         rationale = self._route(graph, analysis, team, working_directory, project_name,
                                 project_type, approvals)
+        effective_budget = self.execution_budget
         if (self.adaptive_budget_mode and intelligence_root
                 and (Path(intelligence_root) / ".agent").is_dir()):
             agent_tasks = [task for task in graph.tasks.values() if task.kind is TaskKind.AGENT]
@@ -203,23 +211,29 @@ class Orchestrator:
             decision = AdaptiveToolBudgetStore(Path(intelligence_root)).decide(
                 analysis, requested_mode=self.adaptive_budget_mode,
                 provider=provider, resolved_model=model, reasoning_setting=reasoning,
-                current_normal_limit=self.execution_budget.max_provider_tool_calls,
+                current_normal_limit=effective_budget.max_provider_tool_calls,
                 enforcement=enforcement)
             context["adaptive_tool_budget"] = decision.to_dict()
             if decision.selected_mode == "reduced" and decision.effective_limit is not None:
-                self.execution_budget = replace(
-                    self.execution_budget, max_provider_tool_calls=decision.effective_limit)
+                effective_budget = replace(
+                    effective_budget, max_provider_tool_calls=decision.effective_limit)
         for task in graph.tasks.values():
             task.metadata["project_intelligence"] = context
-            task.metadata["allowed_files"] = list(context.get("relevant_paths", []))
-            task.metadata["execution_budget"] = self.execution_budget.to_dict()
+            task.metadata["suggested_paths"] = list(
+                context.get("suggested_paths", context.get("relevant_paths", [])))
+            task.metadata["allowed_scope"] = list(allowed_scope)
+            task.metadata["denied_scope"] = list(denied_scope)
+            # Compatibility field now mirrors explicit scope, never retrieval hints.
+            task.metadata["allowed_files"] = list(allowed_scope)
+            task.metadata["constraints"] = list(dict.fromkeys(constraints))
+            task.metadata["execution_budget"] = effective_budget.to_dict()
         if self._experimental("UAP_EXPERIMENTAL_PARENT_VALIDATION"):
             self._assign_parent_validation(graph, working_directory)
         context["orchestration_wall_ms"] = round((time.perf_counter() - started) * 1000, 3)
         context["pre_task_ai_calls"] = 0
         return Composition(analysis, team, graph, rationale,
                            consumption=self.consumption_policy.to_dict(),
-                           execution_budget=self.execution_budget.to_dict(), execution_plan=execution,
+                           execution_budget=effective_budget.to_dict(), execution_plan=execution,
                            project_intelligence=context)
 
     def _provider_budget_enforcement(self, provider_id: str | None) -> str:
@@ -229,7 +243,8 @@ class Orchestrator:
             provider = (self.provider if getattr(self.provider, "id", None) == provider_id
                         else self.provider_registry.instance(provider_id))
             value = str(getattr(provider, "provider_tool_budget_enforcement", "unsupported"))
-            return value if value in {"hard", "soft_guidance", "unsupported"} else "unsupported"
+            return value if value in {
+                "hard", "observed_reactive", "soft_guidance", "unsupported"} else "unsupported"
         except (KeyError, RuntimeError, ValueError):
             return "unsupported"
 
@@ -508,6 +523,10 @@ class Orchestrator:
                      composition.project_intelligence["estimated_tokens"],
                      self.database.json(composition.project_intelligence)))
         graph = composition.graph
+        run_budget = ExecutionBudget(**{
+            name: composition.execution_budget.get(name)
+            for name in ExecutionBudget.__dataclass_fields__
+        })
         if composition.execution_plan:
             for manifest in composition.execution_plan.temporary_skills:
                 self.database.execute(
@@ -550,7 +569,7 @@ class Orchestrator:
                 max_escalations=self.consumption_policy.max_escalations_per_task,
                 receipt_word_limit=self.consumption_policy.receipt_word_limit,
                 max_context_receipts=self.consumption_policy.max_context_receipts,
-                execution_budget=self.execution_budget,
+                execution_budget=run_budget,
             )
             success = await scheduler.run(graph)
         except asyncio.CancelledError:
@@ -577,7 +596,7 @@ class Orchestrator:
                 resolved_model=str(decision.get("resolved_model") or "unknown"),
                 reasoning_setting=str(decision.get("reasoning_setting") or "unknown"),
                 budget_mode=str(decision.get("selected_mode", "normal")),
-                effective_tool_call_limit=self.execution_budget.max_provider_tool_calls,
+                effective_tool_call_limit=run_budget.max_provider_tool_calls,
                 observed_provider_tool_calls=(int(metrics["provider_tool_calls"])
                                               if metrics.get("source") == "measured" else None),
                 provider_status=status,
@@ -621,7 +640,8 @@ class Orchestrator:
         evaluated = (all(bool(item["passed"]) for item in evaluations) if evaluations else None)
         if context_index and success and (evaluated is None or evaluated):
             context_index.remember_useful_files(reported_files)
-            context_index.update_stable(self._stable_index_changes(structured_evidence))
+            context_index.update_stable(self._stable_index_changes(
+                structured_evidence, Path(intelligence_root)))
         if intelligence_store:
             from adaptive_agent.project.discovery import discover
 
@@ -630,7 +650,7 @@ class Orchestrator:
             # Replace the provisional selection record with the measured outcome.
             intelligence_store.record_run(
                 run_id, self._legacy_selection(composition.project_intelligence),
-                success=success, evaluation_passed=evaluated if evaluated is not None else success)
+                success=success, evaluation_passed=evaluated)
             intelligence_store.distill_run(run_id, status, goal, len(graph.tasks),
                                            reported_files, evaluated)
             # The distiller consumes structured execution evidence only. It never

@@ -54,6 +54,22 @@ def project_constraints(path: Path) -> list[str]:
     return [str(item) for item in constraints.get("require_human_approval_for", [])]
 
 
+def project_access_scope(path: Path) -> tuple[list[str], list[str]]:
+    """Return explicit project access policy, never retrieval suggestions.
+
+    Empty allowed scope means the surrounding executor's existing workspace
+    authorization remains authoritative. Invalid policy shapes are rejected so
+    a parse problem cannot silently broaden an explicit restriction.
+    """
+    constraints = (project_config(path).get("constraints") or {})
+    allowed = constraints.get("allowed_files", [])
+    denied = constraints.get("denied_files", [])
+    if not isinstance(allowed, list) or not isinstance(denied, list):
+        raise ValueError("constraints.allowed_files and denied_files must be lists")
+    return ([str(item) for item in allowed if str(item).strip()],
+            [str(item) for item in denied if str(item).strip()])
+
+
 def project_provider_preference(path: Path) -> list[str]:
     preference = ((project_config(path).get("providers") or {}).get("preference") or [])
     return [str(item) for item in preference] or ["auto"]

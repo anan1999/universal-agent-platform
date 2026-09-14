@@ -60,6 +60,10 @@ class PacketProvider(MockProvider):
             learning_evidence=list(self.learning_evidence))
 
 
+class HardBudgetMock(MockProvider):
+    provider_tool_budget_enforcement = "hard"
+
+
 def test_suggested_paths_are_navigation_not_permission(tmp_path):
     project = initialized_project(tmp_path)
     config_path = project / ".agent" / "project.yaml"
@@ -119,7 +123,7 @@ def test_missing_or_corrupt_index_falls_back_to_targeted_exploration(tmp_path):
 
 def test_provider_completion_without_acceptance_is_unverified(tmp_path, monkeypatch):
     monkeypatch.setenv("UAP_EXPERIMENTAL_HEAVY_LEARNING", "1")
-    project = initialized_project(tmp_path)
+    project = initialized_project(tmp_path, software=False)
     provider = PacketProvider()
     asyncio.run(Orchestrator(Database(tmp_path / "unverified.db"), provider).run_goal(
         "Review the API architecture", working_directory=str(project),
@@ -146,7 +150,7 @@ def test_budget_is_run_local_on_reused_orchestrator(tmp_path):
     project = initialized_project(tmp_path)
     configured = ExecutionBudget(max_provider_tool_calls=8)
     orchestrator = Orchestrator(
-        Database(tmp_path / "budget.db"), MockProvider(delay=0),
+        Database(tmp_path / "budget.db"), HardBudgetMock(delay=0),
         execution_budget=configured, adaptive_budget_mode="reduced")
     reduced = orchestrator.compose("RUN-A", "Modify the API", str(project), "fixture", "python")
     orchestrator.adaptive_budget_mode = "normal"
