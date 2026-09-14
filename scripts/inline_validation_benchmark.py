@@ -129,7 +129,13 @@ def render(report: dict) -> str:
                   f"- Pooled tool-call reduction: {summary['pooled_tool_call_reduction_percent']}%",
                   f"- Pooled assistant-message reduction: {summary['pooled_message_reduction_percent']}%",
                   f"- Pooled time reduction: {summary['pooled_time_reduction_percent']}%", "",
-                  "Positive reductions favor the exact declared validation command. This small run is a screening test, not sufficient evidence for a default policy."])
+                  "Positive reductions favor the exact declared validation command. This small run is a screening test, not sufficient evidence for a default policy.", ""])
+    if (summary["declared_quality_passes"] >= summary["generic_quality_passes"]
+            and (summary["pooled_total_token_reduction_percent"] or 0) < 0):
+        lines.append(
+            "Decision: reject the verbose declared-validation and repair instruction as a default. "
+            "It preserved quality but increased aggregate execution cost. Test a minimal canonical "
+            "command handle without anticipatory repair instructions next.")
     return "\n".join(lines) + "\n"
 
 
