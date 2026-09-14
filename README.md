@@ -360,6 +360,35 @@ agentctl agents | skills | skill | tools | profiles | providers | models
 `agentctl orchestrate "<goal>" --json` explicitly delegates execution to a provider.
 `agentctl run --dry-run` plans without executing. Add `--json` to anything you want to parse.
 
+### Experimental adaptive tool budget
+
+For repeated, comparable tasks, opt in with:
+
+```bash
+agentctl run "<goal>" --adaptive-provider-tool-budget
+```
+
+The normal budget is preserved until the same project environment and task family pass at least
+three controller-owned acceptance runs. The provider tool cap then tightens conservatively from
+6 to 4 to 3 after 3, 6, and 9 consecutive accepted runs. Any declared acceptance failure resets
+that family's evidence. An explicit `--max-provider-tool-calls` always wins.
+
+Ordinary tests are not assumed to cover a new requirement. A project command contributes adaptive
+evidence only when the user deliberately marks it as an acceptance contract:
+
+```yaml
+commands:
+  test:
+    command: [python, acceptance.py]
+    timeout: 90
+    acceptance: true
+```
+
+The local database stores only a task-family hash, environment fingerprint, accepted-run count,
+and timestamp—never prompts, model prose, command output, or secrets. Current real-provider
+evidence is promising but limited to one software task family; see
+[`docs/adaptive-tool-budgets.md`](docs/adaptive-tool-budgets.md).
+
 ## Development
 
 ```bash
