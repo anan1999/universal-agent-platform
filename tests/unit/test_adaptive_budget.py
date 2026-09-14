@@ -25,12 +25,34 @@ FAMILIES = {
     "three_d": (["design"], ["3d_model"], ["design"]),
 }
 
+DOMAIN_ARTIFACT_SCENARIOS = (
+    ("software", "source_code"),
+    ("software", "test_result"),
+    ("research", "research_report"),
+    ("research", "research_summary"),
+    ("product", "product_requirements"),
+    ("product", "roadmap"),
+    ("ui_ux", "prototype"),
+    ("ui_ux", "wireframe"),
+    ("graphic_design", "poster"),
+    ("graphic_design", "brand"),
+    ("three_d", "3d_model"),
+    ("three_d", "3d_scene"),
+)
+
 
 def analysis(family="software", complexity=Complexity.NORMAL):
     capabilities, artifacts, profiles = FAMILIES[family]
     return GoalAnalysis(
         f"{family} task", capabilities=list(capabilities), artifact_types=list(artifacts),
         profiles=list(profiles), complexity=complexity)
+
+
+def scenario_analysis(family, artifact):
+    capabilities, _, profiles = FAMILIES[family]
+    return GoalAnalysis(
+        f"{family} {artifact} task", capabilities=list(capabilities),
+        artifact_types=[artifact], profiles=list(profiles), complexity=Complexity.NORMAL)
 
 
 def initialized(root: Path) -> AdaptiveToolBudgetStore:
@@ -247,6 +269,20 @@ def test_multidomain_evidence_never_pools_across_families(tmp_path):
     assert len(store.status()) == len(FAMILIES)
 
 
+def test_twelve_domain_artifact_scenarios_are_independently_eligible(tmp_path):
+    store = initialized(tmp_path)
+    for index, (family, artifact) in enumerate(DOMAIN_ARTIFACT_SCENARIOS):
+        current = scenario_analysis(family, artifact)
+        add_pair(store, current, f"scenario-{index}-1")
+        assert decide(store, current).selected_mode == "normal"
+        add_pair(store, current, f"scenario-{index}-2")
+        decision = decide(store, current)
+        assert decision.selected_mode == "reduced"
+        assert decision.task_family == family
+        assert decision.artifact_type == artifact
+    assert len(store.status()) == len(DOMAIN_ARTIFACT_SCENARIOS)
+
+
 def test_multiround_conversation_learns_then_fails_closed(tmp_path):
     store = initialized(tmp_path)
     current = analysis("ui_ux")
@@ -259,6 +295,45 @@ def test_multiround_conversation_learns_then_fails_closed(tmp_path):
         current, "round-3", "reduced", accepted="fail", run="run-round-3"))
     timeline.append(decide(store, current).selected_mode)
     assert timeline == ["normal", "normal", "reduced", "normal"]
+
+
+def test_twelve_round_conversation_preserves_context_boundaries(tmp_path):
+    store = initialized(tmp_path)
+    ui = scenario_analysis("ui_ux", "prototype")
+    graphic = scenario_analysis("graphic_design", "poster")
+    timeline = []
+
+    timeline.append(decide(store, ui).selected_mode)  # 1: cold start
+    add_pair(store, ui, "ui-1")
+    timeline.append(decide(store, ui).selected_mode)  # 2: one pair
+    store.record_observation(observation(
+        ui, "ui-unpaired", "reduced", run="ui-unpaired-run"))
+    timeline.append(decide(store, ui).selected_mode)  # 3: unpaired evidence ignored
+    add_pair(store, ui, "ui-2")
+    timeline.append(decide(store, ui).selected_mode)  # 4: learned reduction
+    timeline.append(decide(store, ui, provider="other").selected_mode)  # 5
+    timeline.append(decide(store, ui, resolved_model="model-b").selected_mode)  # 6
+    timeline.append(decide(store, ui, reasoning_setting="high").selected_mode)  # 7
+    timeline.append(decide(store, ui, requested_mode="normal").selected_mode)  # 8
+    timeline.append(decide(store, ui, requested_mode="reduced").selected_mode)  # 9
+    timeline.append(decide(store, ui, enforcement="soft_guidance").selected_mode)  # 10
+    store.record_observation(observation(
+        ui, "ui-failed", "reduced", accepted="fail", run="ui-failed-run"))
+    timeline.append(decide(store, ui).selected_mode)  # 11: failure closes learned path
+    timeline.append(decide(store, graphic).selected_mode)  # 12: design domains stay isolated
+
+    assert timeline == [
+        "normal", "normal", "normal", "reduced", "normal", "normal",
+        "normal", "normal", "reduced", "normal", "normal", "normal",
+    ]
+
+
+def test_policy_project_identity_does_not_scan_repository(tmp_path, monkeypatch):
+    store = initialized(tmp_path)
+    monkeypatch.setattr(Path, "iterdir", lambda *_: (_ for _ in ()).throw(
+        AssertionError("policy identity must not scan repository contents")))
+    assert store.fingerprint()
+    assert decide(store).selected_mode == "normal"
 
 
 def test_incomplete_values_zero_denominator_and_policy_latency_are_safe(tmp_path):
