@@ -100,7 +100,19 @@ def render(report: dict) -> str:
                   f"- Pooled tool-call reduction: {summary['pooled_tool_call_reduction_percent']}%",
                   f"- Pooled assistant-message reduction: {summary['pooled_message_reduction_percent']}%",
                   f"- Pooled time reduction: {summary['pooled_time_reduction_percent']}%", "",
-                  "Positive values favor silent validation memory. Quality remains a hard gate."])
+                  "Positive values favor silent validation memory. Quality remains a hard gate.", ""])
+    if summary["warm_quality_passes"] < summary["cold_quality_passes"]:
+        lines.append("Decision: **REJECT_QUALITY** — silent selection reduced external acceptance quality.")
+    elif ((summary["pooled_total_token_reduction_percent"] or 0) <= 0
+          or (summary["pooled_uncached_token_reduction_percent"] or 0) <= 0):
+        lines.append(
+            "Decision: **INCONCLUSIVE** — silent selection preserved quality and reduced tool calls, "
+            "but did not reduce pooled measured tokens. Keep it opt-in; move validation execution "
+            "to a deterministic parent task before claiming amortized token savings.")
+    else:
+        lines.append(
+            "Decision: **CANDIDATE** — quality and pooled token cost improved in this screening run; "
+            "broader repetitions are still required before enabling it by default.")
     return "\n".join(lines) + "\n"
 
 
