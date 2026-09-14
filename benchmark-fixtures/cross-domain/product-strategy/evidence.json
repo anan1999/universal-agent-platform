@@ -1,0 +1,13 @@
+{
+  "problems": [
+    {"id": "P1", "interviews": 5, "severity": 3, "strategic_fit": 2},
+    {"id": "P2", "interviews": 8, "severity": 5, "strategic_fit": 5},
+    {"id": "P3", "interviews": 7, "severity": 4, "strategic_fit": 3}
+  ],
+  "features": [
+    {"id": "F1", "problem": "P1", "impact": 4, "effort": 2},
+    {"id": "F2", "problem": "P2", "impact": 10, "effort": 2},
+    {"id": "F3", "problem": "P2", "impact": 8, "effort": 4},
+    {"id": "F4", "problem": "P3", "impact": 6, "effort": 3}
+  ]
+}

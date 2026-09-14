@@ -1,0 +1,8 @@
+{
+  "product": "caregiver medication planner",
+  "breakpoint_px": 640,
+  "required_sections": ["today", "medications", "care-team"],
+  "primary_action": "Add medication",
+  "navigation_label": "Care plan navigation",
+  "tokens": {"primary": "#17324D", "accent": "#2A9D8F", "surface": "#F7F3EC"}
+}

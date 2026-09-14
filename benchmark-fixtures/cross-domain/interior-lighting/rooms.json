@@ -1,0 +1,10 @@
+{
+  "fixture_lumens": 900,
+  "fixture_watts": 9,
+  "max_watts_per_circuit": 60,
+  "rooms": [
+    {"id": "kitchen", "area_m2": 12, "target_lux": 300},
+    {"id": "living", "area_m2": 20, "target_lux": 150},
+    {"id": "study", "area_m2": 9, "target_lux": 500}
+  ]
+}

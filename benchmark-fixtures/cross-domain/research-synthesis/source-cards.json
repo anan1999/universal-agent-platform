@@ -1,0 +1,8 @@
+{
+  "sources": [
+    {"id": "S1", "sample": 240, "finding": "Intervention A improved completion by 8 percentage points."},
+    {"id": "S2", "sample": 310, "finding": "Intervention B improved completion by 14 percentage points."},
+    {"id": "S3", "sample": 180, "finding": "Intervention B increased support contacts by 3 percentage points."},
+    {"id": "S4", "sample": 90, "finding": "Intervention C had no statistically clear effect."}
+  ]
+}

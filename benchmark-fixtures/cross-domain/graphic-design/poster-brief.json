@@ -1,0 +1,8 @@
+{
+  "event": "Night Harbor Design Week",
+  "date": "18 OCT 2026",
+  "venue": "Pier 7",
+  "view_box": "0 0 1080 1350",
+  "palette": ["#102A43", "#2A9D8F", "#F4EBD0"],
+  "required_layers": ["background", "hero", "information"]
+}
