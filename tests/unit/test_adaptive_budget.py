@@ -226,7 +226,9 @@ def test_policy_exception_and_unsupported_enforcement_fail_to_normal(tmp_path, m
     assert decide(store, enforcement="soft_guidance").reasons == (
         "provider_budget_soft_guidance",)
     assert MockProvider.provider_tool_budget_enforcement == "unsupported"
-    assert CodexProvider.provider_tool_budget_enforcement == "hard"
+    assert CodexProvider.provider_tool_budget_enforcement == "observed_reactive"
+    assert decide(store, enforcement="observed_reactive").reasons == (
+        "provider_budget_unsupported",)
 
 
 def test_codex_hard_monitor_stops_before_seventh_tool():
