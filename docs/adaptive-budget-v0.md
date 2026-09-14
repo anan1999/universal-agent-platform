@@ -61,9 +61,11 @@ research or 3D task. Provider, model, or reasoning changes create a different co
 ## Enforcement and exhaustion
 
 The provider owns provider-tool enforcement; it does not choose the policy. Codex JSONL execution
-is `HARD`: `CodexEventBudget` counts actual command, MCP, and web-search events and terminates the
-child before a seventh tool starts under REDUCED. The base provider contract is `UNSUPPORTED`.
-Adapters that only add prompt wording must declare `SOFT_GUIDANCE`; AUTO will remain NORMAL.
+is `OBSERVED_REACTIVE`: `CodexEventBudget` counts reported command, MCP, and web-search start events
+and terminates the child when the next event exceeds the limit. Because the event can arrive after
+provider-side work has begun, this is not claimed as a provider-native pre-execution hard limit and
+AUTO remains NORMAL. The base provider contract is `UNSUPPORTED`. Adapters that only add prompt
+wording must declare `SOFT_GUIDANCE`; AUTO also remains NORMAL.
 
 UAP deterministic validation commands are counted separately from provider tool calls. Provider
 invocations are also a separate metric. Combining many shell commands into one provider event does
@@ -92,7 +94,7 @@ and policy version. It does not report fake confidence decimals.
 The v0 suite covers no history, one/two pairs, quality failure, +35% uncached regression, high and
 unknown complexity, provider/model/reasoning isolation, missing values, synthetic evidence,
 idempotent replay, explicit modes, a user hard limit of four, policy exceptions, unsupported/soft
-providers, Codex hard exhaustion, and explain parity. It also exercises six independent task
+providers, Codex reactive exhaustion, and explain parity. It also exercises six independent task
 families, 12 domain/artifact combinations, and a 12-round conversation timeline that changes
 provider, model, reasoning, override, enforcement, quality, and design domain. Tests use only
 fixtures and controlled providers; real provider calls for this implementation pass are zero.

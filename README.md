@@ -21,6 +21,11 @@ commands in `.agent/project-index.json`. On a later request such as “Add month
 the fresh session receives the backend/API/frontend paths and commands instead of starting with a
 full repository rediscovery.
 
+These paths are navigation suggestions, not permissions. The executor may perform targeted
+exploration elsewhere inside its existing authorized workspace; explicit `allowed_files`,
+`denied_files`, sandbox, network, and approval rules remain authoritative. See
+[`docs/reuse-first-core.md`](docs/reuse-first-core.md).
+
 ---
 
 ## FOR AI ASSISTANTS
@@ -400,7 +405,7 @@ Inspect or revoke the local evidence without invoking an AI provider:
 ```bash
 agentctl budget status
 agentctl budget explain "<goal>" --mode auto --provider codex \
-  --model <resolved-model> --reasoning low --normal-limit 8 --enforcement hard
+  --model <resolved-model> --reasoning low --normal-limit 8 --enforcement observed_reactive
 agentctl budget reset "<goal>"   # one comparable family
 agentctl budget reset --all      # explicit current-environment reset
 ```

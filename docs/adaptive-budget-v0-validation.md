@@ -2,6 +2,10 @@
 
 Validated on 2026-09-14 on branch `feature/v2.3.1-adaptive-budget-v0`.
 
+> Later correction: `refactor/reuse-first-core` classifies Codex JSONL enforcement as
+> `OBSERVED_REACTIVE`, not `HARD`. Event-driven termination is not proof of a provider-native
+> pre-execution limit, so AUTO conservatively remains NORMAL for this capability.
+
 ## Scope and reused components
 
 The implementation extends the existing `ExecutionBudget`, `GoalAnalyzer`, provider contract,
@@ -30,8 +34,9 @@ Orchestrator, scheduler metrics, provider contracts, Codex event enforcement, an
 
 ## Provider enforcement
 
-- Codex: `HARD`. `CodexEventBudget` counts actual command, MCP, and web-search starts and stops the
-  child before the seventh provider tool starts under a limit of six.
+- Codex: `OBSERVED_REACTIVE`. `CodexEventBudget` counts reported command, MCP, and web-search starts
+  and terminates after the next reported start exceeds the limit. It is not a proven provider-native
+  pre-execution hard limit.
 - Base/Mock provider: `UNSUPPORTED`.
 - Prompt-only adapters must identify themselves as `SOFT_GUIDANCE`; AUTO does not reduce for them.
 
@@ -61,8 +66,8 @@ agentctl budget explain "<goal>" ...
 ```
 
 `budget explain` returned `provider_calls: 0`. A clean-history AUTO dry-run with normal limit 8
-returned NORMAL, effective limit 8, and hard Codex enforcement. An explicit REDUCED dry-run changed
-the execution limit from 8 to 6.
+returned NORMAL and effective limit 8. The earlier branch reported hard Codex enforcement; the
+later correction above supersedes that capability claim.
 
 ## Offline test evidence
 
