@@ -260,6 +260,20 @@ def test_budget_explain_is_zero_provider_calls_and_matches_policy(tmp_path, monk
     assert payload["provider_calls"] == 0
 
 
+def test_budget_explain_accepts_honest_reactive_enforcement(tmp_path, monkeypatch, capsys):
+    initialized(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    assert main(["budget", "explain", "Build an API", "--mode", "auto",
+                 "--provider", "codex", "--model", "model-a", "--reasoning", "low",
+                 "--normal-limit", "8", "--enforcement", "observed_reactive",
+                 "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["decision"]["selected_mode"] == "normal"
+    assert payload["decision"]["enforcement"] == "observed_reactive"
+    assert payload["decision"]["reasons"] == ["provider_budget_unsupported"]
+    assert payload["provider_calls"] == 0
+
+
 def test_multidomain_evidence_never_pools_across_families(tmp_path):
     store = initialized(tmp_path)
     for family in FAMILIES:

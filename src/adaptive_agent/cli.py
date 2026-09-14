@@ -220,7 +220,8 @@ def parser() -> argparse.ArgumentParser:
     budget_explain.add_argument("--model")
     budget_explain.add_argument("--reasoning")
     budget_explain.add_argument("--normal-limit", type=int)
-    budget_explain.add_argument("--enforcement", choices=("hard", "soft_guidance", "unsupported"),
+    budget_explain.add_argument("--enforcement", choices=(
+        "hard", "observed_reactive", "soft_guidance", "unsupported"),
                                 default="unsupported")
     budget_explain.add_argument("--json", action="store_true")
     budget_reset = budget_subcommands.add_parser("reset")
