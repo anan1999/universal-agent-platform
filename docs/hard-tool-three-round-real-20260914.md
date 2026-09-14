@@ -19,3 +19,7 @@ Both arms keep validation inside the agent. The treatment changes only the provi
 - Pooled time reduction: 21.33%
 
 Decision: **INCONCLUSIVE** — measured cost signals disagree.
+
+## Product decision
+
+Do not change the default budget. Keep `--max-provider-tool-calls 3` explicit and experimental: this run supports fewer tool round-trips and lower latency, but not lower uncached token cost. A future adaptive cap may learn only from at least three comparable runs that pass deterministic external acceptance; model-reported completion alone is not sufficient evidence.

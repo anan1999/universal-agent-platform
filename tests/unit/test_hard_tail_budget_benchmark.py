@@ -39,7 +39,10 @@ def test_summary_preserves_quality_gate_and_cost_views():
     assert summary["pooled_total_token_reduction_percent"] == 20.0
     assert summary["pooled_tool_reduction_percent"] == 25.0
     assert summary["hard_quality_passes"] == 1
-    assert "CANDIDATE" in benchmark.render({"summary": summary})
+    rendered = benchmark.render({"summary": summary})
+    assert "CANDIDATE" in rendered
+    assert "Do not change the default budget" in rendered
+    assert "deterministic external acceptance" in rendered
 
 
 def test_unavailable_usage_is_rejected():

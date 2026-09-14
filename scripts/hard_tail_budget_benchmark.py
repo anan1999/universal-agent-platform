@@ -132,6 +132,14 @@ def render(report: dict) -> str:
         lines.append("Decision: **REJECT_COST** — quality held but both measured token views worsened.")
     else:
         lines.append("Decision: **INCONCLUSIVE** — measured cost signals disagree.")
+    lines.extend([
+        "", "## Product decision", "",
+        "Do not change the default budget. Keep `--max-provider-tool-calls 3` explicit and "
+        "experimental: this run supports fewer tool round-trips and lower latency, but not lower "
+        "uncached token cost. A future adaptive cap may learn only from at least three comparable "
+        "runs that pass deterministic external acceptance; model-reported completion alone is "
+        "not sufficient evidence.",
+    ])
     return "\n".join(lines) + "\n"
 
 
