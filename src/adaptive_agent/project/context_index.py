@@ -211,10 +211,11 @@ class ProjectContextIndex:
         cached_before = set(self.cache._read()["files"])
         cached = []
         relevant_terms = _terms(" ".join(relevant)) | _terms(goal)
-        for entry in self.cache.entries():
+        valid_cache_entries = self.cache.entries()
+        for entry in valid_cache_entries:
             if _terms(str(entry.get("path", "")) + " " + str(entry.get("summary", ""))) & relevant_terms:
                 cached.append(entry)
-        stale_cache = sorted(cached_before - {str(item.get("path")) for item in self.cache.entries()})
+        stale_cache = sorted(cached_before - {str(item.get("path")) for item in valid_cache_entries})
         serialized = json.dumps(index, ensure_ascii=False, separators=(",", ":"))
         cache_text = json.dumps(cached, ensure_ascii=False, separators=(",", ":"))
         context_chars = len(serialized) + len(cache_text) + sum(map(len, relevant))
