@@ -4,7 +4,7 @@ import asyncio
 import json
 import os
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -27,6 +27,7 @@ from adaptive_agent.intelligence.project import ContextSelection, IntelligenceDi
 from adaptive_agent.observability.event_bus import EventBus
 from adaptive_agent.profiles.registry import WorkProfileRegistry, profile_registry
 from adaptive_agent.project.context_index import ProjectContextIndex
+from adaptive_agent.project.adaptive_budget import AdaptiveToolBudgetStore
 from adaptive_agent.providers.base import AIProvider
 from adaptive_agent.providers.registry import ProviderRegistry, providers as provider_registry
 from adaptive_agent.runtime import RESOURCE_ROOT, platform_home
@@ -69,7 +70,8 @@ class Orchestrator:
                  provider_preference: Sequence[str] = ("auto",),
                  active_profiles: Sequence[str] = (),
                  consumption_mode: str = "balanced",
-                 execution_budget: ExecutionBudget | None = None):
+                 execution_budget: ExecutionBudget | None = None,
+                 adaptive_tool_budget: bool = False):
         self.database = database
         self.events = events or EventBus(database)
         self.provider = provider
@@ -77,6 +79,7 @@ class Orchestrator:
         self.active_profiles = list(active_profiles)
         self.consumption_policy: ConsumptionPolicy = consumption_policy(consumption_mode)
         self.execution_budget = execution_budget or ExecutionBudget()
+        self.adaptive_tool_budget = adaptive_tool_budget
 
         # V2 universal path.
         self.profiles = profiles or profile_registry()
@@ -151,6 +154,16 @@ class Orchestrator:
                 legacy_value = legacy.to_dict()
                 context.update({key: value for key, value in legacy_value.items()
                                 if key not in {"context_chars", "estimated_tokens"}})
+        if self.adaptive_tool_budget and intelligence_root and (Path(intelligence_root) / ".agent").is_dir():
+            decision = AdaptiveToolBudgetStore(Path(intelligence_root)).decide(
+                analysis, explicit_cap=self.execution_budget.max_provider_tool_calls)
+            context["adaptive_tool_budget"] = decision.to_dict()
+            if (decision.source == "accepted_history"
+                    and self.execution_budget.max_provider_tool_calls is None):
+                self.execution_budget = replace(
+                    self.execution_budget,
+                    max_provider_tool_calls=decision.provider_tool_cap,
+                )
         self.skills.discover_directory(RESOURCE_ROOT / "skills", SkillTrust.BUILT_IN)
         self.skills.discover_directory(platform_home() / "skills", SkillTrust.TRUSTED)
         project_root = intelligence_directory or working_directory
@@ -197,6 +210,35 @@ class Orchestrator:
                            consumption=self.consumption_policy.to_dict(),
                            execution_budget=self.execution_budget.to_dict(), execution_plan=execution,
                            project_intelligence=context)
+
+    def _external_acceptance(self, graph: TaskGraph, success: bool) -> bool | None:
+        """Return controller-observed acceptance, never an agent's completion claim."""
+        checks = []
+        for task in graph.tasks.values():
+            if task.kind is not TaskKind.TOOL:
+                continue
+            tool_id = str(task.metadata.get("tool", task.owner))
+            spec = self.tools.get(tool_id)
+            if spec is None or spec.execution is not ToolExecution.PROJECT_COMMAND:
+                continue
+            result = task.metadata.get("tool_result")
+            if isinstance(result, dict):
+                checks.append(result)
+        if not checks:
+            return None
+        if any(item.get("status") == "failed" or item.get("exit_code") not in {0, None}
+               for item in checks):
+            return False
+        planned = sum(
+            task.kind is TaskKind.TOOL
+            and (self.tools.get(str(task.metadata.get("tool", task.owner))) is not None)
+            and self.tools.get(str(task.metadata.get("tool", task.owner))).execution
+            is ToolExecution.PROJECT_COMMAND
+            for task in graph.tasks.values()
+        )
+        complete = sum(item.get("status") == "completed" and item.get("exit_code") == 0
+                       for item in checks)
+        return True if success and complete == planned else None
 
     def _assign_parent_validation(self, graph: TaskGraph,
                                   working_directory: str | None) -> None:
@@ -492,6 +534,16 @@ class Orchestrator:
         status = "completed" if success else "failed"
         self.database.execute("UPDATE runs SET status=?,completed_at=? WHERE id=?", (status, now_iso(), run_id))
         self.events.emit(Event(f"run_{status}", run_id))
+        if self.adaptive_tool_budget and intelligence_root:
+            accepted = self._external_acceptance(graph, success)
+            if accepted is not None:
+                saved = AdaptiveToolBudgetStore(Path(intelligence_root)).record(
+                    composition.analysis, accepted)
+                self.events.emit(Event(
+                    "adaptive_budget_evidence_recorded", run_id,
+                    metadata={"accepted": accepted, "saved": saved,
+                              "family": AdaptiveToolBudgetStore.family(composition.analysis)},
+                ))
         reported_files: list[str] = []
         structured_evidence: list[dict[str, Any]] = []
         for row in self.database.query(
