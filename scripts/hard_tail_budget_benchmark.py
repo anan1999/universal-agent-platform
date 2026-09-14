@@ -23,8 +23,8 @@ from adaptive_agent.project.direct import prepare
 
 ARMS = ("flexible_8", "hard_3")
 LIMITS = {
-    "flexible_8": {"max_provider_tool_calls": 8, "max_provider_messages": 5},
-    "hard_3": {"max_provider_tool_calls": 3, "max_provider_messages": 5},
+    "flexible_8": {"max_provider_tool_calls": 8, "max_provider_messages": 12},
+    "hard_3": {"max_provider_tool_calls": 3, "max_provider_messages": 12},
 }
 
 
@@ -100,7 +100,7 @@ def render(report: dict) -> str:
     lines = [
         "# Hard tail-budget benchmark", "",
         "Both arms keep validation inside the agent. The treatment changes only the provider "
-        "tool-call limit from eight to three; both arms allow five assistant messages.", "",
+        "tool-call limit from eight to three; both arms allow twelve assistant messages.", "",
         "| Round | Order | Flexible quality | Hard quality | Token reduction | Uncached reduction | Tool delta | Message delta |",
         "|---:|---|---:|---:|---:|---:|---:|---:|",
     ]
