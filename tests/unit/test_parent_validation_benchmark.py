@@ -45,3 +45,10 @@ def test_parent_packet_removes_command_and_assigns_scheduler(tmp_path):
     assert "commands_to_verify" not in treatment
     assert "Run the project-wide test suite once" in control
     assert "scheduler runs project_test" in treatment
+
+
+def test_unavailable_provider_usage_is_not_measurable():
+    assert benchmark.measurable({"usage": {
+        "source": "measured", "input": 10, "output": 2}}) is True
+    assert benchmark.measurable({"usage": {
+        "source": "unavailable", "input": 0, "output": 0}}) is False

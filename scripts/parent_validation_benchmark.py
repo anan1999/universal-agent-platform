@@ -56,6 +56,11 @@ def _percent(before: float, after: float) -> float | None:
     return round((before - after) / before * 100, 2) if before else None
 
 
+def measurable(result: dict) -> bool:
+    usage = result.get("usage", {})
+    return usage.get("source") != "unavailable" and "input" in usage and "output" in usage
+
+
 def summarize(rounds: list[dict]) -> dict:
     rows = []
     for current in rounds:
@@ -220,6 +225,11 @@ async def run(args: argparse.Namespace) -> dict:
             }
             current["results"][arm] = result
             print(f"round {number} {arm}: " + json.dumps(result), flush=True)
+            if not measurable(result):
+                failure = workspace / f"round-{number}-infrastructure-failure.json"
+                failure.write_text(json.dumps(current, indent=2), encoding="utf-8")
+                raise SystemExit(
+                    f"Provider evidence is unavailable; pair rejected and recorded at {failure}.")
         rounds.append(current)
         _save(rounds, args)
     if hashlib.sha256(ACCEPTANCE.read_bytes()).hexdigest() != contract_hash:
