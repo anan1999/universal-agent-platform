@@ -133,13 +133,23 @@ def graphic(root: Path, _value: dict) -> list[str]:
         style = re.search(r"font-size\s*:\s*([0-9.]+)", node.attrib.get("style", ""))
         return float((match.group(1) or match.group(2)) if match else style.group(1)) if match or style else 0
 
-    groups = {node.attrib.get("id"): node for node in tree.iter()
-              if node.tag.rsplit("}", 1)[-1] == "g"}
-    hero_sizes = [text_size(node) for node in groups.get("hero", []).iter()
-                  if node.tag.rsplit("}", 1)[-1] == "text"] if groups.get("hero") is not None else []
-    info_sizes = [text_size(node) for node in groups.get("information", []).iter()
-                  if node.tag.rsplit("}", 1)[-1] == "text"] if groups.get("information") is not None else []
-    if not hero_sizes or not info_sizes or max(hero_sizes) <= max(info_sizes):
+    event_words = set(re.findall(r"\w+", brief["event"].casefold()))
+    covered_words, event_sizes, metadata_sizes = set(), [], []
+    expected_metadata = {
+        re.sub(r"\s+", "", str(brief[key])).casefold() for key in ("date", "venue")}
+    for node in tree.iter():
+        if node.tag.rsplit("}", 1)[-1] != "text":
+            continue
+        node_text = "".join(node.itertext()).strip()
+        node_words = set(re.findall(r"\w+", node_text.casefold()))
+        compact = re.sub(r"\s+", "", node_text).casefold()
+        if node_words and node_words.issubset(event_words):
+            covered_words.update(node_words)
+            event_sizes.append(text_size(node))
+        if compact in expected_metadata:
+            metadata_sizes.append(text_size(node))
+    if (covered_words != event_words or not event_sizes or not metadata_sizes
+            or min(event_sizes) <= max(metadata_sizes)):
         errors.append("hierarchy")
     if re.search(r"<(?:image|script)\b|(?:href|src)\s*=\s*[\"']https?://", source, re.I):
         errors.append("external_resource")
@@ -209,7 +219,7 @@ def main() -> int:
     if not errors:
         errors = VALIDATORS[args.domain](args.project, value)
     payload = {"passed": not errors, "domain": args.domain, "errors": errors,
-               "contract": "cross-domain-deliverable-v2"}
+               "contract": "cross-domain-deliverable-v3"}
     print(json.dumps(payload))
     return 0 if not errors else 1
 
