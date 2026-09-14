@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "suite": "reuse-first-scale-v1",
+  "fixture": "base",
+  "tasks": [
+    {
+      "id": "small",
+      "scale": 1,
+      "goal": "Add a GET /reports/summary API endpoint that returns the expense count and total spending. Preserve existing expense behavior and validate the work.",
+      "acceptance_contract": "context-cache-summary-v1",
+      "expected_surfaces": ["backend"],
+      "minimum_changed_files": 1
+    },
+    {
+      "id": "medium",
+      "scale": 2,
+      "goal": "Add a GET /reports/monthly/{month} API endpoint that returns the selected month, total spending, and totals by category. Preserve existing expense behavior and validate the work.",
+      "acceptance_contract": "context-cache-monthly-api-v1",
+      "expected_surfaces": ["backend"],
+      "minimum_changed_files": 1
+    },
+    {
+      "id": "large",
+      "scale": 3,
+      "goal": "Add a GET /reports/monthly/{month} API endpoint that returns the selected month, total spending, and totals by category, then display that monthly total and category breakdown in the existing React dashboard. Preserve existing expense behavior and validate the work.",
+      "acceptance_contract": "context-cache-monthly-fullstack-v1",
+      "expected_surfaces": ["backend", "frontend"],
+      "minimum_changed_files": 2
+    }
+  ]
+}
