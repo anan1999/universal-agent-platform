@@ -1,6 +1,8 @@
 import asyncio
 import json
+import sqlite3
 import sys
+import time
 from pathlib import Path
 
 import yaml
@@ -70,6 +72,23 @@ def test_success_without_measured_cost_never_tightens(tmp_path):
         store.record(current, accepted=True)
     decision = store.decide(current)
     assert decision.accepted_runs == 9
+    assert decision.provider_tool_cap is None
+    assert decision.cost_gate == "insufficient_cost_evidence"
+
+
+def test_legacy_quality_only_database_is_migrated_without_tightening(tmp_path):
+    store = initialized(tmp_path)
+    current = analysis()
+    store.path.parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(store.path) as db:
+        db.execute("CREATE TABLE adaptive_tool_budgets "
+                   "(family TEXT NOT NULL, fingerprint TEXT NOT NULL, accepted_runs INTEGER NOT NULL, "
+                   "last_verified REAL NOT NULL, PRIMARY KEY(family, fingerprint))")
+        db.execute("INSERT INTO adaptive_tool_budgets VALUES(?,?,?,?)",
+                   (store.family(current), store.fingerprint(), 9, time.time()))
+    decision = store.decide(current)
+    assert decision.accepted_runs == 9
+    assert decision.cost_samples == 0
     assert decision.provider_tool_cap is None
     assert decision.cost_gate == "insufficient_cost_evidence"
 
