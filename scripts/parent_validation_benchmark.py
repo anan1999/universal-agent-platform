@@ -155,6 +155,16 @@ def render(report: dict) -> str:
             "and provider tool calls all increased.")
     else:
         lines.append("Decision: **INCONCLUSIVE** — quality held, but pooled measured token cost did not improve.")
+    lines.extend([
+        "", "## Product decision", "",
+        "Parent-owned validation remains opt-in behind `UAP_EXPERIMENTAL_PARENT_VALIDATION`; "
+        "the default keeps agent-owned validation. The treatment's soft prompt did not enforce "
+        "the boundary: provider-side validation actions doubled from "
+        f"{summary['pooled']['agent_owned']['provider_validation_actions']} to "
+        f"{summary['pooled']['parent_owned']['provider_validation_actions']}. "
+        "A future trial must enforce the command boundary in the child execution interface "
+        "instead of adding more prompt text.",
+    ])
     return "\n".join(lines) + "\n"
 
 

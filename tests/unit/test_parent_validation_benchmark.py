@@ -64,4 +64,7 @@ def test_render_rejects_uniform_cost_regression():
         "parent_owned": result(1200, 300, tools=3, seconds=12, parent_tools=1),
     }}]
     report = {"summary": benchmark.summarize(rounds)}
-    assert "REJECT_COST" in benchmark.render(report)
+    rendered = benchmark.render(report)
+    assert "REJECT_COST" in rendered
+    assert "UAP_EXPERIMENTAL_PARENT_VALIDATION" in rendered
+    assert "child execution interface" in rendered

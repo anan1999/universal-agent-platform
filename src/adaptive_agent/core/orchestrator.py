@@ -189,7 +189,8 @@ class Orchestrator:
             task.metadata["project_intelligence"] = context
             task.metadata["allowed_files"] = list(context.get("relevant_paths", []))
             task.metadata["execution_budget"] = self.execution_budget.to_dict()
-        self._assign_parent_validation(graph, working_directory)
+        if self._experimental("UAP_EXPERIMENTAL_PARENT_VALIDATION"):
+            self._assign_parent_validation(graph, working_directory)
         context["orchestration_wall_ms"] = round((time.perf_counter() - started) * 1000, 3)
         context["pre_task_ai_calls"] = 0
         return Composition(analysis, team, graph, rationale,
