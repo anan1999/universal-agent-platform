@@ -168,6 +168,7 @@ class CodexProvider(AIProvider):
     kind = ProviderKind.CLI
     implemented = True
     execution_mode = ExecutionMode.AGENTIC_LOCAL
+    provider_tool_budget_enforcement = "hard"
 
     def __init__(self, executable: str | None = None, timeout: float = 900.0,
                  command_prefix: Sequence[str] | None = None, capabilities: CodexCapabilities | None = None):
@@ -221,6 +222,7 @@ class CodexProvider(AIProvider):
     def describe(self) -> dict[str, Any]:
         return {"id": self.id, "name": self.display_name, "kind": self.kind.value,
                 "implemented": True, "execution_mode": self.execution_mode.value,
+                "provider_tool_budget_enforcement": self.provider_tool_budget_enforcement,
                 "capabilities": self.capabilities().to_dict(),
                 "codex": self.codex_capabilities.to_dict(), **self.probe().to_dict()}
 

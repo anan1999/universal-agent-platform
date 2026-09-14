@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import os
 import time
@@ -27,7 +28,7 @@ from adaptive_agent.intelligence.project import ContextSelection, IntelligenceDi
 from adaptive_agent.observability.event_bus import EventBus
 from adaptive_agent.profiles.registry import WorkProfileRegistry, profile_registry
 from adaptive_agent.project.context_index import ProjectContextIndex
-from adaptive_agent.project.adaptive_budget import AdaptiveToolBudgetStore
+from adaptive_agent.project.adaptive_budget import AdaptiveToolBudgetStore, BudgetObservation
 from adaptive_agent.providers.base import AIProvider
 from adaptive_agent.providers.registry import ProviderRegistry, providers as provider_registry
 from adaptive_agent.runtime import RESOURCE_ROOT, platform_home
@@ -71,7 +72,8 @@ class Orchestrator:
                  active_profiles: Sequence[str] = (),
                  consumption_mode: str = "balanced",
                  execution_budget: ExecutionBudget | None = None,
-                 adaptive_tool_budget: bool = False):
+                 adaptive_tool_budget: bool = False,
+                 adaptive_budget_mode: str | None = None):
         self.database = database
         self.events = events or EventBus(database)
         self.provider = provider
@@ -79,7 +81,8 @@ class Orchestrator:
         self.active_profiles = list(active_profiles)
         self.consumption_policy: ConsumptionPolicy = consumption_policy(consumption_mode)
         self.execution_budget = execution_budget or ExecutionBudget()
-        self.adaptive_tool_budget = adaptive_tool_budget
+        self.adaptive_budget_mode = adaptive_budget_mode or ("auto" if adaptive_tool_budget else None)
+        self.adaptive_tool_budget = self.adaptive_budget_mode is not None
 
         # V2 universal path.
         self.profiles = profiles or profile_registry()
@@ -154,16 +157,6 @@ class Orchestrator:
                 legacy_value = legacy.to_dict()
                 context.update({key: value for key, value in legacy_value.items()
                                 if key not in {"context_chars", "estimated_tokens"}})
-        if self.adaptive_tool_budget and intelligence_root and (Path(intelligence_root) / ".agent").is_dir():
-            decision = AdaptiveToolBudgetStore(Path(intelligence_root)).decide(
-                analysis, explicit_cap=self.execution_budget.max_provider_tool_calls)
-            context["adaptive_tool_budget"] = decision.to_dict()
-            if (decision.source == "accepted_history"
-                    and self.execution_budget.max_provider_tool_calls is None):
-                self.execution_budget = replace(
-                    self.execution_budget,
-                    max_provider_tool_calls=decision.provider_tool_cap,
-                )
         self.skills.discover_directory(RESOURCE_ROOT / "skills", SkillTrust.BUILT_IN)
         self.skills.discover_directory(platform_home() / "skills", SkillTrust.TRUSTED)
         project_root = intelligence_directory or working_directory
@@ -198,6 +191,24 @@ class Orchestrator:
         graph = self.universal_planner.plan(run_id, goal, analysis, team, execution)
         rationale = self._route(graph, analysis, team, working_directory, project_name,
                                 project_type, approvals)
+        if (self.adaptive_budget_mode and intelligence_root
+                and (Path(intelligence_root) / ".agent").is_dir()):
+            agent_tasks = [task for task in graph.tasks.values() if task.kind is TaskKind.AGENT]
+            settings = {(str(task.metadata.get("provider") or ""),
+                         str(task.metadata.get("model") or ""), str(task.reasoning or ""))
+                        for task in agent_tasks}
+            provider, model, reasoning = (next(iter(settings)) if len(settings) == 1
+                                          else (None, None, None))
+            enforcement = self._provider_budget_enforcement(provider)
+            decision = AdaptiveToolBudgetStore(Path(intelligence_root)).decide(
+                analysis, requested_mode=self.adaptive_budget_mode,
+                provider=provider, resolved_model=model, reasoning_setting=reasoning,
+                current_normal_limit=self.execution_budget.max_provider_tool_calls,
+                enforcement=enforcement)
+            context["adaptive_tool_budget"] = decision.to_dict()
+            if decision.selected_mode == "reduced" and decision.effective_limit is not None:
+                self.execution_budget = replace(
+                    self.execution_budget, max_provider_tool_calls=decision.effective_limit)
         for task in graph.tasks.values():
             task.metadata["project_intelligence"] = context
             task.metadata["allowed_files"] = list(context.get("relevant_paths", []))
@@ -210,6 +221,17 @@ class Orchestrator:
                            consumption=self.consumption_policy.to_dict(),
                            execution_budget=self.execution_budget.to_dict(), execution_plan=execution,
                            project_intelligence=context)
+
+    def _provider_budget_enforcement(self, provider_id: str | None) -> str:
+        if not provider_id:
+            return "unsupported"
+        try:
+            provider = (self.provider if provider_id == self.provider_name
+                        else self.provider_registry.instance(provider_id))
+            value = str(getattr(provider, "provider_tool_budget_enforcement", "unsupported"))
+            return value if value in {"hard", "soft_guidance", "unsupported"} else "unsupported"
+        except (KeyError, RuntimeError, ValueError):
+            return "unsupported"
 
     def _external_acceptance(self, graph: TaskGraph, success: bool) -> bool | None:
         """Return controller-observed acceptance, never an agent's completion claim."""
@@ -539,18 +561,51 @@ class Orchestrator:
         self.events.emit(Event(f"run_{status}", run_id))
         if self.adaptive_tool_budget and intelligence_root:
             accepted = self._external_acceptance(graph, success)
-            if accepted is not None:
-                saved = AdaptiveToolBudgetStore(Path(intelligence_root)).record(
-                    composition.analysis, accepted,
-                    metrics=scheduler.adaptive_metrics(),
-                    effective_cap=self.execution_budget.max_provider_tool_calls,
-                )
-                self.events.emit(Event(
-                    "adaptive_budget_evidence_recorded", run_id,
-                    metadata={"accepted": accepted, "saved": saved,
-                              "family": AdaptiveToolBudgetStore.family(composition.analysis),
-                              "metrics_source": scheduler.adaptive_metrics().get("source")},
-                ))
+            metrics = scheduler.adaptive_metrics()
+            decision = composition.project_intelligence.get("adaptive_tool_budget", {})
+            agent_tasks = [task for task in graph.tasks.values() if task.kind is TaskKind.AGENT]
+            task_id = agent_tasks[0].id if len(agent_tasks) == 1 else f"{run_id}:aggregate"
+            pair_ids = {task.metadata.get("experiment_pair_id") for task in agent_tasks
+                        if task.metadata.get("experiment_pair_id")}
+            observation = BudgetObservation(
+                run_id=run_id, task_id=task_id,
+                experiment_pair_id=next(iter(pair_ids)) if len(pair_ids) == 1 else None,
+                task_family=str(decision.get("task_family", "unknown")),
+                artifact_type=str(decision.get("artifact_type", "unknown")),
+                complexity=composition.analysis.complexity.value,
+                provider=str(decision.get("provider") or "unknown"),
+                resolved_model=str(decision.get("resolved_model") or "unknown"),
+                reasoning_setting=str(decision.get("reasoning_setting") or "unknown"),
+                budget_mode=str(decision.get("selected_mode", "normal")),
+                effective_tool_call_limit=self.execution_budget.max_provider_tool_calls,
+                observed_provider_tool_calls=(int(metrics["provider_tool_calls"])
+                                              if metrics.get("source") == "measured" else None),
+                provider_status=status,
+                acceptance_status=("pass" if accepted is True else
+                                   "fail" if accepted is False else "not_run"),
+                acceptance_contract_version=("project-command-v1" if accepted is not None else None),
+                input_tokens=(int(metrics["input_tokens"])
+                              if metrics.get("source") == "measured" else None),
+                cached_input_tokens=(int(metrics["cached_input_tokens"])
+                                     if metrics.get("source") == "measured" else None),
+                uncached_input_tokens=(int(metrics["uncached_input_tokens"])
+                                       if metrics.get("source") == "measured" else None),
+                output_tokens=(int(metrics["output_tokens"])
+                               if metrics.get("source") == "measured" else None),
+                duration_seconds=(float(metrics["duration_seconds"])
+                                  if metrics.get("source") == "measured" else None),
+                measurement_source=str(metrics.get("source", "unavailable")),
+                is_synthetic=str(decision.get("provider")) == "mock",
+                task_signature=hashlib.sha256(goal.encode()).hexdigest()[:20],
+                input_signature=AdaptiveToolBudgetStore(Path(intelligence_root)).fingerprint(),
+            )
+            saved = AdaptiveToolBudgetStore(Path(intelligence_root)).record_observation(observation)
+            self.events.emit(Event(
+                "adaptive_budget_evidence_recorded", run_id,
+                metadata={"acceptance_status": observation.acceptance_status, "saved": saved,
+                          "task_family": observation.task_family,
+                          "measurement_source": observation.measurement_source},
+            ))
         reported_files: list[str] = []
         structured_evidence: list[dict[str, Any]] = []
         for row in self.database.query(

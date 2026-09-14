@@ -1,277 +1,281 @@
-import asyncio
 import json
 import sqlite3
-import sys
 import time
 from pathlib import Path
 
-import yaml
-
-from adaptive_agent.core.goal_analyzer import GoalAnalyzer
-from adaptive_agent.core.models import Receipt, Task, TaskKind
+from adaptive_agent.cli import _adaptive_budget_mode, _budget_analysis, main, parser
+from adaptive_agent.core.capabilities import Complexity
+from adaptive_agent.core.goal_analyzer import GoalAnalysis
 from adaptive_agent.core.orchestrator import Orchestrator
+from adaptive_agent.project.adaptive_budget import (
+    AdaptiveToolBudgetStore,
+    BudgetObservation,
+)
+from adaptive_agent.providers.codex.provider import CodexEventBudget, CodexProvider
 from adaptive_agent.providers.mock import MockProvider
-from adaptive_agent.project.adaptive_budget import AdaptiveToolBudgetStore
 from adaptive_agent.storage.database import Database
-from adaptive_agent.tasks.graph import TaskGraph
-from adaptive_agent.cli import _budget_analysis, main, parser
 
 
-def analysis(goal: str = "Build a FastAPI endpoint"):
-    return GoalAnalyzer().analyze(goal, active_profiles=("software-engineering",))
+FAMILIES = {
+    "software": (["coding"], ["source_code"], ["software-engineering"]),
+    "research": (["research"], ["research_report"], ["research"]),
+    "product": (["product"], ["product_requirements"], ["product-management"]),
+    "ui_ux": (["design"], ["prototype"], ["design"]),
+    "graphic_design": (["design"], ["poster"], ["design"]),
+    "three_d": (["design"], ["3d_model"], ["design"]),
+}
+
+
+def analysis(family="software", complexity=Complexity.NORMAL):
+    capabilities, artifacts, profiles = FAMILIES[family]
+    return GoalAnalysis(
+        f"{family} task", capabilities=list(capabilities), artifact_types=list(artifacts),
+        profiles=list(profiles), complexity=complexity)
 
 
 def initialized(root: Path) -> AdaptiveToolBudgetStore:
     (root / ".agent").mkdir()
-    (root / ".agent" / "commands.yaml").write_text("commands: {}\n", encoding="utf-8")
-    (root / "pyproject.toml").write_text("[project]\nname='fixture'\n", encoding="utf-8")
+    (root / ".agent/commands.yaml").write_text("commands: {}\n", encoding="utf-8")
+    (root / "project.txt").write_text("stable input\n", encoding="utf-8")
     return AdaptiveToolBudgetStore(root)
 
 
-def measured(tools: int = 3, total: int = 1000, uncached: int = 400,
-             seconds: float = 10) -> dict:
-    return {"source": "measured", "provider_tool_calls": tools,
-            "total_tokens": total, "uncached_tokens": uncached,
-            "duration_seconds": seconds}
+def observation(current, pair, mode, *, run=None, provider="codex", model="model-a",
+                reasoning="low", accepted="pass", tools=None, input_tokens=None,
+                cached=200, output=100, seconds=None, measured="measured", synthetic=False,
+                task_signature=None, input_signature=None):
+    normal = mode == "normal"
+    return BudgetObservation(
+        run_id=run or f"run-{pair}-{mode}", task_id=f"task-{pair}-{mode}",
+        experiment_pair_id=pair,
+        task_family=AdaptiveToolBudgetStore.task_family(current),
+        artifact_type=AdaptiveToolBudgetStore.artifact_type(current),
+        complexity=current.complexity.value, provider=provider, resolved_model=model,
+        reasoning_setting=reasoning, budget_mode=mode,
+        effective_tool_call_limit=8 if normal else 6,
+        observed_provider_tool_calls=(5 if normal else 4) if tools is None else tools,
+        provider_status="completed", acceptance_status=accepted,
+        acceptance_contract_version="contract-v1",
+        input_tokens=(900 if normal else 750) if input_tokens is None else input_tokens,
+        cached_input_tokens=cached,
+        uncached_input_tokens=((900 if normal else 750) if input_tokens is None else input_tokens) - cached,
+        output_tokens=output, duration_seconds=(10 if normal else 8) if seconds is None else seconds,
+        measurement_source=measured, is_synthetic=synthetic,
+        task_signature=task_signature or f"sig-{pair}",
+        input_signature=input_signature or f"input-{pair}", created_at=time.time())
 
 
-def test_requires_three_external_acceptances_before_recommending_cap(tmp_path):
-    store = initialized(tmp_path)
-    current = analysis()
-    assert store.decide(current).provider_tool_cap is None
-    for _ in range(2):
-        assert store.record(current, accepted=True, metrics=measured())
-    assert store.decide(current).provider_tool_cap is None
-    assert store.record(current, accepted=True, metrics=measured())
-    decision = store.decide(current)
-    assert decision.provider_tool_cap == 6
-    assert decision.accepted_runs == 3
-    assert decision.source == "accepted_history"
+def add_pair(store, current, number, **changes):
+    pair = f"pair-{number}"
+    for mode in ("normal", "reduced"):
+        values = dict(changes.get(mode, {}))
+        assert store.record_observation(observation(current, pair, mode, **values))
 
 
-def test_cap_tightens_only_when_each_stage_preserves_measured_cost(tmp_path):
-    store = initialized(tmp_path)
-    current = analysis()
-    for _ in range(3):
-        store.record(current, True, measured(tools=5, total=1000, uncached=400))
-    assert store.decide(current).provider_tool_cap == 6
-    for _ in range(3):
-        store.record(current, True, measured(tools=4, total=800, uncached=300), effective_cap=6)
-    assert store.decide(current).provider_tool_cap == 4
-    for _ in range(3):
-        store.record(current, True, measured(tools=3, total=700, uncached=250), effective_cap=4)
-    decision = store.decide(current)
-    assert decision.provider_tool_cap == 3
-    assert decision.cost_gate == "cap_3_supported_by_cost"
+def decide(store, current=None, **overrides):
+    values = {"requested_mode": "auto", "provider": "codex", "resolved_model": "model-a",
+              "reasoning_setting": "low", "current_normal_limit": 8, "enforcement": "hard"}
+    values.update(overrides)
+    return store.decide(current or analysis(), **values)
 
 
-def test_success_without_measured_cost_never_tightens(tmp_path):
-    store = initialized(tmp_path)
-    current = analysis()
-    for _ in range(9):
-        store.record(current, accepted=True)
-    decision = store.decide(current)
-    assert decision.accepted_runs == 9
-    assert decision.provider_tool_cap is None
-    assert decision.cost_gate == "insufficient_cost_evidence"
-
-
-def test_legacy_quality_only_database_is_migrated_without_tightening(tmp_path):
-    store = initialized(tmp_path)
-    current = analysis()
-    store.path.parent.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(store.path) as db:
-        db.execute("CREATE TABLE adaptive_tool_budgets "
-                   "(family TEXT NOT NULL, fingerprint TEXT NOT NULL, accepted_runs INTEGER NOT NULL, "
-                   "last_verified REAL NOT NULL, PRIMARY KEY(family, fingerprint))")
-        db.execute("INSERT INTO adaptive_tool_budgets VALUES(?,?,?,?)",
-                   (store.family(current), store.fingerprint(), 9, time.time()))
-    decision = store.decide(current)
-    assert decision.accepted_runs == 9
-    assert decision.cost_samples == 0
-    assert decision.provider_tool_cap is None
-    assert decision.cost_gate == "insufficient_cost_evidence"
-
-
-def test_cost_regression_blocks_next_tightening_step(tmp_path):
-    store = initialized(tmp_path)
-    current = analysis()
-    for _ in range(3):
-        store.record(current, True, measured(tools=5, total=1000, uncached=400))
-    for _ in range(3):
-        store.record(current, True, measured(tools=3, total=1200, uncached=500), effective_cap=6)
-    decision = store.decide(current)
-    assert decision.accepted_runs == 6
-    assert decision.provider_tool_cap == 6
-    assert decision.cost_gate == "cap_6_supported"
-
-
-def test_failure_resets_only_the_same_comparable_family(tmp_path):
-    store = initialized(tmp_path)
-    coding = analysis()
-    research = analysis("Analyze a research question")
-    for _ in range(3):
-        store.record(coding, accepted=True, metrics=measured())
-        store.record(research, accepted=True, metrics=measured())
-    assert store.decide(coding).provider_tool_cap == 6
-    assert store.record(coding, accepted=False)
-    assert store.decide(coding).provider_tool_cap is None
-    assert store.decide(research).provider_tool_cap == 6
-
-
-def test_environment_change_invalidates_prior_evidence(tmp_path):
-    store = initialized(tmp_path)
-    current = analysis()
-    for _ in range(3):
-        store.record(current, accepted=True, metrics=measured())
-    assert store.decide(current).provider_tool_cap == 6
-    (tmp_path / "pyproject.toml").write_text("[project]\nname='changed'\n", encoding="utf-8")
-    assert store.decide(current).provider_tool_cap is None
-
-
-def test_explicit_cap_always_wins_without_reading_history(tmp_path):
-    store = initialized(tmp_path)
-    decision = store.decide(analysis(), explicit_cap=2)
-    assert decision.provider_tool_cap == 2
-    assert decision.source == "explicit"
-
-
-def test_status_is_bounded_and_reset_can_target_one_family(tmp_path):
-    store = initialized(tmp_path)
-    coding = analysis()
-    research = analysis("Analyze a research question")
-    for _ in range(3):
-        store.record(coding, True, measured())
-        store.record(research, True, measured())
-    rows = store.status()
-    assert len(rows) == 2
-    assert all(set(row) == {"family", "accepted_runs", "cost_samples",
-                            "provider_tool_cap", "cost_gate", "last_verified"}
-               for row in rows)
-    assert store.reset(coding) == 1
-    assert [row["family"] for row in store.status()] == [store.family(research)]
-    assert store.reset() == 1
-    assert store.status() == []
-
-
-def test_orchestrator_applies_learned_cap_and_explains_source(tmp_path):
-    store = initialized(tmp_path)
-    orchestrator = Orchestrator(
-        Database(tmp_path / "platform.db"), MockProvider(delay=0),
-        adaptive_tool_budget=True,
-    )
-    goal = "Build a FastAPI endpoint"
-    current = orchestrator.analyzer.analyze(goal)
-    for _ in range(3):
-        store.record(current, accepted=True, metrics=measured())
-    composition = orchestrator.compose(
-        "RUN-ADAPTIVE", goal, working_directory=str(tmp_path),
-    )
-    assert composition.execution_budget["max_provider_tool_calls"] == 6
-    evidence = composition.project_intelligence["adaptive_tool_budget"]
-    assert evidence["source"] == "accepted_history"
-    assert evidence["accepted_runs"] == 3
-
-
-def test_controller_acceptance_ignores_agent_claims_and_requires_real_tool_result(tmp_path):
-    initialized(tmp_path)
-    orchestrator = Orchestrator(Database(tmp_path / "platform.db"), MockProvider(delay=0))
-    agent_only = Task("A", "RUN", "Model says done", "developer", kind=TaskKind.AGENT)
-    assert orchestrator._external_acceptance(TaskGraph([agent_only]), True) is None
-
-    passed = Task("T", "RUN", "Run tests", "project_test", kind=TaskKind.TOOL,
-                  metadata={"tool": "project_test", "working_directory": str(tmp_path),
-                            "tool_result": {
-                      "status": "completed", "exit_code": 0}})
-    # Ordinary tests are not assumed to cover the requested change.
-    assert orchestrator._external_acceptance(TaskGraph([passed]), True) is None
-    (tmp_path / ".agent" / "commands.yaml").write_text(
-        "commands:\n  test:\n    command: [python, -m, pytest, -q]\n    acceptance: true\n",
-        encoding="utf-8",
-    )
-    assert orchestrator._external_acceptance(TaskGraph([passed]), True) is True
-    passed.metadata["tool_result"] = {"status": "failed", "exit_code": 1}
-    assert orchestrator._external_acceptance(TaskGraph([passed]), False) is False
-
-
-def test_adaptive_budget_is_an_explicit_cli_experiment():
+def test_feature_is_opt_in_and_legacy_flag_maps_to_auto(tmp_path):
     normal = parser().parse_args(["run", "Build an API", "--dry-run"])
-    adaptive = parser().parse_args([
-        "run", "Build an API", "--dry-run", "--adaptive-provider-tool-budget",
-    ])
-    assert normal.adaptive_provider_tool_budget is False
-    assert adaptive.adaptive_provider_tool_budget is True
+    auto = parser().parse_args(["run", "Build an API", "--dry-run", "--budget", "auto"])
+    legacy = parser().parse_args([
+        "run", "Build an API", "--dry-run", "--adaptive-provider-tool-budget"])
+    assert _adaptive_budget_mode(normal) is None
+    assert _adaptive_budget_mode(auto) == "auto"
+    assert _adaptive_budget_mode(legacy) == "auto"
+    orchestrator = Orchestrator(Database(tmp_path / "db.sqlite"), MockProvider(delay=0))
+    assert orchestrator.adaptive_tool_budget is False
 
 
-def test_three_real_scheduler_acceptances_apply_cap_on_the_next_run(tmp_path):
-    class MeasuredProvider(MockProvider):
-        async def execute(self, task, progress=None, packet=None):
-            return Receipt(
-                task.id, task.owner, "completed", "implemented", provider="mock",
-                duration_seconds=1.0,
-                token_usage={"input": 800, "output": 100, "cached": 500,
-                             "source": "measured", "provider_tool_calls": 3,
-                             "provider_messages": 2, "invocation_count": 1},
-            )
-
-    (tmp_path / ".agent").mkdir()
-    (tmp_path / ".agent/commands.yaml").write_text(yaml.safe_dump({"commands": {
-        "test": {"command": [sys.executable, "-c", "print('accepted')"],
-                 "timeout": 20, "acceptance": True},
-    }}), encoding="utf-8")
-    (tmp_path / "pyproject.toml").write_text("[project]\nname='closed-loop'\n", encoding="utf-8")
-    database = Database(tmp_path / "platform.db")
-    goal = "Fix a simple Python arithmetic bug and run the existing test"
-    for number in range(1, 4):
-        orchestrator = Orchestrator(
-            database, MeasuredProvider(delay=0), adaptive_tool_budget=True,
-        )
-        run_id = asyncio.run(orchestrator.run_goal(
-            goal, working_directory=str(tmp_path), run_id=f"RUN-{number}",
-        ))
-        assert database.query("SELECT status FROM runs WHERE id=?", (run_id,))[0]["status"] == "completed"
-
-    next_orchestrator = Orchestrator(
-        database, MeasuredProvider(delay=0), adaptive_tool_budget=True,
-    )
-    composition = next_orchestrator.compose(
-        "RUN-4", goal, working_directory=str(tmp_path),
-    )
-    assert composition.execution_budget["max_provider_tool_calls"] == 6
-    decision = composition.project_intelligence["adaptive_tool_budget"]
-    assert decision["accepted_runs"] == 3
-    assert decision["cost_samples"] == 3
-    assert decision["cost_gate"] == "cap_6_supported"
+def test_auto_without_history_or_with_one_pair_stays_normal(tmp_path):
+    store = initialized(tmp_path)
+    assert decide(store).selected_mode == "normal"
+    add_pair(store, analysis(), 1)
+    decision = decide(store)
+    assert decision.selected_mode == "normal"
+    assert decision.comparable_pairs == 1
+    assert decision.reasons == ("insufficient_comparable_history",)
 
 
-def test_budget_cli_status_explain_and_targeted_reset(monkeypatch, tmp_path, capsys):
+def test_two_comparable_quality_pairs_select_reduced(tmp_path):
+    store = initialized(tmp_path)
+    for number in (1, 2):
+        add_pair(store, analysis(), number)
+    decision = decide(store)
+    assert decision.selected_mode == "reduced"
+    assert decision.effective_limit == 6
+    assert decision.evidence_ids == ("pair-2", "pair-1")
+    assert "quality_checks_passed" in decision.reasons
+
+
+def test_total_tokens_down_but_uncached_up_35_percent_stays_normal(tmp_path):
+    store = initialized(tmp_path)
+    for number in (1, 2):
+        add_pair(store, analysis(), number,
+                 normal={"input_tokens": 1000, "cached": 400, "output": 100},
+                 reduced={"input_tokens": 900, "cached": 55, "output": 100})
+    decision = decide(store)
+    assert decision.selected_mode == "normal"
+    assert decision.reasons == ("uncached_regression_guard_failed",)
+
+
+def test_recent_reduced_quality_failure_forces_normal(tmp_path):
+    store = initialized(tmp_path)
+    for number in (1, 2):
+        add_pair(store, analysis(), number)
+    assert store.record_observation(observation(
+        analysis(), "pair-failed", "reduced", accepted="fail"))
+    decision = decide(store)
+    assert decision.selected_mode == "normal"
+    assert decision.reasons[0] == "recent_reduced_quality_failure"
+
+
+def test_complex_or_unknown_task_metadata_stays_normal(tmp_path):
+    store = initialized(tmp_path)
+    assert decide(store, analysis(complexity=Complexity.COMPLEX)).reasons == (
+        "complexity_not_eligible",)
+    unknown = GoalAnalysis("unknown", artifact_types=["unknown"])
+    assert decide(store, unknown).reasons == ("task_metadata_unknown",)
+
+
+def test_provider_model_reasoning_are_isolated(tmp_path):
+    store = initialized(tmp_path)
+    for number in (1, 2):
+        add_pair(store, analysis(), number)
+    assert decide(store, provider="other").comparable_pairs == 0
+    assert decide(store, resolved_model="model-b").comparable_pairs == 0
+    assert decide(store, reasoning_setting="high").comparable_pairs == 0
+
+
+def test_unknown_settings_usage_or_acceptance_do_not_form_pairs(tmp_path):
+    store = initialized(tmp_path)
+    for number in (1, 2):
+        pair = f"bad-{number}"
+        store.record_observation(observation(analysis(), pair, "normal"))
+        store.record_observation(observation(
+            analysis(), pair, "reduced", accepted="not_run", measured="unavailable",
+            input_tokens=None, tools=None))
+    assert decide(store).comparable_pairs == 0
+    assert decide(store, resolved_model=None).reasons == ("execution_settings_unknown",)
+
+
+def test_synthetic_mock_history_never_drives_auto(tmp_path):
+    store = initialized(tmp_path)
+    for number in (1, 2):
+        add_pair(store, analysis(), number,
+                 normal={"synthetic": True}, reduced={"synthetic": True})
+    assert decide(store).comparable_pairs == 0
+
+
+def test_duplicate_pair_and_completion_replay_are_idempotent(tmp_path):
+    store = initialized(tmp_path)
+    item = observation(analysis(), "pair-1", "normal")
+    assert store.record_observation(item)
+    assert not store.record_observation(item)
+    replay = observation(analysis(), "pair-1", "normal", run="different-run")
+    assert not store.record_observation(replay)
+    rows = store.status()
+    assert rows[0]["observations"] == 1
+    assert rows[0]["pairs"] == 1
+
+
+def test_explicit_modes_and_smaller_user_limit_are_preserved(tmp_path):
+    store = initialized(tmp_path)
+    normal = decide(store, requested_mode="normal")
+    assert normal.selected_mode == "normal" and normal.decision_source == "user_override"
+    reduced = decide(store, requested_mode="reduced")
+    assert reduced.selected_mode == "reduced" and reduced.effective_limit == 6
+    capped = decide(store, requested_mode="reduced", current_normal_limit=4)
+    assert capped.effective_limit == 4
+    assert capped.reasons == ("normal_limit_already_six_or_less",)
+    already_six = decide(store, current_normal_limit=6)
+    assert already_six.selected_mode == "normal"
+
+
+def test_policy_exception_and_unsupported_enforcement_fail_to_normal(tmp_path, monkeypatch):
+    store = initialized(tmp_path)
+    monkeypatch.setattr(store, "_matching_rows", lambda *args: (_ for _ in ()).throw(sqlite3.Error()))
+    assert decide(store).reasons == ("policy_evidence_error",)
+    assert decide(store, enforcement="unsupported").reasons == ("provider_budget_unsupported",)
+    assert decide(store, enforcement="soft_guidance").reasons == (
+        "provider_budget_soft_guidance",)
+    assert MockProvider.provider_tool_budget_enforcement == "unsupported"
+    assert CodexProvider.provider_tool_budget_enforcement == "hard"
+
+
+def test_codex_hard_monitor_stops_before_seventh_tool():
+    monitor = CodexEventBudget(max_tool_calls=6)
+    for number in range(6):
+        assert monitor.observe(json.dumps({"type": "item.started", "item": {
+            "type": "command_execution", "id": number}}).encode()) is None
+        assert monitor.observe(json.dumps({"type": "item.completed", "item": {
+            "type": "command_execution", "id": number}}).encode()) is None
+    reason = monitor.observe(json.dumps({"type": "item.started", "item": {
+        "type": "command_execution", "id": 7}}).encode())
+    assert reason == "provider tool-call budget exhausted at 6"
+
+
+def test_budget_explain_is_zero_provider_calls_and_matches_policy(tmp_path, monkeypatch, capsys):
     store = initialized(tmp_path)
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr("adaptive_agent.cli.database", lambda: (_ for _ in ()).throw(
-        AssertionError("budget CLI must not initialize the global platform database")))
-    goal = "Build a FastAPI endpoint"
-    current = _budget_analysis(goal, tmp_path)
-    for _ in range(3):
-        store.record(current, True, measured())
+        AssertionError("budget explain must not initialize platform DB")))
+    assert main(["budget", "explain", "Build a FastAPI endpoint", "--mode", "auto",
+                 "--provider", "codex", "--model", "model-a", "--reasoning", "low",
+                 "--normal-limit", "8", "--enforcement", "hard", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    direct = store.decide(_budget_analysis("Build a FastAPI endpoint", tmp_path),
+                          requested_mode="auto", provider="codex", resolved_model="model-a",
+                          reasoning_setting="low", current_normal_limit=8, enforcement="hard")
+    assert payload["decision"]["selected_mode"] == direct.selected_mode
+    assert payload["decision"]["reasons"] == list(direct.reasons)
+    assert payload["provider_calls"] == 0
 
-    assert main(["budget", "status", "--json"]) == 0
-    status = json.loads(capsys.readouterr().out)
-    assert status["count"] == 1
-    assert status["families"][0]["provider_tool_cap"] == 6
 
-    assert main(["budget", "explain", goal, "--json"]) == 0
-    explanation = json.loads(capsys.readouterr().out)
-    assert explanation["effective_provider_tool_cap"] == 6
-    assert explanation["normal_budget_preserved"] is False
+def test_multidomain_evidence_never_pools_across_families(tmp_path):
+    store = initialized(tmp_path)
+    for family in FAMILIES:
+        current = analysis(family)
+        add_pair(store, current, f"{family}-1")
+        assert decide(store, current).selected_mode == "normal"
+        add_pair(store, current, f"{family}-2")
+        assert decide(store, current).selected_mode == "reduced"
+    assert len(store.status()) == len(FAMILIES)
 
-    assert main(["budget", "reset", goal, "--json"]) == 0
-    reset = json.loads(capsys.readouterr().out)
-    assert reset == {"cleared_families": 1, "scope": "goal"}
+
+def test_multiround_conversation_learns_then_fails_closed(tmp_path):
+    store = initialized(tmp_path)
+    current = analysis("ui_ux")
+    timeline = [decide(store, current).selected_mode]
+    add_pair(store, current, 1)
+    timeline.append(decide(store, current).selected_mode)
+    add_pair(store, current, 2)
+    timeline.append(decide(store, current).selected_mode)
+    store.record_observation(observation(
+        current, "round-3", "reduced", accepted="fail", run="run-round-3"))
+    timeline.append(decide(store, current).selected_mode)
+    assert timeline == ["normal", "normal", "reduced", "normal"]
+
+
+def test_incomplete_values_zero_denominator_and_policy_latency_are_safe(tmp_path):
+    store = initialized(tmp_path)
+    for number in (1, 2):
+        add_pair(store, analysis(), number,
+                 normal={"input_tokens": 0, "cached": 0, "output": 0, "tools": 0, "seconds": 0},
+                 reduced={"input_tokens": 1, "cached": 0, "output": 0, "tools": 0, "seconds": 0})
+    decision = decide(store)
+    assert decision.selected_mode == "normal"
+    assert decision.policy_wall_ms >= 0
+
+
+def test_status_and_targeted_reset_are_project_local(tmp_path):
+    store = initialized(tmp_path)
+    for number in (1, 2):
+        add_pair(store, analysis("research"), number)
+    assert store.status()[0]["pairs"] == 2
+    assert store.reset(analysis("research")) == 4
     assert store.status() == []
-
-
-def test_budget_cli_requires_explicit_all_for_bulk_reset(monkeypatch, tmp_path, capsys):
-    initialized(tmp_path)
-    monkeypatch.chdir(tmp_path)
-    assert main(["budget", "reset"]) == 2
-    assert "Specify a goal" in capsys.readouterr().err

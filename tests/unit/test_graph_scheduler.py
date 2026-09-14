@@ -56,6 +56,8 @@ def test_scheduler_aggregates_measured_cost_for_adaptive_learning(tmp_path):
     assert scheduler.adaptive_metrics() == {
         "source": "measured", "provider_tool_calls": 4, "provider_messages": 2,
         "total_tokens": 240, "uncached_tokens": 120, "duration_seconds": 5.0,
+        "input_tokens": 200, "cached_input_tokens": 120,
+        "uncached_input_tokens": 80, "output_tokens": 40,
         "provider_attempts": 2,
     }
 

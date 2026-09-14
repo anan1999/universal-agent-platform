@@ -63,9 +63,12 @@ def _add_budget_arguments(command: argparse.ArgumentParser) -> None:
     command.add_argument("--budget-seconds", type=float, dest="max_wall_seconds")
     command.add_argument("--verification-reserve", type=int, default=20,
                          dest="verification_reserve_percent")
-    command.add_argument(
+    mode = command.add_mutually_exclusive_group()
+    mode.add_argument("--budget", choices=("normal", "reduced", "auto"),
+                      help="experimental provider tool-budget policy")
+    mode.add_argument(
         "--adaptive-provider-tool-budget", action="store_true",
-        help="experimentally tighten provider tool calls after repeated external acceptance",
+        help="compatibility alias for --budget auto",
     )
 
 
@@ -78,6 +81,11 @@ def _execution_budget(args: argparse.Namespace) -> ExecutionBudget:
             "verification_reserve_percent",
         )
     })
+
+
+def _adaptive_budget_mode(args: argparse.Namespace) -> str | None:
+    return getattr(args, "budget", None) or (
+        "auto" if getattr(args, "adaptive_provider_tool_budget", False) else None)
 
 
 def parser() -> argparse.ArgumentParser:
@@ -207,6 +215,13 @@ def parser() -> argparse.ArgumentParser:
     budget_status.add_argument("--json", action="store_true")
     budget_explain = budget_subcommands.add_parser("explain")
     budget_explain.add_argument("goal")
+    budget_explain.add_argument("--mode", choices=("normal", "reduced", "auto"), default="auto")
+    budget_explain.add_argument("--provider")
+    budget_explain.add_argument("--model")
+    budget_explain.add_argument("--reasoning")
+    budget_explain.add_argument("--normal-limit", type=int)
+    budget_explain.add_argument("--enforcement", choices=("hard", "soft_guidance", "unsupported"),
+                                default="unsupported")
     budget_explain.add_argument("--json", action="store_true")
     budget_reset = budget_subcommands.add_parser("reset")
     budget_reset.add_argument("goal", nargs="?")
@@ -316,7 +331,7 @@ def _run_goal(goal: str, provider_name: str = "mock", delay: float = 0.02,
               approvals: list[str] | None = None,
               consumption: str | None = None,
               execution_budget: ExecutionBudget | None = None,
-              adaptive_tool_budget: bool = False) -> tuple[str, str, str | None]:
+              adaptive_budget_mode: str | None = None) -> tuple[str, str, str | None]:
     db = database()
     run_id = new_id("RUN")
     resolved = _resolve_provider(provider_name)
@@ -327,7 +342,7 @@ def _run_goal(goal: str, provider_name: str = "mock", delay: float = 0.02,
         db, resolved, timeout, delay, profiles,
         provider_preference_override=[resolved] if provider_name != "auto" else None,
         consumption_override=consumption, execution_budget=execution_budget,
-        adaptive_tool_budget=adaptive_tool_budget)
+        adaptive_budget_mode=adaptive_budget_mode)
     try:
         completed_id = asyncio.run(orchestrator.run_goal(
             goal, project_id, str(workdir), run_id, info.name, info.type,
@@ -348,7 +363,7 @@ def _orchestrator(db, provider_name: str, timeout: float = 900, delay: float = 0
                   provider_preference_override: list[str] | None = None,
                   consumption_override: str | None = None,
                   execution_budget: ExecutionBudget | None = None,
-                  adaptive_tool_budget: bool = False) -> Orchestrator:
+                  adaptive_budget_mode: str | None = None) -> Orchestrator:
     cwd = Path.cwd()
     preference = provider_preference_override or project_provider_preference(cwd)
     if provider_preference_override is None and preference == ["auto"]:
@@ -360,13 +375,13 @@ def _orchestrator(db, provider_name: str, timeout: float = 900, delay: float = 0
                         consumption_mode=(consumption_override or project_consumption_mode(cwd)
                                           or consumption_mode()),
                         execution_budget=execution_budget,
-                        adaptive_tool_budget=adaptive_tool_budget)
+                        adaptive_budget_mode=adaptive_budget_mode)
 
 
 def _dry_run(goal: str, provider_name: str, profiles: list[str] | None = None,
              consumption: str | None = None,
              execution_budget: ExecutionBudget | None = None,
-             adaptive_tool_budget: bool = False) -> dict:
+             adaptive_budget_mode: str | None = None) -> dict:
     db = database()
     info = discover(Path.cwd())
     resolved = _resolve_provider(provider_name)
@@ -375,7 +390,7 @@ def _dry_run(goal: str, provider_name: str, profiles: list[str] | None = None,
         db, resolved, profiles=profiles, provider=MockProvider(delay=0),
         provider_preference_override=[resolved] if provider_name != "auto" else None,
         consumption_override=consumption, execution_budget=execution_budget,
-        adaptive_tool_budget=adaptive_tool_budget)
+        adaptive_budget_mode=adaptive_budget_mode)
     composition = orchestrator.plan("RUN-DRYRUN", goal, working_directory=str(Path.cwd()),
                                     project_name=info.name, project_type=info.type,
                                     project_signals=info.signals,
@@ -613,22 +628,27 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 print("ADAPTIVE BUDGET EVIDENCE")
                 for row in rows:
-                    cap = row["provider_tool_cap"] if row["provider_tool_cap"] is not None else "normal"
-                    print(f"  {row['family']}: accepted={row['accepted_runs']} "
-                          f"cost_samples={row['cost_samples']} cap={cap} gate={row['cost_gate']}")
+                    print(f"  {row['task_family']}/{row['artifact_type']}: "
+                          f"provider={row['provider']} model={row['resolved_model']} "
+                          f"observations={row['observations']} pairs={row['pairs']}")
             return 0
         if args.budget_command == "explain":
             analysis = _budget_analysis(args.goal, root)
-            decision = store.decide(analysis)
+            decision = store.decide(
+                analysis, requested_mode=args.mode, provider=args.provider,
+                resolved_model=args.model, reasoning_setting=args.reasoning,
+                current_normal_limit=args.normal_limit, enforcement=args.enforcement)
             payload = {"goal": args.goal, "decision": decision.to_dict(),
-                       "effective_provider_tool_cap": decision.provider_tool_cap,
-                       "normal_budget_preserved": decision.provider_tool_cap is None}
+                       "effective_provider_tool_cap": decision.effective_limit,
+                       "normal_budget_preserved": decision.selected_mode == "normal",
+                       "provider_calls": 0}
             print(json.dumps(payload, indent=2) if args.json else
-                  f"Adaptive budget: {decision.source}\n"
-                  f"Family: {decision.family}\nAccepted runs: {decision.accepted_runs}\n"
-                  f"Cost samples: {decision.cost_samples}\n"
-                  f"Effective provider tool cap: {decision.provider_tool_cap or 'normal'}\n"
-                  f"Reason: {decision.reason}\nCost gate: {decision.cost_gate}")
+                  f"Adaptive budget: {decision.selected_mode}\n"
+                  f"Task: {decision.task_family}/{decision.artifact_type}\n"
+                  f"Comparable pairs: {decision.comparable_pairs}\n"
+                  f"Effective provider tool cap: {decision.effective_limit or 'normal'}\n"
+                  f"Reasons: {', '.join(decision.reasons)}\n"
+                  f"Enforcement: {decision.enforcement}\nProvider calls: 0")
             return 0
         if not args.reset_all and not args.goal:
             print("Specify a goal, or pass --all to reset every current-environment family.",
@@ -705,7 +725,7 @@ def main(argv: list[str] | None = None) -> int:
                                                  profiles=selected_profiles, approvals=args.approve,
                                                  consumption=args.consumption,
                                                  execution_budget=_execution_budget(args),
-                                                 adaptive_tool_budget=args.adaptive_provider_tool_budget)
+                                                 adaptive_budget_mode=_adaptive_budget_mode(args))
         except (RuntimeError, ValueError) as error:
             print(f"Run preparation failed: {error}", file=sys.stderr)
             return 2
@@ -720,7 +740,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.dry_run or args.explain:
             print(json.dumps(_dry_run(args.goal, args.provider, selected_profiles,
                                       args.consumption, _execution_budget(args),
-                                      args.adaptive_provider_tool_budget), indent=2))
+                                      _adaptive_budget_mode(args)), indent=2))
             return 0
         try:
             run_id, status, worktree = _run_goal(args.goal, args.provider, timeout=args.timeout,
@@ -728,7 +748,7 @@ def main(argv: list[str] | None = None) -> int:
                                                  approvals=args.approve,
                                                  consumption=args.consumption,
                                                  execution_budget=_execution_budget(args),
-                                                 adaptive_tool_budget=args.adaptive_provider_tool_budget)
+                                                 adaptive_budget_mode=_adaptive_budget_mode(args))
         except (RuntimeError, ValueError) as error:
             print(f"Run preparation failed: {error}", file=sys.stderr)
             return 2

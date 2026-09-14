@@ -66,6 +66,8 @@ class Scheduler:
         self._provider_metric_attempts = 0
         self._provider_metrics_complete = True
         self._measured_total_tokens = 0
+        self._measured_input_tokens = 0
+        self._measured_output_tokens = 0
         self._measured_cached_tokens = 0
         self._provider_tool_calls = 0
         self._provider_messages = 0
@@ -89,6 +91,10 @@ class Scheduler:
             "provider_tool_calls": self._provider_tool_calls,
             "provider_messages": self._provider_messages,
             "total_tokens": self._measured_total_tokens,
+            "input_tokens": self._measured_input_tokens,
+            "output_tokens": self._measured_output_tokens,
+            "cached_input_tokens": self._measured_cached_tokens,
+            "uncached_input_tokens": max(0, self._measured_input_tokens - self._measured_cached_tokens),
             "uncached_tokens": max(
                 0, self._measured_total_tokens - self._measured_cached_tokens),
             "duration_seconds": round(self._provider_duration_seconds, 3),
@@ -470,6 +476,8 @@ class Scheduler:
             )
             self._provider_metrics_complete = self._provider_metrics_complete and measured
             if measured:
+                self._measured_input_tokens += int(usage.get("input", 0))
+                self._measured_output_tokens += int(usage.get("output", 0))
                 self._measured_total_tokens += int(usage.get("input", 0)) + int(usage.get("output", 0))
                 self._measured_cached_tokens += int(usage.get("cached", 0))
                 self._provider_tool_calls += int(usage["provider_tool_calls"])

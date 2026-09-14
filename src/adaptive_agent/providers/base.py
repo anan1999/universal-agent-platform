@@ -149,6 +149,8 @@ class AIProvider(ABC):
     execution_mode: ClassVar[ExecutionMode] = ExecutionMode.API_REASONING
     #: False for adapters that only exist as a plugin surface.
     implemented: ClassVar[bool] = True
+    #: hard | soft_guidance | unsupported. Unknown adapters must not inherit a hard-limit claim.
+    provider_tool_budget_enforcement: ClassVar[str] = "unsupported"
 
     @abstractmethod
     async def execute(
@@ -188,5 +190,7 @@ class AIProvider(ABC):
         probe = self.probe()
         return {"id": self.id, "name": self.display_name, "kind": self.kind.value,
                 "execution_mode": self.execution_mode.value,
-                "implemented": self.implemented, "capabilities": self.capabilities().to_dict(),
+                "implemented": self.implemented,
+                "provider_tool_budget_enforcement": self.provider_tool_budget_enforcement,
+                "capabilities": self.capabilities().to_dict(),
                 **probe.to_dict()}
