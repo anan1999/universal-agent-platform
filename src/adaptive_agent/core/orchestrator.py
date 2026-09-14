@@ -213,6 +213,7 @@ class Orchestrator:
 
     def _external_acceptance(self, graph: TaskGraph, success: bool) -> bool | None:
         """Return controller-observed acceptance, never an agent's completion claim."""
+        planned = []
         checks = []
         for task in graph.tasks.values():
             if task.kind is not TaskKind.TOOL:
@@ -221,6 +222,12 @@ class Orchestrator:
             spec = self.tools.get(tool_id)
             if spec is None or spec.execution is not ToolExecution.PROJECT_COMMAND:
                 continue
+            entry = ToolExecutor(
+                self.tools, Path(task.metadata.get("working_directory", ".")),
+            ).allowlisted(str(spec.command))
+            if not isinstance(entry, dict) or entry.get("acceptance") is not True:
+                continue
+            planned.append(task)
             result = task.metadata.get("tool_result")
             if isinstance(result, dict):
                 checks.append(result)
@@ -229,16 +236,9 @@ class Orchestrator:
         if any(item.get("status") == "failed" or item.get("exit_code") not in {0, None}
                for item in checks):
             return False
-        planned = sum(
-            task.kind is TaskKind.TOOL
-            and (self.tools.get(str(task.metadata.get("tool", task.owner))) is not None)
-            and self.tools.get(str(task.metadata.get("tool", task.owner))).execution
-            is ToolExecution.PROJECT_COMMAND
-            for task in graph.tasks.values()
-        )
         complete = sum(item.get("status") == "completed" and item.get("exit_code") == 0
                        for item in checks)
-        return True if success and complete == planned else None
+        return True if success and complete == len(planned) else None
 
     def _assign_parent_validation(self, graph: TaskGraph,
                                   working_directory: str | None) -> None:

@@ -94,13 +94,21 @@ def test_orchestrator_applies_learned_cap_and_explains_source(tmp_path):
 
 
 def test_controller_acceptance_ignores_agent_claims_and_requires_real_tool_result(tmp_path):
+    initialized(tmp_path)
     orchestrator = Orchestrator(Database(tmp_path / "platform.db"), MockProvider(delay=0))
     agent_only = Task("A", "RUN", "Model says done", "developer", kind=TaskKind.AGENT)
     assert orchestrator._external_acceptance(TaskGraph([agent_only]), True) is None
 
     passed = Task("T", "RUN", "Run tests", "project_test", kind=TaskKind.TOOL,
-                  metadata={"tool": "project_test", "tool_result": {
+                  metadata={"tool": "project_test", "working_directory": str(tmp_path),
+                            "tool_result": {
                       "status": "completed", "exit_code": 0}})
+    # Ordinary tests are not assumed to cover the requested change.
+    assert orchestrator._external_acceptance(TaskGraph([passed]), True) is None
+    (tmp_path / ".agent" / "commands.yaml").write_text(
+        "commands:\n  test:\n    command: [python, -m, pytest, -q]\n    acceptance: true\n",
+        encoding="utf-8",
+    )
     assert orchestrator._external_acceptance(TaskGraph([passed]), True) is True
     passed.metadata["tool_result"] = {"status": "failed", "exit_code": 1}
     assert orchestrator._external_acceptance(TaskGraph([passed]), False) is False
