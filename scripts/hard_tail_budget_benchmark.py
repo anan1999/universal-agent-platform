@@ -186,6 +186,7 @@ async def run(args: argparse.Namespace) -> dict:
                 "status": receipt.status, "usage": receipt.token_usage,
                 "duration_seconds": round(time.perf_counter() - started, 3),
                 "quality": acceptance(roots[arm]), "error": receipt.error_code,
+                "provider_summary": receipt.summary,
                 "telemetry": getattr(provider, "telemetry", {}),
                 "packet_chars": len(packet.render()),
                 "actual_source_changed": source_hash(roots[arm]) != hashes[arm],
