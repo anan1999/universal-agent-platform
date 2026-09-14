@@ -516,18 +516,21 @@ class Orchestrator:
                                    {"dependencies": task.dependencies, "kind": task.kind.value,
                                     "routing": task.metadata["routing"]}))
         try:
-            success = await Scheduler(self.database, self.events, self.provider,
-                                      provider_name=self.provider_name,
-                                      capability_router=self.capability_router,
-                                      tools=self.tools, approvals=approvals,
-                                      provider_registry=self.provider_registry,
-                                      skill_registry=self.skills,
-                                      max_parallel_agents=self.consumption_policy.max_parallel_agents,
-                                      max_parallel_strong_agents=self.consumption_policy.max_parallel_strong_agents,
-                                      max_escalations=self.consumption_policy.max_escalations_per_task,
-                                      receipt_word_limit=self.consumption_policy.receipt_word_limit,
-                                      max_context_receipts=self.consumption_policy.max_context_receipts,
-                                      execution_budget=self.execution_budget).run(graph)
+            scheduler = Scheduler(
+                self.database, self.events, self.provider,
+                provider_name=self.provider_name,
+                capability_router=self.capability_router,
+                tools=self.tools, approvals=approvals,
+                provider_registry=self.provider_registry,
+                skill_registry=self.skills,
+                max_parallel_agents=self.consumption_policy.max_parallel_agents,
+                max_parallel_strong_agents=self.consumption_policy.max_parallel_strong_agents,
+                max_escalations=self.consumption_policy.max_escalations_per_task,
+                receipt_word_limit=self.consumption_policy.receipt_word_limit,
+                max_context_receipts=self.consumption_policy.max_context_receipts,
+                execution_budget=self.execution_budget,
+            )
+            success = await scheduler.run(graph)
         except asyncio.CancelledError:
             self.database.execute("UPDATE runs SET status='cancelled',completed_at=? WHERE id=?", (now_iso(), run_id))
             raise
@@ -538,11 +541,15 @@ class Orchestrator:
             accepted = self._external_acceptance(graph, success)
             if accepted is not None:
                 saved = AdaptiveToolBudgetStore(Path(intelligence_root)).record(
-                    composition.analysis, accepted)
+                    composition.analysis, accepted,
+                    metrics=scheduler.adaptive_metrics(),
+                    effective_cap=self.execution_budget.max_provider_tool_calls,
+                )
                 self.events.emit(Event(
                     "adaptive_budget_evidence_recorded", run_id,
                     metadata={"accepted": accepted, "saved": saved,
-                              "family": AdaptiveToolBudgetStore.family(composition.analysis)},
+                              "family": AdaptiveToolBudgetStore.family(composition.analysis),
+                              "metrics_source": scheduler.adaptive_metrics().get("source")},
                 ))
         reported_files: list[str] = []
         structured_evidence: list[dict[str, Any]] = []

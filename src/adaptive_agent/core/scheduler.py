@@ -63,6 +63,13 @@ class Scheduler:
         self._provider_calls = 0
         self._tool_calls = 0
         self._tokens = 0
+        self._provider_metric_attempts = 0
+        self._provider_metrics_complete = True
+        self._measured_total_tokens = 0
+        self._measured_cached_tokens = 0
+        self._provider_tool_calls = 0
+        self._provider_messages = 0
+        self._provider_duration_seconds = 0.0
 
     def budget_status(self) -> dict[str, object]:
         return {
@@ -71,6 +78,21 @@ class Scheduler:
             "tool_calls_used": self._tool_calls,
             "tokens_used": self._tokens,
             "elapsed_seconds": round(time.monotonic() - self._budget_started, 3),
+        }
+
+    def adaptive_metrics(self) -> dict[str, object]:
+        """Aggregate bounded provider measurements across every attempted AI task."""
+        if not self._provider_metric_attempts or not self._provider_metrics_complete:
+            return {"source": "unavailable"}
+        return {
+            "source": "measured",
+            "provider_tool_calls": self._provider_tool_calls,
+            "provider_messages": self._provider_messages,
+            "total_tokens": self._measured_total_tokens,
+            "uncached_tokens": max(
+                0, self._measured_total_tokens - self._measured_cached_tokens),
+            "duration_seconds": round(self._provider_duration_seconds, 3),
+            "provider_attempts": self._provider_metric_attempts,
         }
 
     def _remaining_seconds(self) -> float | None:
@@ -439,6 +461,20 @@ class Scheduler:
         self.receipts.save(receipt)
         usage = receipt.token_usage
         source = str(usage.get("source", "estimated" if usage.get("estimated", True) else "measured"))
+        if task.kind is TaskKind.AGENT:
+            self._provider_metric_attempts += 1
+            measured = (
+                source == "measured"
+                and isinstance(usage.get("provider_tool_calls"), int)
+                and isinstance(usage.get("provider_messages"), int)
+            )
+            self._provider_metrics_complete = self._provider_metrics_complete and measured
+            if measured:
+                self._measured_total_tokens += int(usage.get("input", 0)) + int(usage.get("output", 0))
+                self._measured_cached_tokens += int(usage.get("cached", 0))
+                self._provider_tool_calls += int(usage["provider_tool_calls"])
+                self._provider_messages += int(usage["provider_messages"])
+                self._provider_duration_seconds += max(0.0, float(receipt.duration_seconds))
         # Invocation count is first-class: a run's cost is not only tokens, and
         # not every provider reports tokens at all.
         invocations = int(usage.get("invocation_count", 1 if task.kind is TaskKind.AGENT else 0))

@@ -1,7 +1,11 @@
+import asyncio
+import sys
 from pathlib import Path
 
+import yaml
+
 from adaptive_agent.core.goal_analyzer import GoalAnalyzer
-from adaptive_agent.core.models import Task, TaskKind
+from adaptive_agent.core.models import Receipt, Task, TaskKind
 from adaptive_agent.core.orchestrator import Orchestrator
 from adaptive_agent.providers.mock import MockProvider
 from adaptive_agent.project.adaptive_budget import AdaptiveToolBudgetStore
@@ -159,3 +163,44 @@ def test_adaptive_budget_is_an_explicit_cli_experiment():
     ])
     assert normal.adaptive_provider_tool_budget is False
     assert adaptive.adaptive_provider_tool_budget is True
+
+
+def test_three_real_scheduler_acceptances_apply_cap_on_the_next_run(tmp_path):
+    class MeasuredProvider(MockProvider):
+        async def execute(self, task, progress=None, packet=None):
+            return Receipt(
+                task.id, task.owner, "completed", "implemented", provider="mock",
+                duration_seconds=1.0,
+                token_usage={"input": 800, "output": 100, "cached": 500,
+                             "source": "measured", "provider_tool_calls": 3,
+                             "provider_messages": 2, "invocation_count": 1},
+            )
+
+    (tmp_path / ".agent").mkdir()
+    (tmp_path / ".agent/commands.yaml").write_text(yaml.safe_dump({"commands": {
+        "test": {"command": [sys.executable, "-c", "print('accepted')"],
+                 "timeout": 20, "acceptance": True},
+    }}), encoding="utf-8")
+    (tmp_path / "pyproject.toml").write_text("[project]\nname='closed-loop'\n", encoding="utf-8")
+    database = Database(tmp_path / "platform.db")
+    goal = "Fix a simple Python arithmetic bug and run the existing test"
+    for number in range(1, 4):
+        orchestrator = Orchestrator(
+            database, MeasuredProvider(delay=0), adaptive_tool_budget=True,
+        )
+        run_id = asyncio.run(orchestrator.run_goal(
+            goal, working_directory=str(tmp_path), run_id=f"RUN-{number}",
+        ))
+        assert database.query("SELECT status FROM runs WHERE id=?", (run_id,))[0]["status"] == "completed"
+
+    next_orchestrator = Orchestrator(
+        database, MeasuredProvider(delay=0), adaptive_tool_budget=True,
+    )
+    composition = next_orchestrator.compose(
+        "RUN-4", goal, working_directory=str(tmp_path),
+    )
+    assert composition.execution_budget["max_provider_tool_calls"] == 6
+    decision = composition.project_intelligence["adaptive_tool_budget"]
+    assert decision["accepted_runs"] == 3
+    assert decision["cost_samples"] == 3
+    assert decision["cost_gate"] == "cap_6_supported"

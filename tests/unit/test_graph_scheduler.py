@@ -1,6 +1,6 @@
 import asyncio
 
-from adaptive_agent.core.models import Event, Task, TaskKind, TaskStatus
+from adaptive_agent.core.models import Event, Receipt, Task, TaskKind, TaskStatus
 from adaptive_agent.core.consumption import ExecutionBudget
 from adaptive_agent.core.scheduler import Scheduler
 from adaptive_agent.core.tools import ToolExecutor, ToolResult
@@ -35,6 +35,37 @@ def test_scheduler_emits_events_receipts_and_tokens(tmp_path):
     assert len(db.query("SELECT * FROM receipts")) == 2
     assert len(db.query("SELECT * FROM token_usage")) == 2
     assert {row["event"] for row in db.query("SELECT * FROM events")} >= {"task_started", "task_completed", "receipt_created"}
+
+
+def test_scheduler_aggregates_measured_cost_for_adaptive_learning(tmp_path):
+    class MeasuredProvider(MockProvider):
+        async def execute(self, task, progress=None, packet=None):
+            return Receipt(
+                task.id, task.owner, "completed", "done", provider="codex",
+                duration_seconds=2.5,
+                token_usage={"input": 100, "output": 20, "cached": 60,
+                             "source": "measured", "provider_tool_calls": 2,
+                             "provider_messages": 1, "invocation_count": 1},
+            )
+
+    tasks = [Task("A", "R", "first", "worker"),
+             Task("B", "R", "second", "worker", dependencies=["A"])]
+    _, scheduler, result = _budget_graph(
+        tmp_path, tasks, MeasuredProvider(delay=0), ExecutionBudget())
+    assert result is True
+    assert scheduler.adaptive_metrics() == {
+        "source": "measured", "provider_tool_calls": 4, "provider_messages": 2,
+        "total_tokens": 240, "uncached_tokens": 120, "duration_seconds": 5.0,
+        "provider_attempts": 2,
+    }
+
+
+def test_scheduler_refuses_estimated_cost_as_learning_evidence(tmp_path):
+    tasks = [Task("A", "R", "first", "worker")]
+    _, scheduler, result = _budget_graph(
+        tmp_path, tasks, MockProvider(delay=0), ExecutionBudget())
+    assert result is True
+    assert scheduler.adaptive_metrics() == {"source": "unavailable"}
 
 
 def _budget_graph(tmp_path, tasks, provider, budget):
