@@ -24,7 +24,7 @@ from adaptive_agent.project.direct import prepare
 ARMS = ("flexible_8", "hard_3")
 LIMITS = {
     "flexible_8": {"max_provider_tool_calls": 8, "max_provider_messages": 5},
-    "hard_3": {"max_provider_tool_calls": 3, "max_provider_messages": 3},
+    "hard_3": {"max_provider_tool_calls": 3, "max_provider_messages": 5},
 }
 
 
@@ -99,8 +99,8 @@ def render(report: dict) -> str:
     summary = report["summary"]
     lines = [
         "# Hard tail-budget benchmark", "",
-        "Both arms keep validation inside the agent. The treatment hard-limits the child to "
-        "three provider tool calls and three assistant messages, targeting post-completion tail work.", "",
+        "Both arms keep validation inside the agent. The treatment changes only the provider "
+        "tool-call limit from eight to three; both arms allow five assistant messages.", "",
         "| Round | Order | Flexible quality | Hard quality | Token reduction | Uncached reduction | Tool delta | Message delta |",
         "|---:|---|---:|---:|---:|---:|---:|---:|",
     ]

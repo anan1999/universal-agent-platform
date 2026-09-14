@@ -25,9 +25,9 @@ def test_hard_packet_and_runtime_limits_match(tmp_path):
     shutil.copytree(benchmark.FIXTURE, root)
     context = benchmark.prepare(root, benchmark.GOAL)["context"]
     rendered = benchmark.TailBudgetPacket(root, benchmark.GOAL, context, "hard_3").render()
-    assert "Hard envelope: 3 tool calls and 3 assistant messages" in rendered
+    assert "Hard envelope: 3 tool calls and 5 assistant messages" in rendered
     assert benchmark.LIMITS["hard_3"] == {
-        "max_provider_tool_calls": 3, "max_provider_messages": 3}
+        "max_provider_tool_calls": 3, "max_provider_messages": 5}
 
 
 def test_summary_preserves_quality_gate_and_cost_views():
