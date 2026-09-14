@@ -1,0 +1,669 @@
+{
+  "experiment": "flexible_8_vs_hard_3_tail_budget",
+  "goal": "Add a GET /reports/monthly/{month} API endpoint that returns the selected month, total spending, and totals by category, then display that monthly total and category breakdown in the existing React dashboard. Preserve existing expense behavior and validate the work.",
+  "model": "gpt-5.6-luna",
+  "reasoning": "low",
+  "limits": {
+    "flexible_8": {
+      "max_provider_tool_calls": 8,
+      "max_provider_messages": 12
+    },
+    "hard_3": {
+      "max_provider_tool_calls": 3,
+      "max_provider_messages": 12
+    }
+  },
+  "summary": {
+    "rounds_completed": 3,
+    "flexible_quality_passes": 3,
+    "hard_quality_passes": 3,
+    "pooled": {
+      "flexible_8": {
+        "tokens": 213720,
+        "uncached_tokens": 44504,
+        "tool_calls": 8,
+        "assistant_messages": 12,
+        "assistant_message_chars": 5759,
+        "seconds": 210.652
+      },
+      "hard_3": {
+        "tokens": 211897,
+        "uncached_tokens": 56761,
+        "tool_calls": 6,
+        "assistant_messages": 12,
+        "assistant_message_chars": 5665,
+        "seconds": 165.716
+      }
+    },
+    "pooled_total_token_reduction_percent": 0.85,
+    "pooled_uncached_token_reduction_percent": -27.54,
+    "pooled_tool_reduction_percent": 25.0,
+    "pooled_message_reduction_percent": 0.0,
+    "pooled_time_reduction_percent": 21.33,
+    "rows": [
+      {
+        "round": 1,
+        "order": [
+          "flexible_8",
+          "hard_3"
+        ],
+        "flexible_quality": true,
+        "hard_quality": true,
+        "token_reduction_percent": 0.72,
+        "uncached_reduction_percent": 5.18,
+        "tool_delta": 0,
+        "message_delta": 0,
+        "flexible_8": {
+          "tokens": 71342,
+          "uncached_tokens": 9902,
+          "tool_calls": 2,
+          "assistant_messages": 4,
+          "assistant_message_chars": 1983
+        },
+        "hard_3": {
+          "tokens": 70829,
+          "uncached_tokens": 9389,
+          "tool_calls": 2,
+          "assistant_messages": 4,
+          "assistant_message_chars": 2009
+        }
+      },
+      {
+        "round": 2,
+        "order": [
+          "hard_3",
+          "flexible_8"
+        ],
+        "flexible_quality": true,
+        "hard_quality": true,
+        "token_reduction_percent": 1.56,
+        "uncached_reduction_percent": 26.63,
+        "tool_delta": 1,
+        "message_delta": 0,
+        "flexible_8": {
+          "tokens": 71249,
+          "uncached_tokens": 11857,
+          "tool_calls": 3,
+          "assistant_messages": 4,
+          "assistant_message_chars": 1667
+        },
+        "hard_3": {
+          "tokens": 70140,
+          "uncached_tokens": 8700,
+          "tool_calls": 2,
+          "assistant_messages": 4,
+          "assistant_message_chars": 2061
+        }
+      },
+      {
+        "round": 3,
+        "order": [
+          "flexible_8",
+          "hard_3"
+        ],
+        "flexible_quality": true,
+        "hard_quality": true,
+        "token_reduction_percent": 0.28,
+        "uncached_reduction_percent": -70.02,
+        "tool_delta": 1,
+        "message_delta": 0,
+        "flexible_8": {
+          "tokens": 71129,
+          "uncached_tokens": 22745,
+          "tool_calls": 3,
+          "assistant_messages": 4,
+          "assistant_message_chars": 2109
+        },
+        "hard_3": {
+          "tokens": 70928,
+          "uncached_tokens": 38672,
+          "tool_calls": 2,
+          "assistant_messages": 4,
+          "assistant_message_chars": 1595
+        }
+      }
+    ]
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "order": [
+        "flexible_8",
+        "hard_3"
+      ],
+      "source_hashes": {
+        "flexible_8": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "hard_3": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "results": {
+        "flexible_8": {
+          "status": "completed",
+          "usage": {
+            "input": 69373,
+            "output": 1969,
+            "cached": 61440,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09e1b-2b85-7060-8fe8-00d823967b09"
+          },
+          "duration_seconds": 64.65,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "provider_summary": "Added monthly spending API reporting and current-month category breakdown to the React dashboard while preserving expense CRUD.",
+          "telemetry": {
+            "tool_calls": 2,
+            "assistant_messages": 4,
+            "assistant_message_chars": 1983,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "0e8cc28ef6c193b29f1adb83c87cfc895f631225153614b6ab3446190eb6c04c",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py",
+                  "package.json"
+                ],
+                "output_chars": 3078,
+                "exit_code": 1,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "c6ef1c3729ad4264c10ff01db6e5f1f3e2e2d86b2f07f919a4fb0826312cdbd1",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "package.json"
+                ],
+                "output_chars": 1896,
+                "exit_code": 0,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              }
+            ]
+          },
+          "packet_chars": 1866,
+          "actual_source_changed": true
+        },
+        "hard_3": {
+          "status": "completed",
+          "usage": {
+            "input": 69079,
+            "output": 1750,
+            "cached": 61440,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09e1c-2c84-7de3-b834-c8fb8ed99283"
+          },
+          "duration_seconds": 56.157,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "provider_summary": "Added GET /reports/monthly/{month} with month-scoped totals and category breakdown, and displayed both in the React dashboard.",
+          "telemetry": {
+            "tool_calls": 2,
+            "assistant_messages": 4,
+            "assistant_message_chars": 2009,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "347e00f83251e84202d1fc3424d7f596c8b0f94a60f8b4ec2dc68742cfa166b2",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py",
+                  "package.json"
+                ],
+                "output_chars": 3161,
+                "exit_code": 1,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "ed4b8d5e57481df3727b84c89a08fb63b1afe92559d7904e320a602a67e20e88",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1866,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              }
+            ]
+          },
+          "packet_chars": 1866,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "round": 2,
+      "order": [
+        "hard_3",
+        "flexible_8"
+      ],
+      "source_hashes": {
+        "flexible_8": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "hard_3": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "results": {
+        "hard_3": {
+          "status": "completed",
+          "usage": {
+            "input": 68501,
+            "output": 1639,
+            "cached": 61440,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09e1d-12cb-7eb2-a970-6188ba09a19d"
+          },
+          "duration_seconds": 51.032,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "provider_summary": "Implemented monthly spending reports and dashboard display. The requested pytest validation is blocked by the environment: pytest cannot import the local app package (ModuleNotFoundError: app).",
+          "telemetry": {
+            "tool_calls": 2,
+            "assistant_messages": 4,
+            "assistant_message_chars": 2061,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "e61998ef1654e64c2272121a060baf17366848bbf598c0137f72ae02ddea6a4a",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py"
+                ],
+                "output_chars": 2813,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "7be055735fac202ca172807987fe7ed17d5799ac3aab11eaf95d68cace7580d9",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1504,
+                "exit_code": 2,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              }
+            ]
+          },
+          "packet_chars": 1866,
+          "actual_source_changed": true
+        },
+        "flexible_8": {
+          "status": "completed",
+          "usage": {
+            "input": 69245,
+            "output": 2004,
+            "cached": 59392,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09e1d-df74-7b41-8307-3377123aef59"
+          },
+          "duration_seconds": 70.33,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "provider_summary": "Added the monthly spending report API and React dashboard breakdown. Existing expense CRUD remains unchanged.",
+          "telemetry": {
+            "tool_calls": 3,
+            "assistant_messages": 4,
+            "assistant_message_chars": 1667,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "1f9630fc8824850e67be47b544a9657eae3790a1836226426a235ba95eb263ac",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py"
+                ],
+                "output_chars": 2741,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "dbf28997d9b696a80d73e9564d94e05019fdc1d16f83deb7d2b09fcc08b582dd",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 268,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "134529f90308d3bdfcfee620283cd58a42d91eafa7f964aad00187d989a4f465",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1508,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              }
+            ]
+          },
+          "packet_chars": 1866,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "round": 3,
+      "order": [
+        "flexible_8",
+        "hard_3"
+      ],
+      "source_hashes": {
+        "flexible_8": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+        "hard_3": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+      },
+      "results": {
+        "flexible_8": {
+          "status": "failed",
+          "usage": {
+            "input": 69114,
+            "output": 2015,
+            "cached": 48384,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09e1e-fcf9-7f30-9628-47807ff99560"
+          },
+          "duration_seconds": 75.672,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "provider_summary": "Implemented monthly spending reports and dashboard category breakdown. Backend tests could not collect because the workspace package was not on PYTHONPATH; frontend build could not run because npm is unavailable.",
+          "telemetry": {
+            "tool_calls": 3,
+            "assistant_messages": 4,
+            "assistant_message_chars": 2109,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "1f9630fc8824850e67be47b544a9657eae3790a1836226426a235ba95eb263ac",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py"
+                ],
+                "output_chars": 2741,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "dbf28997d9b696a80d73e9564d94e05019fdc1d16f83deb7d2b09fcc08b582dd",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 268,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "134529f90308d3bdfcfee620283cd58a42d91eafa7f964aad00187d989a4f465",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1508,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              }
+            ]
+          },
+          "packet_chars": 1866,
+          "actual_source_changed": true
+        },
+        "hard_3": {
+          "status": "completed",
+          "usage": {
+            "input": 69074,
+            "output": 1854,
+            "cached": 32256,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "execution_id": "01a09e20-29d8-7ac2-8e14-ab4f55a5ebea"
+          },
+          "duration_seconds": 58.527,
+          "quality": {
+            "passed": true,
+            "contract": "context-cache-monthly-v1",
+            "error": null,
+            "returncode": 0
+          },
+          "error": null,
+          "provider_summary": "Added GET /reports/monthly/{month} with month-filtered totals and category breakdown, and displayed the report in the React dashboard with month selection. Expense CRUD was preserved.",
+          "telemetry": {
+            "tool_calls": 2,
+            "assistant_messages": 4,
+            "assistant_message_chars": 1595,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "395f54ec7b38ce319f690ebb9dd8e9d8ca43cfd689189359a64210e1f3da44eb",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [
+                  "app/main.py",
+                  "frontend/src/App.jsx",
+                  "tests/test_expenses.py"
+                ],
+                "output_chars": 2820,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "validation"
+                ],
+                "command_sha256": "1450d99e017eedb0bbafc7dce4f05afa2e223bab39e589b1411bca841f811196",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1794,
+                "exit_code": 1,
+                "failure_hints": [
+                  "missing_dependency"
+                ]
+              }
+            ]
+          },
+          "packet_chars": 1866,
+          "actual_source_changed": true
+        }
+      }
+    }
+  ],
+  "limitations": [
+    "A hard stop before turn completion has no final provider usage report and is rejected.",
+    "This screening uses one software task family.",
+    "Provider tokens do not map directly to subscription quota units."
+  ]
+}
