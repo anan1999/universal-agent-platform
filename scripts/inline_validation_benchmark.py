@@ -32,10 +32,8 @@ class DeclaredValidationPacket(PiBudgetPacket):
         super().__init__(root, goal, context)
         self.text += (
             "DETERMINISTIC VALIDATION:\n"
-            f"- Run exactly: {VALIDATION_COMMAND}\n"
-            "- Reserve one tool call for it before returning.\n"
-            "- If it fails because of your implementation, make one focused repair and rerun "
-            "the same command once. Do not substitute pytest, npm, or environment setup.\n"
+            f"- Before returning, run exactly: {VALIDATION_COMMAND}\n"
+            "- Treat its exit status as authoritative; do not substitute a guessed command.\n"
         )
 
 
@@ -141,7 +139,7 @@ def render(report: dict) -> str:
 
 def save(rounds: list[dict], args: argparse.Namespace) -> dict:
     report = {
-        "experiment": "generic_vs_exact_inline_validation", "goal": GOAL,
+        "experiment": "generic_vs_minimal_exact_inline_validation", "goal": GOAL,
         "model": args.model, "reasoning": "low", "validation_command": VALIDATION_COMMAND,
         "summary": summarize(rounds), "rounds": rounds,
         "limitations": ["Small screening run on one implementation task family.",

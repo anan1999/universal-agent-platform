@@ -59,10 +59,8 @@ class ExecutionPacket:
         if self.read_only:
             constraints.append("Do not modify anything in the workspace.")
         elif self.validation_commands:
-            constraints.extend([
-                "Before returning, run the smallest applicable command from DETERMINISTIC VALIDATION exactly as declared.",
-                "If it fails because of this implementation, make one focused repair and rerun that same command once; do not substitute guessed validation commands.",
-            ])
+            constraints.append(
+                "Before returning, run the smallest applicable command from DETERMINISTIC VALIDATION exactly as declared.")
         if self.execution_budget.get("enabled"):
             budget = self.execution_budget
             constraints.extend([
@@ -151,7 +149,6 @@ class ExecutionPacketBuilder:
             project_context=[
                 f"Architecture: {', '.join(f'{key}={value}' for key, value in architecture.items()) or 'unknown'}",
                 f"Important paths: {', '.join(f'{key}={value}' for key, value in important_paths.items()) or 'none'}",
-                f"Validated commands: {', '.join(f'{key}={value}' for key, value in commands.items()) or 'none'}",
             ] if project_index else [],
             cached_file_summaries=[
                 f"{item.get('path')}: {item.get('summary')}"

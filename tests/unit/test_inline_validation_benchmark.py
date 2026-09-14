@@ -21,8 +21,8 @@ def test_declared_packet_names_one_exact_validation_command(tmp_path):
     packet = benchmark.DeclaredValidationPacket(tmp_path, "goal", {"source_pointers": []})
     rendered = packet.render()
     assert benchmark.VALIDATION_COMMAND in rendered
-    assert "rerun the same command once" in rendered
-    assert "Do not substitute pytest" in rendered
+    assert "exit status as authoritative" in rendered
+    assert "focused repair" not in rendered
 
 
 def test_summary_keeps_quality_separate_from_cost():

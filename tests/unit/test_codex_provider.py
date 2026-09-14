@@ -45,7 +45,7 @@ def test_execution_packet_is_bounded_and_has_no_chat_history(tmp_path):
     assert RESULT_SCHEMA["properties"]["learning_evidence"]["items"]["additionalProperties"] is False
 
 
-def test_mutating_packet_requires_declared_validation_and_one_inline_repair(tmp_path):
+def test_mutating_packet_exposes_one_canonical_validation_handle(tmp_path):
     task = Task("T", "R", "Implement fix", "developer", metadata={
         "project_intelligence": {"project_index": {
             "commands": {"test": "python -m pytest -q"},
@@ -55,8 +55,8 @@ def test_mutating_packet_requires_declared_validation_and_one_inline_repair(tmp_
         task, tmp_path, "sample", "python").render()
     assert "DETERMINISTIC VALIDATION" in rendered
     assert "test: python -m pytest -q" in rendered
-    assert "make one focused repair and rerun that same command once" in rendered
-    assert "do not substitute guessed validation commands" in rendered
+    assert "run the smallest applicable command" in rendered
+    assert "make one focused repair" not in rendered
 
 
 def test_read_only_packet_does_not_request_project_validation(tmp_path):
