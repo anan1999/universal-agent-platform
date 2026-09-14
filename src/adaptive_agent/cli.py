@@ -26,6 +26,7 @@ from adaptive_agent.core.orchestrator import Orchestrator
 from adaptive_agent.git.worktree import WorktreeManager
 from adaptive_agent.intelligence.project import ProjectIntelligenceStore
 from adaptive_agent.project.context_index import ProjectContextIndex
+from adaptive_agent.project.adaptive_budget import AdaptiveToolBudgetStore
 from adaptive_agent.project.adapter import (
     UAP_END,
     UAP_START,
@@ -200,6 +201,18 @@ def parser() -> argparse.ArgumentParser:
     consumption.add_argument("mode", nargs="?", choices=("economy", "balanced", "maximum"))
     consumption.add_argument("--json", action="store_true")
 
+    budget_command = commands.add_parser("budget", help="inspect or reset adaptive tool-budget evidence")
+    budget_subcommands = budget_command.add_subparsers(dest="budget_command", required=True)
+    budget_status = budget_subcommands.add_parser("status")
+    budget_status.add_argument("--json", action="store_true")
+    budget_explain = budget_subcommands.add_parser("explain")
+    budget_explain.add_argument("goal")
+    budget_explain.add_argument("--json", action="store_true")
+    budget_reset = budget_subcommands.add_parser("reset")
+    budget_reset.add_argument("goal", nargs="?")
+    budget_reset.add_argument("--all", action="store_true", dest="reset_all")
+    budget_reset.add_argument("--json", action="store_true")
+
     provider_test = commands.add_parser("provider-test", help="run one tiny read-only provider request")
     provider_test.add_argument("name")
     provider_test.add_argument("--timeout", type=float, default=30.0)
@@ -247,6 +260,15 @@ def requires_orchestration(goal: str) -> bool:
         return False
     analysis = GoalAnalyzer(profiles=profile_registry()).analyze(goal)
     return bool(analysis.capabilities) and not analysis.inferred
+
+
+def _budget_analysis(goal: str, root: Path):
+    from adaptive_agent.core.goal_analyzer import GoalAnalyzer
+    from adaptive_agent.profiles.registry import profile_registry
+
+    info = discover(root)
+    return GoalAnalyzer(profiles=profile_registry()).analyze(
+        goal, project_profiles(root), info.signals)
 
 
 def _resolve_provider(name: str) -> str:
@@ -575,6 +597,50 @@ def main(argv: list[str] | None = None) -> int:
     db = database()
     selected_profiles = ([item.strip() for item in args.profiles.split(",") if item.strip()]
                          if getattr(args, "profiles", None) else None)
+
+    if args.command == "budget":
+        root = Path.cwd().resolve()
+        if not (root / ".agent").is_dir():
+            print("Current project is not initialized. Run agentctl init --auto.", file=sys.stderr)
+            return 2
+        store = AdaptiveToolBudgetStore(root)
+        if args.budget_command == "status":
+            rows = store.status()
+            payload = {"project": str(root), "families": rows, "count": len(rows)}
+            if args.json:
+                print(json.dumps(payload, indent=2))
+            elif not rows:
+                print("No current adaptive budget evidence.")
+            else:
+                print("ADAPTIVE BUDGET EVIDENCE")
+                for row in rows:
+                    cap = row["provider_tool_cap"] if row["provider_tool_cap"] is not None else "normal"
+                    print(f"  {row['family']}: accepted={row['accepted_runs']} "
+                          f"cost_samples={row['cost_samples']} cap={cap} gate={row['cost_gate']}")
+            return 0
+        if args.budget_command == "explain":
+            analysis = _budget_analysis(args.goal, root)
+            decision = store.decide(analysis)
+            payload = {"goal": args.goal, "decision": decision.to_dict(),
+                       "effective_provider_tool_cap": decision.provider_tool_cap,
+                       "normal_budget_preserved": decision.provider_tool_cap is None}
+            print(json.dumps(payload, indent=2) if args.json else
+                  f"Adaptive budget: {decision.source}\n"
+                  f"Family: {decision.family}\nAccepted runs: {decision.accepted_runs}\n"
+                  f"Cost samples: {decision.cost_samples}\n"
+                  f"Effective provider tool cap: {decision.provider_tool_cap or 'normal'}\n"
+                  f"Reason: {decision.reason}\nCost gate: {decision.cost_gate}")
+            return 0
+        if not args.reset_all and not args.goal:
+            print("Specify a goal, or pass --all to reset every current-environment family.",
+                  file=sys.stderr)
+            return 2
+        analysis = None if args.reset_all else _budget_analysis(args.goal, root)
+        cleared = store.reset(analysis)
+        payload = {"cleared_families": cleared, "scope": "all" if args.reset_all else "goal"}
+        print(json.dumps(payload, indent=2) if args.json
+              else f"Cleared {cleared} adaptive budget family record(s).")
+        return 0
 
     if args.command == "setup":
         result = run_setup(auto=args.auto, non_interactive=args.non_interactive)

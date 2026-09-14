@@ -1,4 +1,5 @@
 import asyncio
+import json
 import sys
 from pathlib import Path
 
@@ -11,7 +12,7 @@ from adaptive_agent.providers.mock import MockProvider
 from adaptive_agent.project.adaptive_budget import AdaptiveToolBudgetStore
 from adaptive_agent.storage.database import Database
 from adaptive_agent.tasks.graph import TaskGraph
-from adaptive_agent.cli import parser
+from adaptive_agent.cli import _budget_analysis, main, parser
 
 
 def analysis(goal: str = "Build a FastAPI endpoint"):
@@ -116,6 +117,24 @@ def test_explicit_cap_always_wins_without_reading_history(tmp_path):
     assert decision.source == "explicit"
 
 
+def test_status_is_bounded_and_reset_can_target_one_family(tmp_path):
+    store = initialized(tmp_path)
+    coding = analysis()
+    research = analysis("Analyze a research question")
+    for _ in range(3):
+        store.record(coding, True, measured())
+        store.record(research, True, measured())
+    rows = store.status()
+    assert len(rows) == 2
+    assert all(set(row) == {"family", "accepted_runs", "cost_samples",
+                            "provider_tool_cap", "cost_gate", "last_verified"}
+               for row in rows)
+    assert store.reset(coding) == 1
+    assert [row["family"] for row in store.status()] == [store.family(research)]
+    assert store.reset() == 1
+    assert store.status() == []
+
+
 def test_orchestrator_applies_learned_cap_and_explains_source(tmp_path):
     store = initialized(tmp_path)
     orchestrator = Orchestrator(
@@ -204,3 +223,34 @@ def test_three_real_scheduler_acceptances_apply_cap_on_the_next_run(tmp_path):
     assert decision["accepted_runs"] == 3
     assert decision["cost_samples"] == 3
     assert decision["cost_gate"] == "cap_6_supported"
+
+
+def test_budget_cli_status_explain_and_targeted_reset(monkeypatch, tmp_path, capsys):
+    store = initialized(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    goal = "Build a FastAPI endpoint"
+    current = _budget_analysis(goal, tmp_path)
+    for _ in range(3):
+        store.record(current, True, measured())
+
+    assert main(["budget", "status", "--json"]) == 0
+    status = json.loads(capsys.readouterr().out)
+    assert status["count"] == 1
+    assert status["families"][0]["provider_tool_cap"] == 6
+
+    assert main(["budget", "explain", goal, "--json"]) == 0
+    explanation = json.loads(capsys.readouterr().out)
+    assert explanation["effective_provider_tool_cap"] == 6
+    assert explanation["normal_budget_preserved"] is False
+
+    assert main(["budget", "reset", goal, "--json"]) == 0
+    reset = json.loads(capsys.readouterr().out)
+    assert reset == {"cleared_families": 1, "scope": "goal"}
+    assert store.status() == []
+
+
+def test_budget_cli_requires_explicit_all_for_bulk_reset(monkeypatch, tmp_path, capsys):
+    initialized(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    assert main(["budget", "reset"]) == 2
+    assert "Specify a goal" in capsys.readouterr().err

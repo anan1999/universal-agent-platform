@@ -212,3 +212,53 @@ class AdaptiveToolBudgetStore:
                 return True
         except (OSError, sqlite3.Error):
             return False
+
+    def status(self) -> list[dict[str, Any]]:
+        """List bounded current-environment evidence without goals or provider content."""
+        fingerprint = self.fingerprint()
+        if fingerprint is None or not self.path.exists():
+            return []
+        try:
+            with closing(self._connect()) as db:
+                rows = db.execute(
+                    "SELECT family,accepted_runs,last_verified FROM adaptive_tool_budgets "
+                    "WHERE fingerprint=? AND last_verified>=? AND last_verified<=? "
+                    "ORDER BY family LIMIT 64",
+                    (fingerprint, time.time() - EVIDENCE_TTL, time.time()),
+                ).fetchall()
+                result = []
+                for family, accepted, verified in rows:
+                    observations = self._observations(db, family, fingerprint)
+                    cap, gate = self._eligible_cap(int(accepted), observations)
+                    result.append({
+                        "family": family, "accepted_runs": int(accepted),
+                        "cost_samples": len(observations), "provider_tool_cap": cap,
+                        "cost_gate": gate, "last_verified": float(verified),
+                    })
+                return result
+        except (OSError, sqlite3.Error):
+            return []
+
+    def reset(self, analysis: GoalAnalysis | None = None) -> int:
+        """Delete adaptive evidence for one family or this project environment."""
+        fingerprint = self.fingerprint()
+        if fingerprint is None or not self.path.exists():
+            return 0
+        family = self.family(analysis) if analysis is not None else None
+        try:
+            with closing(self._connect()) as db, db:
+                if family is None:
+                    cursor = db.execute(
+                        "DELETE FROM adaptive_tool_budgets WHERE fingerprint=?", (fingerprint,))
+                    db.execute(
+                        "DELETE FROM adaptive_budget_observations WHERE fingerprint=?", (fingerprint,))
+                else:
+                    cursor = db.execute(
+                        "DELETE FROM adaptive_tool_budgets WHERE family=? AND fingerprint=?",
+                        (family, fingerprint))
+                    db.execute(
+                        "DELETE FROM adaptive_budget_observations WHERE family=? AND fingerprint=?",
+                        (family, fingerprint))
+                return max(0, int(cursor.rowcount))
+        except (OSError, sqlite3.Error):
+            return 0
