@@ -1,0 +1,1319 @@
+{
+  "experiment": "fresh_user_fixed_8_vs_candidate_6_cross_domain",
+  "model": "gpt-5.6-luna",
+  "reasoning": "low",
+  "caps": {
+    "fixed_8": 8,
+    "candidate_6": 6
+  },
+  "message_cap": 12,
+  "acceptance_sha256": "262f6334c60b346a407bb57cc08c5078ecfd23440901f8b5751972b924917ff0",
+  "implementation_commit": "6696b1a6fbdbea4dfffd2e05c01e4e83d8f48e4b",
+  "fresh_user_contract": {
+    "new_git_project": true,
+    "agent_state": false,
+    "prior_project_memory": false,
+    "fresh_provider_session": true
+  },
+  "cases": [
+    {
+      "domain": "product-strategy",
+      "order": [
+        "fixed_8",
+        "candidate_6"
+      ],
+      "source_hash": "65267c95fadc4d9d86997f5b4945761808cdd417b370809cf8fd69321158ee41",
+      "results": {
+        "fixed_8": {
+          "status": "completed",
+          "usage": {
+            "input": 81616,
+            "output": 772,
+            "cached": 75520,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "provider_tool_calls": 5,
+            "provider_messages": 1,
+            "execution_id": "01a09ea0-cd4b-7962-9f5d-186f395534e0"
+          },
+          "duration_seconds": 56.853,
+          "quality": {
+            "passed": true,
+            "domain": "product-strategy",
+            "errors": [],
+            "contract": "cross-domain-deliverable-v1",
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 5,
+            "assistant_messages": 1,
+            "assistant_message_chars": 326,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "0f317cf153bb52cd5c1bd8114b26ddc874c765d3e0c77fb9fe4f80c0e8d5c8ed",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 53,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "892f054aecd4c4b9d625cdbfbdeb033d213e41c99a239022427b44189457f4d5",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1721,
+                "exit_code": 0,
+                "failure_hints": [
+                  "test_failure"
+                ]
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "fae1f38996f72b8c3aee9c46602ab4ec9583b96a49cc5478a101134c00a58478",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 467,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "8d0e933f15c3dd071956490413780db2a9e9afb9ef7994d5db77a3c7901825c3",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 500,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 5,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 6,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "015f90bfc3b9652f32d7d4ed0336f5a32b6d939050b854696e7f3d57179b41d5",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 337,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 667,
+          "actual_source_changed": true
+        },
+        "candidate_6": {
+          "status": "completed",
+          "usage": {
+            "input": 80017,
+            "output": 819,
+            "cached": 61440,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "provider_tool_calls": 3,
+            "provider_messages": 1,
+            "execution_id": "01a09ea1-abfc-7bd1-8fb7-b13e544bceac"
+          },
+          "duration_seconds": 42.586,
+          "quality": {
+            "passed": true,
+            "domain": "product-strategy",
+            "errors": [],
+            "contract": "cross-domain-deliverable-v1",
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 3,
+            "assistant_messages": 1,
+            "assistant_message_chars": 371,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "0f317cf153bb52cd5c1bd8114b26ddc874c765d3e0c77fb9fe4f80c0e8d5c8ed",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 53,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "b633380dfded6eb02346c30f8ab0b048f012ec5b474540de35b62e19484da299",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 984,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "d13e124ba257626330176b29026d1c55cf77f939a04ce3fcf3b22ba8b5f85ce6",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 288,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 667,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "domain": "research-synthesis",
+      "order": [
+        "candidate_6",
+        "fixed_8"
+      ],
+      "source_hash": "178c682c7eede31ccf9748476e0d2e8ecdf0062682825e1ddda5994342380f54",
+      "results": {
+        "candidate_6": {
+          "status": "completed",
+          "usage": {
+            "input": 79955,
+            "output": 846,
+            "cached": 61440,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "provider_tool_calls": 3,
+            "provider_messages": 2,
+            "execution_id": "01a09ea2-5c6b-7a92-9eb1-7a5de9180318"
+          },
+          "duration_seconds": 40.926,
+          "quality": {
+            "passed": true,
+            "domain": "research-synthesis",
+            "errors": [],
+            "contract": "cross-domain-deliverable-v1",
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 3,
+            "assistant_messages": 2,
+            "assistant_message_chars": 728,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "0f317cf153bb52cd5c1bd8114b26ddc874c765d3e0c77fb9fe4f80c0e8d5c8ed",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 60,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "c91ed354d3754a922962696b06270d1dd0f2a46d772b1e694c8664a83202b8b9",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 873,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "2eda00e99b291529caad19d858b6b1053d00a0f9efa6131154f3ff610b2b469d",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 315,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 689,
+          "actual_source_changed": true
+        },
+        "fixed_8": {
+          "status": "completed",
+          "usage": {
+            "input": 79504,
+            "output": 720,
+            "cached": 60416,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "provider_tool_calls": 3,
+            "provider_messages": 1,
+            "execution_id": "01a09ea2-fe2f-7e63-8442-cae9f5a81a5e"
+          },
+          "duration_seconds": 40.089,
+          "quality": {
+            "passed": true,
+            "domain": "research-synthesis",
+            "errors": [],
+            "contract": "cross-domain-deliverable-v1",
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 3,
+            "assistant_messages": 1,
+            "assistant_message_chars": 482,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "0f317cf153bb52cd5c1bd8114b26ddc874c765d3e0c77fb9fe4f80c0e8d5c8ed",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 60,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "a1d8df27de0fadd88c71685d408655c08bb4f8b9fdc96a43c42cbc07650ee52e",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 852,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "2eda00e99b291529caad19d858b6b1053d00a0f9efa6131154f3ff610b2b469d",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 315,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 689,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "domain": "ui-ux",
+      "order": [
+        "fixed_8",
+        "candidate_6"
+      ],
+      "source_hash": "77b76e57f69c5a278c27092b94079f50c8f0760ecf0974f07b5ea1fee3200c70",
+      "results": {
+        "fixed_8": {
+          "status": "completed",
+          "usage": {
+            "input": 88143,
+            "output": 3913,
+            "cached": 65536,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "provider_tool_calls": 5,
+            "provider_messages": 3,
+            "execution_id": "01a09ea3-a08c-7f22-bf42-f30175294a56"
+          },
+          "duration_seconds": 109.387,
+          "quality": {
+            "passed": true,
+            "domain": "ui-ux",
+            "errors": [],
+            "contract": "cross-domain-deliverable-v1",
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 5,
+            "assistant_messages": 3,
+            "assistant_message_chars": 1208,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "16431f8e9791a48d14a5e559978bd3c076c29bdefdbe736e0d69004fdf34cd7f",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 638,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "c76401a6429b3b28ae47aa973ef236aecf2e571d43bdaeb0932692c697373a40",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 409,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "097d759796c7ccfd93f75492dc489d000b8cf18d96d8dc886458672b782da495",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 299,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "725d54194c208294b6b1ab3d41dfe417654382abed344371d5d99810c3f808b9",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1721,
+                "exit_code": 0,
+                "failure_hints": [
+                  "test_failure"
+                ]
+              },
+              {
+                "sequence": 5,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 6,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "08f8478152bbc86daac17ee58bc76ddc2d8baf47be4c7a1f2d8f0cb778bf8c90",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 134,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 645,
+          "actual_source_changed": true
+        },
+        "candidate_6": {
+          "status": "completed",
+          "usage": {
+            "input": 85960,
+            "output": 3763,
+            "cached": 48384,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "provider_tool_calls": 3,
+            "provider_messages": 1,
+            "execution_id": "01a09ea5-4f53-7b21-8009-7b18c085b25d"
+          },
+          "duration_seconds": 92.994,
+          "quality": {
+            "passed": true,
+            "domain": "ui-ux",
+            "errors": [],
+            "contract": "cross-domain-deliverable-v1",
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 3,
+            "assistant_messages": 1,
+            "assistant_message_chars": 622,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "unclassified"
+                ],
+                "command_sha256": "44e8ed0ded49695bfb1c034c937d964df3a112167638f848b0ef586a20cc97e1",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 599,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "8a5c0108c3f129849bf99396b792bd8220da1abd5056cb74c810c50241c005f9",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 729,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "33755893190c89d52445b42a10da155a548fd4342d9794daf9332358fbd5d51e",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 140,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 645,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "domain": "three-d-design",
+      "order": [
+        "candidate_6",
+        "fixed_8"
+      ],
+      "source_hash": "24bb6a37d365ddc48c3fa4f80374e597c632a40ba82693d51ced0c15f9234c92",
+      "results": {
+        "candidate_6": {
+          "status": "completed",
+          "usage": {
+            "input": 103298,
+            "output": 2275,
+            "cached": 81664,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "provider_tool_calls": 4,
+            "provider_messages": 2,
+            "execution_id": "01a09ea6-c096-7691-88a3-c61d8c8028b4"
+          },
+          "duration_seconds": 78.497,
+          "quality": {
+            "passed": true,
+            "domain": "three-d-design",
+            "errors": [],
+            "contract": "cross-domain-deliverable-v1",
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 4,
+            "assistant_messages": 2,
+            "assistant_message_chars": 835,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "unclassified"
+                ],
+                "command_sha256": "d740095ee76b0e6f2042f3b54cb40b4f7e52366f6173adb8eff09a32d0ef04e9",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 1210,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "06d3e932032c8b02bcbb2b2571d86e7f5cff7eb011503973d83e8748507615c8",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2361,
+                "exit_code": 0,
+                "failure_hints": [
+                  "test_failure"
+                ]
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "7f7b2dd2c3d39f75783759d0c2cf8d70a2cea7a1d1203de51ae0caa3a656edab",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": 1,
+                "failure_hints": []
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "792c97e523e8c4c00beb66265510139278cd170ff11bbd6bc77bb3c47a20ef85",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 110,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 646,
+          "actual_source_changed": true
+        },
+        "fixed_8": {
+          "status": "completed",
+          "usage": {
+            "input": 159812,
+            "output": 3317,
+            "cached": 118016,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "provider_tool_calls": 5,
+            "provider_messages": 1,
+            "execution_id": "01a09ea7-f67e-7191-bcb5-051497045ecb"
+          },
+          "duration_seconds": 118.52,
+          "quality": {
+            "passed": true,
+            "domain": "three-d-design",
+            "errors": [],
+            "contract": "cross-domain-deliverable-v1",
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 5,
+            "assistant_messages": 1,
+            "assistant_message_chars": 546,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "unclassified"
+                ],
+                "command_sha256": "fec01d22f41fcdbf24fdbcc66a83c1ac75912427080930b995972b0d8b447640",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 324,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "9ac900f4dacaec8885225cbfff50b9ba3e8dcfc77c378fd24cc5b4e367272e59",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2361,
+                "exit_code": 0,
+                "failure_hints": [
+                  "test_failure"
+                ]
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "255871df97549098f34593222bc6114cebabafa690cb5f01acb7014b6e45b7b1",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 639,
+                "exit_code": 1,
+                "failure_hints": []
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "unclassified"
+                ],
+                "command_sha256": "b9a1933b7c2b7c1c794d6291e1614570ccb858bd6f2c09f9113e55e2cf9b95f5",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 288,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 6,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 7,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "15c3233ad5ed68e76b451ae4d84c48c5f03a376db5b94cbe4c94e6ce98678bda",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 92,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 8,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 646,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "domain": "graphic-design",
+      "order": [
+        "fixed_8",
+        "candidate_6"
+      ],
+      "source_hash": "2048a9e62753729c728357983350168ad93c8ba032b582635cbfea26050d11e4",
+      "results": {
+        "fixed_8": {
+          "status": "completed",
+          "usage": {
+            "input": 118988,
+            "output": 2675,
+            "cached": 79616,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "provider_tool_calls": 5,
+            "provider_messages": 2,
+            "execution_id": "01a09ea9-cbeb-7ff3-a409-461e833ca5b3"
+          },
+          "duration_seconds": 88.901,
+          "quality": {
+            "passed": false,
+            "domain": "graphic-design",
+            "errors": [
+              "copy",
+              "hierarchy"
+            ],
+            "contract": "cross-domain-deliverable-v1",
+            "returncode": 1
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 5,
+            "assistant_messages": 2,
+            "assistant_message_chars": 874,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "0f317cf153bb52cd5c1bd8114b26ddc874c765d3e0c77fb9fe4f80c0e8d5c8ed",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 62,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "90e04d47a267fb66705f07abc9a833d384b29debe70e537ebafc8b90010f2e09",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 646,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "658af4850d3c1010cc713d423bce9014d3ea0634db1276dacb18803d709adbeb",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 125,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "152276d631fd62e25a5cdf56392c8d03702f1dfc9f80785b69b52b878750f51a",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 251,
+                "exit_code": 1,
+                "failure_hints": []
+              },
+              {
+                "sequence": 6,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "cf2239cdf932a62699f98eb6efa74e1cfd5a93e646d1e57487afb05fa96ffa4f",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 27,
+                "exit_code": 1,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 641,
+          "actual_source_changed": true
+        },
+        "candidate_6": {
+          "status": "completed",
+          "usage": {
+            "input": 83649,
+            "output": 2429,
+            "cached": 63488,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "provider_tool_calls": 4,
+            "provider_messages": 3,
+            "execution_id": "01a09eab-2dff-7713-a8ad-9285858f24e0"
+          },
+          "duration_seconds": 76.976,
+          "quality": {
+            "passed": false,
+            "domain": "graphic-design",
+            "errors": [
+              "copy",
+              "hierarchy"
+            ],
+            "contract": "cross-domain-deliverable-v1",
+            "returncode": 1
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 4,
+            "assistant_messages": 3,
+            "assistant_message_chars": 1039,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "2870c3108d61eb6cb6a1f485c1963677311e167b3ea915d729972da3a592cfc8",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 783,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "c76401a6429b3b28ae47aa973ef236aecf2e571d43bdaeb0932692c697373a40",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 417,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "864ccc0ecb96d67ad091163b0c469f205c31d7c3a34e6aacb45b067b9cd99414",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 229,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "988990a5c88d1daea32da365833167695df91ca90756c48103025134a0dc05fb",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 176,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 641,
+          "actual_source_changed": true
+        }
+      }
+    },
+    {
+      "domain": "interior-lighting",
+      "order": [
+        "candidate_6",
+        "fixed_8"
+      ],
+      "source_hash": "4d9e197bf135bb1c5298c1ac790923d53568a5c084171ea28756f2163a7c582a",
+      "results": {
+        "candidate_6": {
+          "status": "completed",
+          "usage": {
+            "input": 80382,
+            "output": 1185,
+            "cached": 61440,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "provider_tool_calls": 3,
+            "provider_messages": 3,
+            "execution_id": "01a09eac-5f3b-7161-b959-92b8ed575baa"
+          },
+          "duration_seconds": 52.053,
+          "quality": {
+            "passed": true,
+            "domain": "interior-lighting",
+            "errors": [],
+            "contract": "cross-domain-deliverable-v1",
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 3,
+            "assistant_messages": 3,
+            "assistant_message_chars": 1189,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "ec12e1b85a2b1d6c23e844539aa3262ba4cb6490d3631a7d57bf2d1546e75649",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 57,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "75481cca3642a80a65b928830e173872e96d8a054d6f2e455319ecab491a19dd",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 674,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "e0e4b2f714b41c14c0f9d93027d42fbc3821a4f92e75c5ba49f24e618ac00e23",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 10,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 667,
+          "actual_source_changed": true
+        },
+        "fixed_8": {
+          "status": "completed",
+          "usage": {
+            "input": 82659,
+            "output": 1171,
+            "cached": 73472,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "provider_tool_calls": 3,
+            "provider_messages": 2,
+            "execution_id": "01a09ead-2d8f-7720-861b-068151757355"
+          },
+          "duration_seconds": 51.61,
+          "quality": {
+            "passed": true,
+            "domain": "interior-lighting",
+            "errors": [],
+            "contract": "cross-domain-deliverable-v1",
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 3,
+            "assistant_messages": 2,
+            "assistant_message_chars": 919,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "unclassified"
+                ],
+                "command_sha256": "0c2ac45b6b23c5539a14ed8040a04ddeb545f700c6e9dbf14af8275bb19b34a3",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 678,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "231c51d613018c0b4f272283fdf356e371a176bb806c4a593dc525830b274bcf",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 2399,
+                "exit_code": 0,
+                "failure_hints": [
+                  "test_failure"
+                ]
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "de0e57798880a03065cad6544f405cebeb6e192372302265fa7956cd30977943",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 69,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 667,
+          "actual_source_changed": true
+        }
+      }
+    }
+  ],
+  "summary": {
+    "domains": 6,
+    "quality": {
+      "fixed_8": 5,
+      "candidate_6": 5
+    },
+    "pooled": {
+      "fixed_8": {
+        "tokens": 623290,
+        "uncached_tokens": 150714,
+        "tool_calls": 26,
+        "assistant_messages": 10,
+        "seconds": 465.36
+      },
+      "candidate_6": {
+        "tokens": 524578,
+        "uncached_tokens": 146722,
+        "tool_calls": 20,
+        "assistant_messages": 12,
+        "seconds": 384.032
+      }
+    },
+    "domain_wins": {
+      "tokens": 5,
+      "uncached_tokens": 3,
+      "tool_calls": 4,
+      "assistant_messages": 1
+    },
+    "total_token_reduction_percent": 15.84,
+    "uncached_token_reduction_percent": 2.65,
+    "tool_reduction_percent": 23.08,
+    "message_reduction_percent": -20.0,
+    "time_reduction_percent": 17.48
+  },
+  "decision": "INCOMPLETE_QUALITY"
+}
