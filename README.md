@@ -146,7 +146,8 @@ agentctl status --json
 The older `.agent/intelligence.json` data remains readable through debug/experimental commands,
 but its maturity, promotion and payback lifecycle is not part of the default execution path.
 See [V2.3.1 simplified core](docs/v2.3.1-simplified-core.md) for budgets, feature flags and the
-isolated context-cache benchmark contract.
+isolated context-cache benchmark contract. The reusable [benchmark measurement environment](docs/benchmark-measurement-environment.md)
+adds hashed prepared fixtures, durable checkpoints, and fixed small/medium/large acceptance tasks.
 
 ## Copy this into any AI assistant
 

@@ -58,7 +58,7 @@ class PreparedFixture:
                 "source": str(self.source),
                 "source_hash": expected,
             })
-        return {"source_hash": expected, "prepared_path": str(self.prepared), "reused": reused}
+        return {"source_hash": expected, "prepared_path": "prepared/base", "reused": reused}
 
     def materialize(self, task_id: str, arm: str) -> Path:
         if not self.prepared.is_dir():
