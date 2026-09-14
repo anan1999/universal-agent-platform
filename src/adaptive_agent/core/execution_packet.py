@@ -115,6 +115,14 @@ class ExecutionPacketBuilder:
         architecture = project_index.get("architecture", {}) if isinstance(project_index, dict) else {}
         commands = project_index.get("commands", {}) if isinstance(project_index, dict) else {}
         important_paths = project_index.get("important_paths", {}) if isinstance(project_index, dict) else {}
+        parent_validation = sorted({str(item) for item in
+                                    task.metadata.get("parent_validation_tools", [])})
+        packet_constraints = (list(constraints) if constraints is not None
+                              else list(task.metadata.get("constraints", [])))
+        if parent_validation:
+            packet_constraints.append(
+                "Do not run project-wide validation in this task; the scheduler runs: "
+                + ", ".join(parent_validation) + ".")
         def summaries(kind: str) -> list[str]:
             return [f"{item['id']}: {item['summary']}" +
                     (f"\n{item['detail']}" if item.get("detail") else "")
@@ -129,7 +137,7 @@ class ExecutionPacketBuilder:
             skill_context=[item.to_context() for item in (loaded_skills or [])],
             loaded_references=[f"{item.manifest.id}:{name}"
                                for item in (loaded_skills or []) for name in item.references],
-            constraints=constraints or list(task.metadata.get("constraints", [])),
+            constraints=packet_constraints,
             read_only=inferred_read_only if read_only is None else read_only,
             artifact_type=getattr(task, "artifact_type", "unknown"),
             responsibility=str(task.metadata.get("responsibility", "")),
@@ -143,7 +151,9 @@ class ExecutionPacketBuilder:
             project_context=[
                 f"Architecture: {', '.join(f'{key}={value}' for key, value in architecture.items()) or 'unknown'}",
                 f"Important paths: {', '.join(f'{key}={value}' for key, value in important_paths.items()) or 'none'}",
-                f"Validated commands: {', '.join(f'{key}={value}' for key, value in commands.items()) or 'none'}",
+                *([] if parent_validation else [
+                    f"Validated commands: {', '.join(f'{key}={value}' for key, value in commands.items()) or 'none'}"
+                ]),
             ] if project_index else [],
             cached_file_summaries=[
                 f"{item.get('path')}: {item.get('summary')}"

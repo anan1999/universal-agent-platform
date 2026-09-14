@@ -63,6 +63,43 @@ def test_simple_bug_is_single_agent_with_deterministic_test(monkeypatch, tmp_pat
                for task in plan["tasks"])
 
 
+def test_allowlisted_downstream_validation_is_owned_by_scheduler(tmp_path):
+    import yaml
+
+    from adaptive_agent.core.execution_packet import ExecutionPacketBuilder
+    from adaptive_agent.core.orchestrator import Orchestrator
+
+    (tmp_path / ".agent").mkdir()
+    (tmp_path / ".agent" / "commands.yaml").write_text(yaml.safe_dump({
+        "commands": {"test": {"command": ["python", "-m", "pytest", "-q"]}}
+    }), encoding="utf-8")
+    (tmp_path / "pyproject.toml").write_text("[project]\nname='tiny'\n", encoding="utf-8")
+    orchestrator = Orchestrator(Database(tmp_path / "parent-validation.db"), MockProvider(delay=0))
+    composition = orchestrator.compose(
+        "RUN-parent", "Fix a simple arithmetic bug and run the existing test.",
+        str(tmp_path), "tiny", "python")
+    agent = next(task for task in composition.graph.tasks.values() if task.kind.value == "agent")
+    assert agent.metadata["validation_owner"] == "scheduler"
+    assert agent.metadata["parent_validation_tools"] == ["project_test"]
+    packet = ExecutionPacketBuilder().build(agent, tmp_path, "tiny", "python")
+    rendered = packet.render()
+    assert "scheduler runs: project_test" in rendered
+    assert "Validated commands:" not in rendered
+
+
+def test_missing_allowlist_keeps_validation_with_agent(tmp_path):
+    from adaptive_agent.core.orchestrator import Orchestrator
+
+    (tmp_path / ".agent").mkdir()
+    (tmp_path / "pyproject.toml").write_text("[project]\nname='tiny'\n", encoding="utf-8")
+    composition = Orchestrator(
+        Database(tmp_path / "no-parent-validation.db"), MockProvider(delay=0)
+    ).compose("RUN-local", "Fix a simple arithmetic bug and run the existing test.",
+              str(tmp_path), "tiny", "python")
+    agent = next(task for task in composition.graph.tasks.values() if task.kind.value == "agent")
+    assert "parent_validation_tools" not in agent.metadata
+
+
 def test_non_software_review_uses_one_reasoning_responsibility(monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
     plan = _dry_run("Review the usability of a mobile onboarding flow.", "mock")

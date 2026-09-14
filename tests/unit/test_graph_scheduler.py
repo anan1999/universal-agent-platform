@@ -1,8 +1,9 @@
 import asyncio
 
-from adaptive_agent.core.models import Event, Task, TaskStatus
+from adaptive_agent.core.models import Event, Task, TaskKind, TaskStatus
 from adaptive_agent.core.consumption import ExecutionBudget
 from adaptive_agent.core.scheduler import Scheduler
+from adaptive_agent.core.tools import ToolExecutor, ToolResult
 from adaptive_agent.observability.event_bus import EventBus
 from adaptive_agent.providers.mock import MockProvider
 from adaptive_agent.storage.database import Database
@@ -84,4 +85,38 @@ def test_token_preflight_rejects_input_that_cannot_fit(tmp_path):
     assert provider.usage().invocation_count == 0
     event = db.query("SELECT metadata_json FROM events WHERE event='budget_exhausted'")[0]
     assert "token budget" in event["metadata_json"]
+
+
+def test_parent_validation_uses_one_provider_call_then_zero_ai_tool(monkeypatch, tmp_path):
+    agent = Task("A", "R", "implement", "worker",
+                 metadata={"parent_validation_tools": ["project_test"]})
+    validation = Task("V", "R", "validate", "project_test", dependencies=["A"],
+                      kind=TaskKind.TOOL,
+                      metadata={"tool": "project_test", "working_directory": str(tmp_path)})
+    monkeypatch.setattr(ToolExecutor, "run", lambda self, tool: ToolResult(
+        "project_test", "completed", "Project Test succeeded.", exit_code=0))
+    provider = MockProvider(delay=0)
+    db, scheduler, result = _budget_graph(
+        tmp_path, [agent, validation], provider, ExecutionBudget(max_provider_calls=1))
+    assert result is True
+    assert provider.usage().invocation_count == 1
+    assert scheduler.budget_status()["tool_calls_used"] == 1
+    invocations = db.query("SELECT task_id,invocation_count FROM token_usage ORDER BY task_id")
+    assert [(row["task_id"], row["invocation_count"]) for row in invocations] == [("A", 1), ("V", 0)]
+
+
+def test_parent_validation_failure_does_not_trigger_another_provider_call(monkeypatch, tmp_path):
+    agent = Task("A", "R", "implement", "worker",
+                 metadata={"parent_validation_tools": ["project_test"]})
+    validation = Task("V", "R", "validate", "project_test", dependencies=["A"],
+                      kind=TaskKind.TOOL,
+                      metadata={"tool": "project_test", "working_directory": str(tmp_path)})
+    monkeypatch.setattr(ToolExecutor, "run", lambda self, tool: ToolResult(
+        "project_test", "failed", "Project Test exited 1.", exit_code=1))
+    provider = MockProvider(delay=0)
+    _, scheduler, result = _budget_graph(
+        tmp_path, [agent, validation], provider, ExecutionBudget(max_provider_calls=1))
+    assert result is False
+    assert provider.usage().invocation_count == 1
+    assert scheduler.budget_status()["tool_calls_used"] == 1
 

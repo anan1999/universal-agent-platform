@@ -20,7 +20,7 @@ from adaptive_agent.core.models import Event, TaskKind, new_id, now_iso
 from adaptive_agent.core.scheduler import Scheduler
 from adaptive_agent.core.team_composer import TeamComposer, TeamMember, TeamPlan
 from adaptive_agent.core.team_manager import TeamManager
-from adaptive_agent.core.tools import ToolRegistry
+from adaptive_agent.core.tools import ToolExecution, ToolExecutor, ToolRegistry
 from adaptive_agent.core.universal_planner import UniversalPlanner
 from adaptive_agent.models.registry import ModelRegistry
 from adaptive_agent.intelligence.project import ContextSelection, IntelligenceDistiller, ProjectIntelligenceStore
@@ -189,12 +189,43 @@ class Orchestrator:
             task.metadata["project_intelligence"] = context
             task.metadata["allowed_files"] = list(context.get("relevant_paths", []))
             task.metadata["execution_budget"] = self.execution_budget.to_dict()
+        self._assign_parent_validation(graph, working_directory)
         context["orchestration_wall_ms"] = round((time.perf_counter() - started) * 1000, 3)
         context["pre_task_ai_calls"] = 0
         return Composition(analysis, team, graph, rationale,
                            consumption=self.consumption_policy.to_dict(),
                            execution_budget=self.execution_budget.to_dict(), execution_plan=execution,
                            project_intelligence=context)
+
+    def _assign_parent_validation(self, graph: TaskGraph,
+                                  working_directory: str | None) -> None:
+        """Move executable project validation out of the AI session.
+
+        A planned tool is not enough: project commands are delegated only when
+        the exact allowlist entry exists. Otherwise the agent retains normal
+        validation context and responsibility.
+        """
+        if not working_directory:
+            return
+        executor = ToolExecutor(self.tools, Path(working_directory))
+        validation_tasks = []
+        for task in graph.tasks.values():
+            if task.kind is not TaskKind.TOOL:
+                continue
+            tool_id = str(task.metadata.get("tool", task.owner))
+            spec = self.tools.get(tool_id)
+            if (spec is None or spec.execution is not ToolExecution.PROJECT_COMMAND
+                    or not executor.allowlisted(str(spec.command))):
+                continue
+            validation_tasks.append((task, tool_id))
+        for task in graph.tasks.values():
+            if task.kind is not TaskKind.AGENT:
+                continue
+            owned = sorted({tool_id for validation, tool_id in validation_tasks
+                            if task.id in validation.dependencies})
+            if owned:
+                task.metadata["validation_owner"] = "scheduler"
+                task.metadata["parent_validation_tools"] = owned
 
     @staticmethod
     def _reuse_project_roles(team: TeamPlan, intelligence: ContextSelection) -> None:
