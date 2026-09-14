@@ -77,6 +77,7 @@ def test_real_provider_contract_with_fake_subprocess(tmp_path):
               "uncertainty_reason": "", "needs_escalation": False}
     output = "\n".join([
         json.dumps({"type": "thread.started", "thread_id": "thread-real-1"}),
+        json.dumps({"type": "item.completed", "item": {"type": "command_execution"}}),
         json.dumps({"type": "item.completed", "item": {"type": "agent_message", "text": json.dumps(result)}}),
         json.dumps({"type": "turn.completed", "usage": {"input_tokens": 123, "cached_input_tokens": 20, "output_tokens": 45}}),
     ])
@@ -103,6 +104,8 @@ def test_real_provider_contract_with_fake_subprocess(tmp_path):
     assert receipt.token_usage["cached"] == 20
     assert receipt.token_usage["invocation_count"] == 1
     assert receipt.token_usage["execution_id"] == "thread-real-1"
+    assert receipt.token_usage["provider_tool_calls"] == 1
+    assert receipt.token_usage["provider_messages"] == 1
 
 
 def test_provider_failure_classification_and_no_reasoning_escalation():

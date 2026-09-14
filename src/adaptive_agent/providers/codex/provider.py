@@ -297,6 +297,7 @@ class CodexProvider(AIProvider):
             "input": int(usage.get("input_tokens", 0)), "output": int(usage.get("output_tokens", 0)),
             "cached": int(usage.get("cached_input_tokens", 0)), "source": source, "estimated": source != "measured",
             "invocation_count": 1,
+            **self._execution_counts(stdout_text),
         }
         if execution_id:
             token_usage["execution_id"] = execution_id
@@ -435,6 +436,24 @@ class CodexProvider(AIProvider):
         if not isinstance(result, dict) or "status" not in result or "summary" not in result:
             raise ValueError("Codex final message did not match the receipt contract")
         return result, usage, execution_id
+
+    @staticmethod
+    def _execution_counts(output: str) -> dict[str, int]:
+        """Return bounded event counts without retaining commands or message text."""
+        tool_kinds = {"command_execution", "mcp_tool_call", "web_search"}
+        tools = 0
+        messages = 0
+        for line in output.splitlines():
+            try:
+                event = json.loads(line)
+            except (ValueError, json.JSONDecodeError):
+                continue
+            item = event.get("item")
+            if event.get("type") != "item.completed" or not isinstance(item, dict):
+                continue
+            tools += item.get("type") in tool_kinds
+            messages += item.get("type") == "agent_message"
+        return {"provider_tool_calls": tools, "provider_messages": messages}
 
     @staticmethod
     def _bounded_error(message: str, limit: int = 1200) -> str:
