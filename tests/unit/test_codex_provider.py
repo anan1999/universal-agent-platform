@@ -45,7 +45,7 @@ def test_execution_packet_is_bounded_and_has_no_chat_history(tmp_path):
     assert RESULT_SCHEMA["properties"]["learning_evidence"]["items"]["additionalProperties"] is False
 
 
-def test_mutating_packet_exposes_one_canonical_validation_handle(tmp_path):
+def test_packet_exposes_canonical_validation_once_without_extra_workflow(tmp_path):
     task = Task("T", "R", "Implement fix", "developer", metadata={
         "project_intelligence": {"project_index": {
             "commands": {"test": "python -m pytest -q"},
@@ -53,13 +53,12 @@ def test_mutating_packet_exposes_one_canonical_validation_handle(tmp_path):
     })
     rendered = ExecutionPacketBuilder().build(
         task, tmp_path, "sample", "python").render()
-    assert "DETERMINISTIC VALIDATION" in rendered
-    assert "test: python -m pytest -q" in rendered
-    assert "run the smallest applicable command" in rendered
+    assert "Validated commands: test=python -m pytest -q" in rendered
+    assert "DETERMINISTIC VALIDATION" not in rendered
     assert "make one focused repair" not in rendered
 
 
-def test_read_only_packet_does_not_request_project_validation(tmp_path):
+def test_read_only_packet_does_not_request_extra_validation_workflow(tmp_path):
     task = Task("T", "R", "Review implementation", "reviewer", metadata={
         "read_only": True,
         "project_intelligence": {"project_index": {

@@ -131,9 +131,9 @@ def render(report: dict) -> str:
     if (summary["declared_quality_passes"] >= summary["generic_quality_passes"]
             and (summary["pooled_total_token_reduction_percent"] or 0) < 0):
         lines.append(
-            "Decision: reject the verbose declared-validation and repair instruction as a default. "
-            "It preserved quality but increased aggregate execution cost. Test a minimal canonical "
-            "command handle without anticipatory repair instructions next.")
+            "Decision: reject explicit prompt emphasis of the declared validation command as a "
+            "default. The compact context already exposes the canonical command; repeating and "
+            "emphasizing it preserved quality but increased aggregate execution cost.")
     return "\n".join(lines) + "\n"
 
 
