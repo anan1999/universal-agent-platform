@@ -1,0 +1,252 @@
+{
+  "experiment": "fresh_user_fixed_8_vs_candidate_6_cross_domain",
+  "model": "gpt-5.6-luna",
+  "reasoning": "low",
+  "caps": {
+    "fixed_8": 8,
+    "candidate_6": 6
+  },
+  "message_cap": 12,
+  "acceptance_sha256": "7d0a65f703cd789bfc8d07f4b802b3390802f51d9274fcbe3a947006ea9f6cbd",
+  "implementation_commit": "466a653e037460488d8c10152e545fa07395a42c",
+  "fresh_user_contract": {
+    "new_git_project": true,
+    "agent_state": false,
+    "prior_project_memory": false,
+    "fresh_provider_session": true
+  },
+  "cases": [
+    {
+      "domain": "graphic-design",
+      "order": [
+        "fixed_8",
+        "candidate_6"
+      ],
+      "source_hash": "2048a9e62753729c728357983350168ad93c8ba032b582635cbfea26050d11e4",
+      "results": {
+        "fixed_8": {
+          "status": "completed",
+          "usage": {
+            "input": 82547,
+            "output": 2281,
+            "cached": 74496,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "provider_tool_calls": 3,
+            "provider_messages": 3,
+            "execution_id": "01a09eb0-2ebd-7821-b2ab-e6e081a3d57f"
+          },
+          "duration_seconds": 71.627,
+          "quality": {
+            "passed": true,
+            "domain": "graphic-design",
+            "errors": [],
+            "contract": "cross-domain-deliverable-v2",
+            "returncode": 0
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 3,
+            "assistant_messages": 3,
+            "assistant_message_chars": 1317,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "unclassified"
+                ],
+                "command_sha256": "44e8ed0ded49695bfb1c034c937d964df3a112167638f848b0ef586a20cc97e1",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 614,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "1d720d567f86dc01758f0fc5a25756503dd21481785f119282e0707a55dac25b",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 661,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "59f964d7771a7a39425e0f5e0cdc6177611d4e9d1205c115f6ca44a48e427a47",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 187,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 641,
+          "actual_source_changed": true
+        },
+        "candidate_6": {
+          "status": "completed",
+          "usage": {
+            "input": 82836,
+            "output": 2057,
+            "cached": 59392,
+            "source": "measured",
+            "estimated": false,
+            "invocation_count": 1,
+            "provider_tool_calls": 4,
+            "provider_messages": 2,
+            "execution_id": "01a09eb1-4aa6-7df3-910e-d970e749bc4c"
+          },
+          "duration_seconds": 73.649,
+          "quality": {
+            "passed": false,
+            "domain": "graphic-design",
+            "errors": [
+              "hierarchy"
+            ],
+            "contract": "cross-domain-deliverable-v2",
+            "returncode": 1
+          },
+          "error": null,
+          "telemetry": {
+            "tool_calls": 4,
+            "assistant_messages": 2,
+            "assistant_message_chars": 812,
+            "provider_turns": 1,
+            "internal_reasoning_rounds": null,
+            "actions": [
+              {
+                "sequence": 1,
+                "type": "command_execution",
+                "labels": [
+                  "unclassified"
+                ],
+                "command_sha256": "0f2e2ca18aa5df4b7be4583aa8cb0ea097356a41de9f15169dde044e56487663",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 626,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 2,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "864ccc0ecb96d67ad091163b0c469f205c31d7c3a34e6aacb45b067b9cd99414",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 229,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 3,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "c76401a6429b3b28ae47aa973ef236aecf2e571d43bdaeb0932692c697373a40",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 417,
+                "exit_code": 0,
+                "failure_hints": []
+              },
+              {
+                "sequence": 4,
+                "type": "file_change",
+                "labels": [
+                  "editing"
+                ],
+                "command_sha256": null,
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 0,
+                "exit_code": null,
+                "failure_hints": []
+              },
+              {
+                "sequence": 5,
+                "type": "command_execution",
+                "labels": [
+                  "inspection"
+                ],
+                "command_sha256": "6f815c10ba2a026ae35f3bb19b0aa53aa3710024a275f673d53ea4fba2903a26",
+                "repeated_exact_command": false,
+                "fixture_paths_mentioned": [],
+                "output_chars": 155,
+                "exit_code": 0,
+                "failure_hints": []
+              }
+            ]
+          },
+          "packet_chars": 641,
+          "actual_source_changed": true
+        }
+      }
+    }
+  ],
+  "summary": {
+    "domains": 1,
+    "quality": {
+      "fixed_8": 1,
+      "candidate_6": 0
+    },
+    "pooled": {
+      "fixed_8": {
+        "tokens": 84828,
+        "uncached_tokens": 10332,
+        "tool_calls": 3,
+        "assistant_messages": 3,
+        "seconds": 71.627
+      },
+      "candidate_6": {
+        "tokens": 84893,
+        "uncached_tokens": 25501,
+        "tool_calls": 4,
+        "assistant_messages": 2,
+        "seconds": 73.649
+      }
+    },
+    "domain_wins": {
+      "tokens": 0,
+      "uncached_tokens": 0,
+      "tool_calls": 0,
+      "assistant_messages": 1
+    },
+    "total_token_reduction_percent": -0.08,
+    "uncached_token_reduction_percent": -146.82,
+    "tool_reduction_percent": -33.33,
+    "message_reduction_percent": 33.33,
+    "time_reduction_percent": -2.82
+  },
+  "decision": "REJECT_QUALITY"
+}
