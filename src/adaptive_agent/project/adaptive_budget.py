@@ -17,7 +17,6 @@ from adaptive_agent.project.experience import OperationExperience
 
 MIN_ACCEPTED_RUNS = 3
 EVIDENCE_TTL = 30 * 86400
-CAP_STEPS = ((3, 6), (6, 4), (9, 3))
 
 
 @dataclass(frozen=True, slots=True)

@@ -58,3 +58,12 @@ def test_reset_refuses_target_outside_dedicated_workspace(tmp_path):
         assert "leaves its dedicated workspace" in str(error)
     else:
         raise AssertionError("unsafe reset target was accepted")
+
+
+def test_real_result_is_converted_to_production_cost_evidence():
+    current = result(1000, 300, 4, seconds=12)
+    assert benchmark.adaptive_metrics(current) == {
+        "source": "measured", "provider_tool_calls": 4,
+        "total_tokens": 1000, "uncached_tokens": 700,
+        "duration_seconds": 12,
+    }

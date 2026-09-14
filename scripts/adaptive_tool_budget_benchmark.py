@@ -51,6 +51,18 @@ def selected_cap(store: AdaptiveToolBudgetStore, analysis) -> tuple[int, dict]:
     return decision.provider_tool_cap or BASELINE_CAP, decision.to_dict()
 
 
+def adaptive_metrics(result: dict) -> dict:
+    usage = result["usage"]
+    return {
+        "source": usage.get("source"),
+        "provider_tool_calls": result["telemetry"].get("tool_calls"),
+        "total_tokens": int(usage.get("input", 0)) + int(usage.get("output", 0)),
+        "uncached_tokens": (int(usage.get("input", 0)) - int(usage.get("cached", 0))
+                            + int(usage.get("output", 0))),
+        "duration_seconds": result["duration_seconds"],
+    }
+
+
 def _aggregate(rounds: list[dict], start: int = 1) -> dict:
     selected = [item for item in rounds if item["round"] >= start]
     pooled = {
@@ -210,7 +222,12 @@ async def run(args: argparse.Namespace) -> dict:
             print(f"round {number} {arm}: " + json.dumps(result), flush=True)
             if result["usage"].get("source") == "unavailable":
                 raise SystemExit("Provider usage unavailable; benchmark pair rejected")
-        adaptive_store.record(analysis, current["results"]["adaptive"]["quality"]["passed"])
+        adaptive_result = current["results"]["adaptive"]
+        adaptive_store.record(
+            analysis, adaptive_result["quality"]["passed"],
+            metrics=adaptive_metrics(adaptive_result),
+            effective_cap=cap,
+        )
         report["rounds"].append(current)
         _save(report, args)
     if hashlib.sha256(ACCEPTANCE.read_bytes()).hexdigest() != report["acceptance_sha256"]:

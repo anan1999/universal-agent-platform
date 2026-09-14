@@ -369,9 +369,10 @@ agentctl run "<goal>" --adaptive-provider-tool-budget
 ```
 
 The normal budget is preserved until the same project environment and task family pass at least
-three controller-owned acceptance runs. The provider tool cap then tightens conservatively from
-6 to 4 to 3 after 3, 6, and 9 consecutive accepted runs. Any declared acceptance failure resets
-that family's evidence. An explicit `--max-provider-tool-calls` always wins.
+three controller-owned acceptance runs with measured provider cost. Cap 6 requires the observed
+tools to fit. Caps 4 and 3 additionally require the preceding stage's median total and uncached
+tokens not to worsen, and its observed tools to fit the next cap. Any declared acceptance failure
+resets that family's evidence. An explicit `--max-provider-tool-calls` always wins.
 
 Ordinary tests are not assumed to cover a new requirement. A project command contributes adaptive
 evidence only when the user deliberately marks it as an acceptance contract:

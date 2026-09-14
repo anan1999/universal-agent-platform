@@ -14,7 +14,10 @@ fewer tokens.
 3. Model-reported completion is never learning evidence.
 4. A deterministic project command must be user-allowlisted and explicitly carry
    `acceptance: true`.
-5. Three consecutive accepted runs select cap 6; six select cap 4; nine select cap 3.
+5. Three consecutive accepted runs can select cap 6 only when measured tool counts fit. Caps 4
+   and 3 additionally require the preceding stage's median total and uncached tokens not to
+   worsen, and all three recent accepted runs to fit the next cap. Missing or estimated cost never
+   promotes a budget.
 6. A declared acceptance failure deletes the evidence for that family. Environment changes make
    old evidence ineligible. Explicit user limits take precedence.
 
