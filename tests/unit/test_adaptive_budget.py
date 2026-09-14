@@ -21,27 +21,65 @@ def initialized(root: Path) -> AdaptiveToolBudgetStore:
     return AdaptiveToolBudgetStore(root)
 
 
+def measured(tools: int = 3, total: int = 1000, uncached: int = 400,
+             seconds: float = 10) -> dict:
+    return {"source": "measured", "provider_tool_calls": tools,
+            "total_tokens": total, "uncached_tokens": uncached,
+            "duration_seconds": seconds}
+
+
 def test_requires_three_external_acceptances_before_recommending_cap(tmp_path):
     store = initialized(tmp_path)
     current = analysis()
     assert store.decide(current).provider_tool_cap is None
     for _ in range(2):
-        assert store.record(current, accepted=True)
+        assert store.record(current, accepted=True, metrics=measured())
     assert store.decide(current).provider_tool_cap is None
-    assert store.record(current, accepted=True)
+    assert store.record(current, accepted=True, metrics=measured())
     decision = store.decide(current)
     assert decision.provider_tool_cap == 6
     assert decision.accepted_runs == 3
     assert decision.source == "accepted_history"
 
 
-def test_cap_tightens_in_bounded_steps_and_never_below_three(tmp_path):
+def test_cap_tightens_only_when_each_stage_preserves_measured_cost(tmp_path):
     store = initialized(tmp_path)
     current = analysis()
-    for count in range(1, 13):
+    for _ in range(3):
+        store.record(current, True, measured(tools=5, total=1000, uncached=400))
+    assert store.decide(current).provider_tool_cap == 6
+    for _ in range(3):
+        store.record(current, True, measured(tools=4, total=800, uncached=300), effective_cap=6)
+    assert store.decide(current).provider_tool_cap == 4
+    for _ in range(3):
+        store.record(current, True, measured(tools=3, total=700, uncached=250), effective_cap=4)
+    decision = store.decide(current)
+    assert decision.provider_tool_cap == 3
+    assert decision.cost_gate == "cap_3_supported_by_cost"
+
+
+def test_success_without_measured_cost_never_tightens(tmp_path):
+    store = initialized(tmp_path)
+    current = analysis()
+    for _ in range(9):
         store.record(current, accepted=True)
-        expected = None if count < 3 else 6 if count < 6 else 4 if count < 9 else 3
-        assert store.decide(current).provider_tool_cap == expected
+    decision = store.decide(current)
+    assert decision.accepted_runs == 9
+    assert decision.provider_tool_cap is None
+    assert decision.cost_gate == "insufficient_cost_evidence"
+
+
+def test_cost_regression_blocks_next_tightening_step(tmp_path):
+    store = initialized(tmp_path)
+    current = analysis()
+    for _ in range(3):
+        store.record(current, True, measured(tools=5, total=1000, uncached=400))
+    for _ in range(3):
+        store.record(current, True, measured(tools=3, total=1200, uncached=500), effective_cap=6)
+    decision = store.decide(current)
+    assert decision.accepted_runs == 6
+    assert decision.provider_tool_cap == 6
+    assert decision.cost_gate == "cap_6_supported"
 
 
 def test_failure_resets_only_the_same_comparable_family(tmp_path):
@@ -49,8 +87,8 @@ def test_failure_resets_only_the_same_comparable_family(tmp_path):
     coding = analysis()
     research = analysis("Analyze a research question")
     for _ in range(3):
-        store.record(coding, accepted=True)
-        store.record(research, accepted=True)
+        store.record(coding, accepted=True, metrics=measured())
+        store.record(research, accepted=True, metrics=measured())
     assert store.decide(coding).provider_tool_cap == 6
     assert store.record(coding, accepted=False)
     assert store.decide(coding).provider_tool_cap is None
@@ -61,7 +99,7 @@ def test_environment_change_invalidates_prior_evidence(tmp_path):
     store = initialized(tmp_path)
     current = analysis()
     for _ in range(3):
-        store.record(current, accepted=True)
+        store.record(current, accepted=True, metrics=measured())
     assert store.decide(current).provider_tool_cap == 6
     (tmp_path / "pyproject.toml").write_text("[project]\nname='changed'\n", encoding="utf-8")
     assert store.decide(current).provider_tool_cap is None
@@ -83,7 +121,7 @@ def test_orchestrator_applies_learned_cap_and_explains_source(tmp_path):
     goal = "Build a FastAPI endpoint"
     current = orchestrator.analyzer.analyze(goal)
     for _ in range(3):
-        store.record(current, accepted=True)
+        store.record(current, accepted=True, metrics=measured())
     composition = orchestrator.compose(
         "RUN-ADAPTIVE", goal, working_directory=str(tmp_path),
     )
