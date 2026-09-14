@@ -36,6 +36,7 @@ class ExecutionPacket:
     project_context: list[str] = field(default_factory=list)
     cached_file_summaries: list[str] = field(default_factory=list)
     execution_budget: dict[str, object] = field(default_factory=dict)
+    validation_commands: list[str] = field(default_factory=list)
 
     def render(self) -> str:
         def section(name: str, values: list[str], fallback: str | None = None) -> str:
@@ -57,6 +58,11 @@ class ExecutionPacket:
         constraints.append(f"Keep the final structured response within {self.max_output_words} words.")
         if self.read_only:
             constraints.append("Do not modify anything in the workspace.")
+        elif self.validation_commands:
+            constraints.extend([
+                "Before returning, run the smallest applicable command from DETERMINISTIC VALIDATION exactly as declared.",
+                "If it fails because of this implementation, make one focused repair and rerun that same command once; do not substitute guessed validation commands.",
+            ])
         if self.execution_budget.get("enabled"):
             budget = self.execution_budget
             constraints.extend([
@@ -79,6 +85,7 @@ class ExecutionPacket:
             f"EXPECTED ARTIFACT:\n{self.artifact_type}" if self.artifact_type != "unknown" else "",
             section("COMPACT PROJECT INDEX", self.project_context),
             section("VALID CACHED FILE SUMMARIES", self.cached_file_summaries),
+            section("DETERMINISTIC VALIDATION", self.validation_commands),
             section("DEPENDENCY RECEIPTS", self.dependency_receipts),
             section("ALLOWED SCOPE", self.allowed_files, "Minimize the workspace scope required by the task."),
             section("REQUIRED SKILLS", self.required_skills),
@@ -115,6 +122,7 @@ class ExecutionPacketBuilder:
         architecture = project_index.get("architecture", {}) if isinstance(project_index, dict) else {}
         commands = project_index.get("commands", {}) if isinstance(project_index, dict) else {}
         important_paths = project_index.get("important_paths", {}) if isinstance(project_index, dict) else {}
+        effective_read_only = inferred_read_only if read_only is None else read_only
         def summaries(kind: str) -> list[str]:
             return [f"{item['id']}: {item['summary']}" +
                     (f"\n{item['detail']}" if item.get("detail") else "")
@@ -130,7 +138,7 @@ class ExecutionPacketBuilder:
             loaded_references=[f"{item.manifest.id}:{name}"
                                for item in (loaded_skills or []) for name in item.references],
             constraints=constraints or list(task.metadata.get("constraints", [])),
-            read_only=inferred_read_only if read_only is None else read_only,
+            read_only=effective_read_only,
             artifact_type=getattr(task, "artifact_type", "unknown"),
             responsibility=str(task.metadata.get("responsibility", "")),
             project_knowledge=summaries("knowledge"),
@@ -150,6 +158,10 @@ class ExecutionPacketBuilder:
                 for item in intelligence.get("cached_files", [])
             ],
             execution_budget=dict(task.metadata.get("execution_budget", {})),
+            validation_commands=(
+                [f"{name}: {command}" for name, command in list(commands.items())[:3]]
+                if commands and not effective_read_only else []
+            ),
         )
 
     def _summarize(self, receipt: Receipt) -> str:
