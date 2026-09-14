@@ -67,7 +67,7 @@ def test_design_acceptance_validates_real_artifact_formats(tmp_path):
     graphic = tmp_path / "graphic"
     shutil.copytree(benchmark.FIXTURES / "graphic-design", graphic)
     graphic.joinpath("poster.svg").write_text(
-        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1350"><title>Poster</title><desc>Event poster</desc><g id="background"><rect width="1080" height="1350" fill="#102A43"/></g><g id="hero"><text font-size="80" fill="#F4EBD0">Night Harbor Design Week</text></g><g id="information"><text font-size="30" fill="#2A9D8F">18 OCT 2026</text><text font-size="30" fill="#F4EBD0">Pier 7</text></g></svg>""",
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1350"><title>Night Harbor Design Week</title><desc>Event poster</desc><g id="background"><rect width="1080" height="1350" fill="#102A43"/></g><g id="hero"><text font-size="80" fill="#F4EBD0">NIGHT</text><text font-size="80" fill="#F4EBD0">HARBOR</text><text font-size="80" fill="#F4EBD0">DESIGN WEEK</text></g><g id="information"><text font-size="30" fill="#2A9D8F">18 OCT 2026</text><text font-size="30" fill="#F4EBD0">PIER 7</text></g></svg>""",
         encoding="utf-8")
     assert benchmark.acceptance(graphic, "graphic-design")["passed"]
 

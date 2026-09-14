@@ -120,21 +120,26 @@ def graphic(root: Path, _value: dict) -> list[str]:
     if not set(brief["required_layers"]).issubset(ids): errors.append("layers")
     local_names = [node.tag.rsplit("}", 1)[-1] for node in tree.iter()]
     if "title" not in local_names or "desc" not in local_names: errors.append("accessibility")
-    text = " ".join("".join(node.itertext()).strip() for node in tree.iter()
-                    if node.tag.rsplit("}", 1)[-1] == "text")
-    if not all(str(brief[key]) in text for key in ("event", "date", "venue")): errors.append("copy")
+    visible_copy = "".join("".join(node.itertext()) for node in tree.iter()
+                           if node.tag.rsplit("}", 1)[-1] in {"title", "text"})
+    normalized_copy = re.sub(r"\s+", "", visible_copy).casefold()
+    if not all(re.sub(r"\s+", "", str(brief[key])).casefold() in normalized_copy
+               for key in ("event", "date", "venue")):
+        errors.append("copy")
     colors = {match.upper() for match in re.findall(r"#[0-9a-fA-F]{6}", source)}
     if colors - {item.upper() for item in brief["palette"]}: errors.append("palette")
-    sizes = {}
-    for node in tree.iter():
-        if node.tag.rsplit("}", 1)[-1] != "text": continue
-        label = "".join(node.itertext()).strip()
+    def text_size(node) -> float:
         match = re.search(r"font-size\s*:\s*([0-9.]+)|^([0-9.]+)$", node.attrib.get("font-size", ""))
         style = re.search(r"font-size\s*:\s*([0-9.]+)", node.attrib.get("style", ""))
-        size = float((match.group(1) or match.group(2)) if match else style.group(1)) if match or style else 0
-        sizes[label] = size
-    if not (sizes.get(brief["event"], 0) > sizes.get(brief["date"], 0)
-            and sizes.get(brief["event"], 0) > sizes.get(brief["venue"], 0)):
+        return float((match.group(1) or match.group(2)) if match else style.group(1)) if match or style else 0
+
+    groups = {node.attrib.get("id"): node for node in tree.iter()
+              if node.tag.rsplit("}", 1)[-1] == "g"}
+    hero_sizes = [text_size(node) for node in groups.get("hero", []).iter()
+                  if node.tag.rsplit("}", 1)[-1] == "text"] if groups.get("hero") is not None else []
+    info_sizes = [text_size(node) for node in groups.get("information", []).iter()
+                  if node.tag.rsplit("}", 1)[-1] == "text"] if groups.get("information") is not None else []
+    if not hero_sizes or not info_sizes or max(hero_sizes) <= max(info_sizes):
         errors.append("hierarchy")
     if re.search(r"<(?:image|script)\b|(?:href|src)\s*=\s*[\"']https?://", source, re.I):
         errors.append("external_resource")
@@ -204,7 +209,7 @@ def main() -> int:
     if not errors:
         errors = VALIDATORS[args.domain](args.project, value)
     payload = {"passed": not errors, "domain": args.domain, "errors": errors,
-               "contract": "cross-domain-deliverable-v1"}
+               "contract": "cross-domain-deliverable-v2"}
     print(json.dumps(payload))
     return 0 if not errors else 1
 
