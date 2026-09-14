@@ -71,8 +71,9 @@ def test_procedure_pair_only_adds_observed_evidence(tmp_path, monkeypatch):
                         ToolResult(tool, 'completed', 'ok', exit_code=0))
     contexts, training = benchmark.prepare_reuse_pair(roots)
     cold = contexts['baseline']['context']
-    warm = dict(contexts['uap']['context'])
-    assert warm.pop('verified_procedures')[0]['successful_runs'] == 1
-    assert cold == warm
+    warm = contexts['uap']['context']
+    assert cold == warm  # One command: silent selection changes no prompt bytes.
+    assert contexts['uap']['validation_memory']['selected_commands'] == ['test']
+    assert contexts['uap']['validation_memory']['successful_runs']['project_test'] == 1
     assert not training['baseline']['evidence_saved']
     assert training['uap']['evidence_saved']

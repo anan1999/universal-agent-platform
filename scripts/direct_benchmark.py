@@ -134,8 +134,8 @@ def prepare_reuse_pair(roots):
                               'exit_code': result.exit_code, 'evidence_saved': saved, 'ai_calls': 0}
     contexts = {name: prepare(root, GOAL, read_sources=True, use_experience=name == 'uap')
                 for name, root in roots.items()}
-    assert 'verified_procedures' not in contexts['baseline']['context']
-    assert contexts['uap']['context']['verified_procedures']
+    assert not contexts['baseline']['validation_memory']['applied']
+    assert contexts['uap']['validation_memory']['applied']
     assert contexts['baseline']['context']['source_excerpts'] == contexts['uap']['context']['source_excerpts']
     return contexts, measurements
 
@@ -193,7 +193,7 @@ async def run(args):
             if not provider.probe().ready:
                 raise SystemExit('Codex is not available')
             current = task(root, args.model, 'low')
-            packet = Packet(root, GOAL, contexts[name])
+            packet = Packet(root, GOAL, contexts[name]["context"])
             if reuse:
                 packet.text += ('For this isolated experiment, invoke UAP with python -m adaptive_agent.cli '
                                 'in place of agentctl; PYTHONPATH points to the implementation under test. '

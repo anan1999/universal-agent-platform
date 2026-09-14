@@ -29,9 +29,11 @@ def test_cross_task_procedure_reuse_domain_matrix(tmp_path, monkeypatch, capsys,
         # New object, as in a fresh task/process; real allowlisted subprocess ran.
         result = prepare(tmp_path, 'Check the project deliverable', use_experience=True)
         assert result['provider_calls'] == 0
-        procedures = result['context']['verified_procedures']
-        assert procedures[0]['successful_runs'] == task_number + 1
-        assert len(json.dumps(procedures)) < 400
+        assert 'verified_procedures' not in result['context']
+        assert result['context']['commands_to_verify'] == {
+            'test': str([sys.executable, '-c', 'assert 2 + 2 == 4'])}
+        assert result['validation_memory']['applied'] is True
+        assert result['validation_memory']['successful_runs']['project_test'] == task_number + 1
     # This tests reusable mechanics, not the quality of any particular domain.
 
 
@@ -53,6 +55,22 @@ def test_failure_config_environment_and_ttl_revoke(tmp_path, monkeypatch):
     with sqlite3.connect(store.path) as db:
         db.execute('UPDATE operations SET verified=verified-?', (TTL + 1,))
     assert not store.reusable()
+
+
+def test_success_memory_silently_filters_multiple_validation_candidates(tmp_path):
+    (tmp_path / '.agent').mkdir()
+    (tmp_path / '.agent/commands.yaml').write_text(yaml.safe_dump({'commands': {
+        'test': {'command': [sys.executable, '-c', 'assert True']},
+        'build': {'command': [sys.executable, '-c', 'print("build")']},
+    }}), encoding='utf-8')
+    cold = prepare(tmp_path, 'Validate the change')['context']['commands_to_verify']
+    store = OperationExperience(tmp_path)
+    assert store.record(
+        ToolResult('project_test', 'completed', 'ok', exit_code=0), store.fingerprint())
+    warm = prepare(tmp_path, 'Validate the change', use_experience=True)
+    assert set(cold) == {'test', 'build'}
+    assert set(warm['context']['commands_to_verify']) == {'test'}
+    assert warm['validation_memory']['selected_commands'] == ['test']
 
 
 def test_no_unobserved_success_or_changed_during_execution(tmp_path):
@@ -91,6 +109,7 @@ def test_default_has_zero_operation_memory_access_even_when_memory_exists(tmp_pa
         result = json.loads(capsys.readouterr().out)
         assert 'verified_procedures' not in result['context']
         assert 'verified_procedures' not in result['instruction']
+        assert result['validation_memory']['enabled'] is False
     assert before == store.path.read_bytes()
 
 
