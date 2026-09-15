@@ -38,9 +38,9 @@ from adaptive_agent.storage.database import Database
 TASKS = [
     "Implement the backend foundation for a personal expense app: FastAPI, SQLite, an Expense model, CRUD API, and backend tests.",
     "Implement a compact React expense dashboard that calls the existing API and handles loading and error states.",
-    "Implement category filtering and a category spending breakdown across the existing API and React dashboard, with tests.",
-    "Fix a realistic date or monthly-filter boundary bug, add a regression test, and preserve existing behavior.",
-    "Implement a monthly spending report and summary feature across the API and UI, including deterministic tests.",
+    "Add GET /exports/expenses.csv with columns id,amount,category,description,date, add a dashboard download link to that exact endpoint, and add deterministic tests.",
+    "Add GET /reports/monthly/{month} returning exactly month, total, and by_category, with money represented as two-decimal strings; include only dates inside that calendar month and add boundary regression tests.",
+    "Add a dashboard month input that calls /reports/monthly/{month} and renders the returned total and by_category breakdown, with deterministic tests.",
 ]
 
 
@@ -224,12 +224,41 @@ def evaluate(path: Path, task_number: int) -> dict[str, Any]:
     source = "\n".join(item.read_text(encoding="utf-8", errors="replace").lower()
                        for item in frontend_sources)
     if task_number >= 3:
-        checks.append(("category", "category" in source))
+        export_probe = subprocess.run([sys.executable, "-c", """
+import tempfile
+from fastapi.testclient import TestClient
+from app.main import create_app
+with tempfile.TemporaryDirectory() as directory:
+    with TestClient(create_app(directory + '/acceptance.sqlite3')) as client:
+        payload = {'amount':'12.34','category':'Food','description':'Lunch','date':'2026-02-10'}
+        assert client.post('/expenses', json=payload).status_code == 201
+        response = client.get('/exports/expenses.csv')
+        assert response.status_code == 200
+        assert response.headers.get('content-type','').startswith('text/csv')
+        rows = response.text.strip().splitlines()
+        assert rows[0] == 'id,amount,category,description,date'
+        assert '12.34,Food,Lunch,2026-02-10' in rows[1]
+"""], cwd=path, capture_output=True, text=True, timeout=30, check=False)
+        checks.append(("csv export", export_probe.returncode == 0))
+        checks.append(("csv download link", "/exports/expenses.csv" in source))
     if task_number >= 4:
-        checks.append(("monthly regression", any("month" in item.read_text(encoding="utf-8", errors="replace").lower()
-                                                  for item in (path / "tests").glob("*.py"))))
+        monthly_probe = subprocess.run([sys.executable, "-c", """
+import tempfile
+from fastapi.testclient import TestClient
+from app.main import create_app
+with tempfile.TemporaryDirectory() as directory:
+    with TestClient(create_app(directory + '/acceptance.sqlite3')) as client:
+        for amount, category, date in [('99.00','Other','2026-01-31'),('10.00','Food','2026-02-01'),('20.00','Travel','2026-02-28'),('77.00','Other','2026-03-01')]:
+            assert client.post('/expenses', json={'amount':amount,'category':category,'description':'x','date':date}).status_code == 201
+        response = client.get('/reports/monthly/2026-02')
+        assert response.status_code == 200
+        assert response.json() == {'month':'2026-02','total':'30.00','by_category':{'Food':'10.00','Travel':'20.00'}}
+"""], cwd=path, capture_output=True, text=True, timeout=30, check=False)
+        checks.append(("monthly boundary contract", monthly_probe.returncode == 0))
     if task_number >= 5:
-        checks.append(("monthly report", "summary" in source or "report" in source))
+        checks.append(("monthly dashboard request", "/reports/monthly/" in source))
+        checks.append(("month input", 'type="month"' in source or "type='month'" in source))
+        checks.append(("category breakdown", "by_category" in source))
     return {"passed": all(value for _, value in checks),
             "checks": [{"name": name, "passed": value} for name, value in checks],
             "duration_seconds": time.monotonic() - started,
@@ -615,6 +644,10 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
                 break_even = break_even or number
             continue
         used_run_ids = {str(item.get("uap", {}).get("run_id") or "") for item in tasks}
+        if evaluate(canonical, number)["passed"]:
+            raise SystemExit(
+                f"Benchmark task {number} acceptance already passes before execution; "
+                "the task sequence is not independent.")
         recovered_rows = db.query(
             "SELECT id FROM runs WHERE goal=? AND status='completed' ORDER BY created_at DESC", (goal,))
         recovered_run_id = next((row["id"] for row in recovered_rows

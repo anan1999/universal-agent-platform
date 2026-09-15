@@ -185,6 +185,9 @@ def test_real_benchmark_requires_opt_in_and_forbids_mock():
     assert 'if not paired_models_match({"baseline": baseline_result, "uap": uap_result})' in script
     assert 'def source_snapshot(path: Path)' in script
     assert 'and task["baseline"].get("source_changed") is True' in script
+    assert "acceptance already passes before execution" in script
+    assert "'/exports/expenses.csv'" in script
+    assert "'/reports/monthly/2026-02'" in script
     assert "chosen_name = args.canonical_source" in script
     assert 'path / "frontend" / "src", path / "src"' in script
     assert '("frontend/src/", "src/")' in script
