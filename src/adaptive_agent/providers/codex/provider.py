@@ -538,6 +538,7 @@ class CodexProvider(AIProvider):
         request_id = 0
         thread_id: str | None = None
         turn_id: str | None = None
+        relevant_turn_ids: set[str] = set()
         steer_request_id: int | None = None
         steer_accepted = False
         completed = False
@@ -617,6 +618,7 @@ class CodexProvider(AIProvider):
             })
             turn_result = await response(int(turn_request))
             turn_id = str(turn_result["turn"]["id"])
+            relevant_turn_ids.add(turn_id)
             while True:
                 line = await process.stdout.readline()
                 if not line:
@@ -633,7 +635,12 @@ class CodexProvider(AIProvider):
                     else:
                         result = event.get("result")
                         if isinstance(result, dict) and result.get("turnId"):
+                            # App-server versions may report either the active turn or a
+                            # successor turn here.  Both belong to the same steered
+                            # execution.  Do not discard the original id: its normal
+                            # completion is sufficient to close the provider lifecycle.
                             turn_id = str(result["turnId"])
+                            relevant_turn_ids.add(turn_id)
                         events.append((json.dumps({"type": "uap.completion_steered"}) + "\n").encode())
                         steer_accepted = True
                 if method == "item/completed" and isinstance(item, dict):
@@ -660,7 +667,8 @@ class CodexProvider(AIProvider):
                         events.append((json.dumps({"type": "uap.completion_steer_requested"}) + "\n").encode())
                 if method == "turn/completed" and isinstance(params, dict):
                     completed_turn = params.get("turn", {})
-                    if str(completed_turn.get("id")) == turn_id:
+                    completed_id = str(completed_turn.get("id"))
+                    if completed_id in relevant_turn_ids:
                         completed = completed_turn.get("status") == "completed"
                         if completed or not (steer_request_id is not None or steer_accepted):
                             break

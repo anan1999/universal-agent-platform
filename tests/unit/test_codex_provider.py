@@ -363,7 +363,7 @@ def test_streaming_completion_probe_requires_two_passes_before_stopping(monkeypa
     assert process.terminated is True
 
 
-def test_app_server_steers_after_acceptance_and_waits_for_exact_usage(monkeypatch, tmp_path):
+def test_app_server_accepts_original_turn_completion_after_steer(monkeypatch, tmp_path):
     result = {"status": "completed", "summary": "done"}
     server_events = [
         {"id": 1, "result": {"userAgent": "test"}},
@@ -381,7 +381,7 @@ def test_app_server_steers_after_acceptance_and_waits_for_exact_usage(monkeypatc
          "turnId": "turn-steered", "item": {"type": "agentMessage", "id": "msg-1",
          "text": json.dumps(result), "phase": "final_answer"}}},
         {"method": "turn/completed", "params": {"threadId": "thread-live",
-         "turn": {"id": "turn-steered", "status": "completed", "items": []}}},
+         "turn": {"id": "turn-live", "status": "completed", "items": []}}},
     ]
 
     class Input:
