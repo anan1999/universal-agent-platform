@@ -195,6 +195,19 @@ def repairable_side(row: dict[str, Any]) -> str | None:
                     and result.get("usage_complete")) else None
 
 
+def canonical_side(row: dict[str, Any]) -> str | None:
+    """Choose by quality only; token outcomes can never select a checkpoint."""
+    baseline_ok = bool(row["quality"]["baseline"]["passed"])
+    uap_ok = bool(row["quality"]["uap"]["passed"])
+    if baseline_ok and uap_ok:
+        return "baseline"
+    if baseline_ok:
+        return "baseline"
+    if uap_ok:
+        return "uap"
+    return None
+
+
 def summarize(tracks: list[dict[str, Any]]) -> dict[str, Any]:
     rows = [row for track in tracks for row in track["rounds"]]
     valid = [row for row in rows if row.get("comparison_valid")]
@@ -351,13 +364,15 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
                     evidence = domain_root / "evidence" / f"round-{number}" / side
                     reset_source(root, evidence)
                     repair_calls += 1
-            if any(not row["comparison_valid"] for row in track["rounds"]):
-                save(payload, args)
-                raise SystemExit(f"Retained evidence is still invalid: {domain}")
             if track["rounds"]:
                 last = int(track["rounds"][-1]["round"])
+                side = canonical_side(track["rounds"][-1])
+                if side is None:
+                    save(payload, args)
+                    raise SystemExit(f"Neither retained artifact passes: {domain} round {last}")
+                track["rounds"][-1]["canonical_source"] = side
                 if not evaluate(canonical, domain, last)["passed"]:
-                    reset_source(domain_root / "evidence" / f"round-{last}" / "baseline", canonical)
+                    reset_source(domain_root / "evidence" / f"round-{last}" / side, canonical)
         for number, spec in enumerate(specs[domain][:args.rounds], 1):
             if number <= len(track["rounds"]):
                 continue
@@ -388,6 +403,7 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
                    "uap_tokens": _tokens(uap_result),
                    "quality": {"baseline": baseline_quality, "uap": uap_quality}}
             row["comparison_valid"] = valid_pair(row)
+            row["canonical_source"] = canonical_side(row)
             track["rounds"].append(row)
             evidence = domain_root / "evidence" / f"round-{number}"
             reset_source(baseline, evidence / "baseline")
@@ -399,9 +415,9 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
                               "baseline_quality": baseline_quality["passed"],
                               "uap_quality": uap_quality["passed"],
                               "valid": row["comparison_valid"]}), flush=True)
-            if not row["comparison_valid"]:
-                raise SystemExit(f"Quality or measurement gate failed: {domain} round {number}")
-            reset_source(baseline, canonical)
+            if row["canonical_source"] is None:
+                raise SystemExit(f"Neither artifact passes: {domain} round {number}")
+            reset_source(baseline if row["canonical_source"] == "baseline" else uap, canonical)
         (domain_root / "partial.json").unlink(missing_ok=True)
     save(payload, args)
     payload["environment"]["repair_calls_used"] = repair_calls

@@ -41,3 +41,12 @@ def test_only_one_completed_measured_quality_failure_is_repairable():
     assert benchmark.repairable_side(current) == "baseline"
     current["quality"]["uap"]["passed"] = False
     assert benchmark.repairable_side(current) is None
+
+
+def test_canonical_is_selected_by_quality_and_never_tokens():
+    current = row("ui-ux", 10, 1000, False)
+    assert benchmark.canonical_side(current) == "baseline"
+    current["quality"]["baseline"]["passed"] = False
+    assert benchmark.canonical_side(current) == "uap"
+    current["quality"]["uap"]["passed"] = False
+    assert benchmark.canonical_side(current) is None
