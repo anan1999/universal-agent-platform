@@ -50,6 +50,14 @@ python scripts/context_cache_benchmark.py \
 
 這個機制預設關閉。它只會在 provider 回報工具操作完成後執行 benchmark-owned acceptance，連續兩次 PASS 才停止 provider。它不接受任意 shell command，也不把 retrieval suggestion 當權限。報表會將 `artifact=completed` 與 `provider=stopped` 分開記錄；因為未收到 provider final receipt，token usage 只能標記為 `partial_measured` 或 `unavailable`，不能拿來宣稱節省。
 
+多輪測試會交替執行順序，降低固定由某一 arm 先跑造成的時間／cache 偏差。呼叫上限必須明確等於或高於最壞情況；檢查發生在 provider probe 與 workspace 建立之前：
+
+```bash
+python scripts/context_cache_benchmark.py \
+  --execute --task small --rounds 2 --max-provider-calls 4 \
+  --provider codex --early-completion --resume
+```
+
 也可以明確要求六次呼叫跑完整 suite：
 
 ```bash

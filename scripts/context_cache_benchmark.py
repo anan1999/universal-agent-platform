@@ -46,6 +46,10 @@ def arguments() -> argparse.Namespace:
                         help="reuse matching, acceptance-passing arm checkpoints")
     parser.add_argument("--early-completion", action="store_true",
                         help="stop an agentic provider after two independent acceptance passes")
+    parser.add_argument("--rounds", type=int, default=1,
+                        help="paired repetitions; arm order alternates each round")
+    parser.add_argument("--max-provider-calls", type=int, default=2,
+                        help="hard authorization ceiling checked before setup")
     parser.add_argument("--provider", default="codex")
     parser.add_argument("--model")
     parser.add_argument("--reasoning", default="low", choices=("low", "medium", "high", "xhigh"))
@@ -59,6 +63,28 @@ def arguments() -> argparse.Namespace:
 def selected_tasks(args: argparse.Namespace) -> list[dict[str, Any]]:
     task_id = getattr(args, "task", "large")
     return list(SUITE["tasks"]) if task_id == "all" else [TASKS[task_id]]
+
+
+def round_plan(args: argparse.Namespace) -> list[tuple[dict[str, Any], int, str, tuple[str, str]]]:
+    rounds = int(getattr(args, "rounds", 1))
+    if not 1 <= rounds <= 10:
+        raise SystemExit("--rounds must be between 1 and 10.")
+    plan = []
+    for spec in selected_tasks(args):
+        for number in range(1, rounds + 1):
+            run_key = spec["id"] if rounds == 1 else f"{spec['id']}-r{number}"
+            order = ("disabled", "enabled") if number % 2 else ("enabled", "disabled")
+            plan.append((spec, number, run_key, order))
+    return plan
+
+
+def enforce_call_ceiling(args: argparse.Namespace) -> int:
+    planned = len(round_plan(args)) * 2
+    ceiling = int(getattr(args, "max_provider_calls", 2))
+    if planned > ceiling:
+        raise SystemExit(
+            f"Plan requires {planned} provider calls; explicitly set --max-provider-calls {planned}.")
+    return planned
 
 
 def source_hash(root: Path) -> str:
@@ -168,39 +194,45 @@ def dry_run(args: argparse.Namespace) -> dict[str, Any]:
     return payload
 
 
-def _signature(args: argparse.Namespace, spec: dict[str, Any], source: str, arm: str) -> str:
-    return experiment_signature({
+def _signature(args: argparse.Namespace, spec: dict[str, Any], source: str, arm: str,
+               run_key: str | None = None) -> str:
+    payload = {
         "harness_schema": 1, "uap": __version__, "source_hash": source,
         "task_id": spec["id"], "goal": spec["goal"], "arm": arm,
         "reuse_context_enabled": arm == "enabled", "provider": args.provider,
         "model": args.model, "reasoning": args.reasoning, "timeout": args.timeout,
         "early_completion": bool(getattr(args, "early_completion", False)),
-    })
+    }
+    if run_key and run_key != spec["id"]:
+        payload["round_key"] = run_key
+    return experiment_signature(payload)
 
 
 async def _run_arm(args: argparse.Namespace, spec: dict[str, Any], fixture: PreparedFixture,
-                   prepared: dict[str, Any], checkpoints: Checkpoints, arm: str) -> dict[str, Any]:
-    signature = _signature(args, spec, prepared["source_hash"], arm)
-    root = fixture.workspace / "runs" / spec["id"] / arm
+                   prepared: dict[str, Any], checkpoints: Checkpoints, arm: str,
+                   run_key: str | None = None) -> dict[str, Any]:
+    key = run_key or spec["id"]
+    signature = _signature(args, spec, prepared["source_hash"], arm, key)
+    root = fixture.workspace / "runs" / key / arm
     if getattr(args, "resume", False):
-        cached = checkpoints.completed(spec["id"], arm, signature)
+        cached = checkpoints.completed(key, arm, signature)
         if cached is not None and root.is_dir() and acceptance(root, spec["id"])["passed"]:
-            print(f"[{spec['id']}/{arm}] resumed verified checkpoint", flush=True)
+            print(f"[{key}/{arm}] resumed verified checkpoint", flush=True)
             return {**cached, "resumed": True}
 
-    root = fixture.materialize(spec["id"], arm)
+    root = fixture.materialize(key, arm)
     initialize_context_only(root)
     provider = providers().create(args.provider, timeout=args.timeout)
-    plan_dir = fixture.workspace / "plans" / spec["id"]
+    plan_dir = fixture.workspace / "plans" / key
     plan_dir.mkdir(parents=True, exist_ok=True)
     composition = Orchestrator(
         Database(plan_dir / f"{arm}.db"), provider, provider_name=args.provider,
         reuse_context=arm == "enabled").compose(
-            f"RUN-{spec['id'].upper()}-{arm.upper()}", spec["goal"], str(root),
+            f"RUN-{key.upper()}-{arm.upper()}", spec["goal"], str(root),
             "Pocket Expense", "benchmark")
     agent_tasks = [item for item in composition.graph.tasks.values() if item.kind is TaskKind.AGENT]
     if len(agent_tasks) != 1:
-        raise RuntimeError(f"{spec['id']}/{arm} expected one AI task, got {len(agent_tasks)}")
+        raise RuntimeError(f"{key}/{arm} expected one AI task, got {len(agent_tasks)}")
     task = agent_tasks[0]
     task.metadata["model"] = args.model
     task.reasoning = args.reasoning
@@ -211,7 +243,7 @@ async def _run_arm(args: argparse.Namespace, spec: dict[str, Any], fixture: Prep
             "completion_probe_grace_seconds": 1.0,
         })
     packet = ExecutionPacketBuilder().build(task, root, "Pocket Expense", "benchmark")
-    print(f"[{spec['id']}/{arm}] provider call started (timeout={args.timeout:g}s)", flush=True)
+    print(f"[{key}/{arm}] provider call started (timeout={args.timeout:g}s)", flush=True)
     started = time.monotonic()
     probe = (lambda: acceptance(root, spec["id"])["passed"]) if early_completion else None
     receipt = await provider.execute(task, packet=packet, completion_probe=probe)
@@ -227,13 +259,14 @@ async def _run_arm(args: argparse.Namespace, spec: dict[str, Any], fixture: Prep
         "pre_task_ai_calls": composition.project_intelligence.get("pre_task_ai_calls", 0),
         "orchestration_wall_ms": composition.project_intelligence.get("orchestration_wall_ms"),
     }
-    checkpoints.save(spec["id"], arm, signature, result)
-    print(f"[{spec['id']}/{arm}] {result['status']}; acceptance="
+    checkpoints.save(key, arm, signature, result)
+    print(f"[{key}/{arm}] {result['status']}; acceptance="
           f"{'PASS' if quality['passed'] else 'FAIL'}; usage={metrics['token_source']}", flush=True)
     return result
 
 
-def _pair(spec: dict[str, Any], baseline: dict[str, Any], uap: dict[str, Any]) -> dict[str, Any]:
+def _pair(spec: dict[str, Any], baseline: dict[str, Any], uap: dict[str, Any],
+          round_number: int = 1, order: tuple[str, str] = ("disabled", "enabled")) -> dict[str, Any]:
     equal_quality = bool(baseline["quality"]["passed"] and uap["quality"]["passed"])
     measured = baseline["token_source"] == "measured" and uap["token_source"] == "measured"
     fewer_tokens = measured and uap["total_tokens"] < baseline["total_tokens"]
@@ -244,7 +277,8 @@ def _pair(spec: dict[str, Any], baseline: dict[str, Any], uap: dict[str, Any]) -
     conclusion = "YES" if equal_quality and less_repeated_work else (
         "NO" if equal_quality and measured else "INCONCLUSIVE")
     return {
-        "task_id": spec["id"], "scale": spec["scale"], "goal": spec["goal"],
+        "task_id": spec["id"], "scale": spec["scale"], "round": round_number,
+        "order": list(order), "goal": spec["goal"],
         "acceptance_contract": spec["acceptance_contract"],
         "baseline": baseline, "uap": uap, "equal_quality": equal_quality,
         "decision_evidence": {"measured_complete_tokens": measured,
@@ -273,22 +307,22 @@ def reanalyze(args: argparse.Namespace) -> dict[str, Any]:
             ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True,
             text=True, check=False).stdout.strip() or "unknown"
     pairs: list[dict[str, Any]] = []
-    for spec in selected_tasks(args):
+    for spec, round_number, run_key, order in round_plan(args):
         arms: dict[str, dict[str, Any]] = {}
         for arm in ("disabled", "enabled"):
-            signature = _signature(args, spec, prepared["source_hash"], arm)
-            result = checkpoints.load(spec["id"], arm, signature)
-            root = workspace / "runs" / spec["id"] / arm
+            signature = _signature(args, spec, prepared["source_hash"], arm, run_key)
+            result = checkpoints.load(run_key, arm, signature)
+            root = workspace / "runs" / run_key / arm
             if result is None or not root.is_dir():
-                raise SystemExit(f"No matching checkpoint for {spec['id']}/{arm}.")
+                raise SystemExit(f"No matching checkpoint for {run_key}/{arm}.")
             quality = acceptance(root, spec["id"])
             result = {**result, "quality": quality,
                       "status": ("completed" if result.get("provider_status") == "completed"
                                  and quality["passed"] else "failed"),
                       "files_changed": changed_files(fixture.prepared, root)}
-            checkpoints.save(spec["id"], arm, signature, result)
+            checkpoints.save(run_key, arm, signature, result)
             arms[arm] = result
-        pairs.append(_pair(spec, arms["disabled"], arms["enabled"]))
+        pairs.append(_pair(spec, arms["disabled"], arms["enabled"], round_number, order))
     historical_calls = sum(
         int(pair[arm].get("ai_invocations", 0) or 0)
         for pair in pairs for arm in ("baseline", "uap"))
@@ -300,7 +334,9 @@ def reanalyze(args: argparse.Namespace) -> dict[str, Any]:
         "prepared_fixture": prepared, "same_uap_execution_path": True,
         "only_variable": "reusable_context_enabled", "provider_calls": 0,
         "historical_provider_calls": historical_calls, "pairs": pairs,
-        "summary": {"selected_tasks": len(pairs), "reanalyze_provider_calls": 0,
+        "summary": {"selected_tasks": len(selected_tasks(args)),
+                    "rounds": int(getattr(args, "rounds", 1)), "pairs": len(pairs),
+                    "reanalyze_provider_calls": 0,
                     "historical_provider_calls": historical_calls,
                     "conclusive_pairs": sum(p["conclusion"] != "INCONCLUSIVE" for p in pairs),
                     "yes": sum(p["conclusion"] == "YES" for p in pairs),
@@ -317,6 +353,7 @@ def reanalyze(args: argparse.Namespace) -> dict[str, Any]:
 
 
 async def execute(args: argparse.Namespace) -> dict[str, Any]:
+    planned_calls = enforce_call_ceiling(args)
     registry = providers()
     if args.provider == "mock" or args.provider not in registry or not registry.get(args.provider).implemented:
         raise SystemExit("A registered real provider is required; Mock is forbidden.")
@@ -332,10 +369,13 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True,
                             text=True, check=False).stdout.strip() or "unknown"
     pairs: list[dict[str, Any]] = []
-    for spec in selected_tasks(args):
-        baseline = await _run_arm(args, spec, fixture, prepared, checkpoints, "disabled")
-        uap = await _run_arm(args, spec, fixture, prepared, checkpoints, "enabled")
-        pairs.append(_pair(spec, baseline, uap))
+    for spec, round_number, run_key, order in round_plan(args):
+        arms: dict[str, dict[str, Any]] = {}
+        for arm in order:
+            arms[arm] = await _run_arm(
+                args, spec, fixture, prepared, checkpoints, arm, run_key)
+        pairs.append(_pair(
+            spec, arms["disabled"], arms["enabled"], round_number, order))
         partial = {
             "suite": SUITE["suite"], "environment": {"uap": __version__, "commit": commit,
             "execution_commit": commit,
@@ -356,7 +396,8 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
                         "source_hash": prepared["source_hash"]},
         "prepared_fixture": prepared, "same_uap_execution_path": True,
         "only_variable": "reusable_context_enabled", "pairs": pairs,
-        "summary": {"selected_tasks": len(pairs), "provider_calls_max": len(pairs) * 2,
+        "summary": {"selected_tasks": len(selected_tasks(args)), "rounds": int(getattr(args, "rounds", 1)),
+                    "pairs": len(pairs), "provider_calls_max": planned_calls,
                     "provider_calls_actual": sum(
                         not pair[arm].get("resumed", False)
                         for pair in pairs for arm in ("baseline", "uap")),
@@ -375,14 +416,15 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
 
 def render(payload: dict[str, Any]) -> str:
     lines = ["# Reuse-first scale benchmark", "", f"Suite: `{payload['suite']}`", "",
-             "| Scale | Task | Baseline acceptance | UAP acceptance | Baseline tokens | UAP tokens | Result |",
-             "|---:|---|---:|---:|---:|---:|---|"]
+             "| Scale | Task | Round | Order | Baseline acceptance | UAP acceptance | Baseline tokens | UAP tokens | Result |",
+             "|---:|---|---:|---|---:|---:|---:|---:|---|"]
     for pair in payload["pairs"]:
         baseline, uap = pair["baseline"], pair["uap"]
         baseline_tokens = str(baseline["total_tokens"]) if baseline["token_source"] == "measured" else "UNAVAILABLE"
         uap_tokens = str(uap["total_tokens"]) if uap["token_source"] == "measured" else "UNAVAILABLE"
         lines.append(
-            f"| {pair['scale']} | {pair['task_id']} | "
+            f"| {pair['scale']} | {pair['task_id']} | {pair.get('round', 1)} | "
+            f"{' → '.join(pair.get('order', ['disabled', 'enabled']))} | "
             f"{'PASS' if baseline['quality']['passed'] else 'FAIL'} | "
             f"{'PASS' if uap['quality']['passed'] else 'FAIL'} | {baseline_tokens} | {uap_tokens} | "
             f"{pair['conclusion']} |")

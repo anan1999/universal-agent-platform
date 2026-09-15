@@ -1,5 +1,8 @@
 import json
+import asyncio
 from types import SimpleNamespace
+
+import pytest
 
 from scripts.benchmark_harness import (
     Checkpoints, PreparedFixture, changed_files, experiment_signature, tree_hash,
@@ -90,6 +93,19 @@ def test_early_completion_is_part_of_experiment_signature():
     spec = benchmark.TASKS["small"]
     assert benchmark._signature(disabled, spec, "hash", "disabled") != benchmark._signature(
         enabled, spec, "hash", "disabled")
+
+
+def test_round_plan_alternates_arm_order_and_call_ceiling_precedes_provider(monkeypatch):
+    args = SimpleNamespace(task="small", rounds=3, max_provider_calls=6)
+    plan = benchmark.round_plan(args)
+    assert [row[2] for row in plan] == ["small-r1", "small-r2", "small-r3"]
+    assert [row[3] for row in plan] == [
+        ("disabled", "enabled"), ("enabled", "disabled"), ("disabled", "enabled")]
+    assert benchmark.enforce_call_ceiling(args) == 6
+    args.max_provider_calls = 5
+    monkeypatch.setattr(benchmark, "providers", lambda: (_ for _ in ()).throw(AssertionError()))
+    with pytest.raises(SystemExit, match="requires 6 provider calls"):
+        asyncio.run(benchmark.execute(args))
 
 
 def test_receipt_metrics_separates_artifact_and_provider_completion():

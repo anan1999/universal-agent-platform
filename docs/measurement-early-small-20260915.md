@@ -2,9 +2,9 @@
 
 Suite: `reuse-first-scale-v1`
 
-| Scale | Task | Baseline acceptance | UAP acceptance | Baseline tokens | UAP tokens | Result |
-|---:|---|---:|---:|---:|---:|---|
-| 1 | small | PASS | PASS | UNAVAILABLE | UNAVAILABLE | INCONCLUSIVE |
+| Scale | Task | Round | Order | Baseline acceptance | UAP acceptance | Baseline tokens | UAP tokens | Result |
+|---:|---|---:|---|---:|---:|---:|---:|---|
+| 1 | small | 1 | disabled → enabled | PASS | PASS | UNAVAILABLE | UNAVAILABLE | INCONCLUSIVE |
 
 ## small detail
 
