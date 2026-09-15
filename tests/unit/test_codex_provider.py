@@ -371,17 +371,17 @@ def test_app_server_steers_after_acceptance_and_waits_for_exact_usage(monkeypatc
         {"id": 3, "result": {"turn": {"id": "turn-live", "status": "inProgress"}}},
         {"method": "item/completed", "params": {"threadId": "thread-live",
          "turnId": "turn-live", "item": {"type": "commandExecution", "id": "cmd-1"}}},
-        {"id": 4, "result": {}},
+        {"id": 4, "result": {"turnId": "turn-steered"}},
         {"method": "thread/tokenUsage/updated", "params": {
-            "threadId": "thread-live", "turnId": "turn-live", "tokenUsage": {"total": {
+            "threadId": "thread-live", "turnId": "turn-steered", "tokenUsage": {"total": {
                 "inputTokens": 100, "cachedInputTokens": 60, "cacheWriteInputTokens": 0,
                 "outputTokens": 20, "reasoningOutputTokens": 5, "totalTokens": 120,
             }}}},
         {"method": "item/completed", "params": {"threadId": "thread-live",
-         "turnId": "turn-live", "item": {"type": "agentMessage", "id": "msg-1",
+         "turnId": "turn-steered", "item": {"type": "agentMessage", "id": "msg-1",
          "text": json.dumps(result), "phase": "final_answer"}}},
         {"method": "turn/completed", "params": {"threadId": "thread-live",
-         "turn": {"id": "turn-live", "status": "completed", "items": []}}},
+         "turn": {"id": "turn-steered", "status": "completed", "items": []}}},
     ]
 
     class Input:
@@ -438,6 +438,7 @@ def test_app_server_steers_after_acceptance_and_waits_for_exact_usage(monkeypatc
     assert provider._execution_counts(stdout.decode()) == {
         "provider_tool_calls": 1, "provider_messages": 1}
     assert provider._has_completion_steer(stdout.decode()) is True
+    assert provider._completion_steer_state(stdout.decode()) == "accepted"
 
 
 def test_execute_uses_live_usage_as_complete_measured_receipt(tmp_path):

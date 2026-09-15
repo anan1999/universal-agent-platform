@@ -330,6 +330,13 @@ class CodexProvider(AIProvider):
             self._accumulate(token_usage)
             receipt = self._failure(task, CodexErrorCode.TIMEOUT, message, started, model=model)
             receipt.token_usage = token_usage
+            steer_state = self._completion_steer_state(stdout_text)
+            if steer_state:
+                receipt.completion = {
+                    "artifact": "completed", "provider": "timeout",
+                    "reason": "timeout_after_external_completion_probe",
+                    "steer_state": steer_state,
+                }
             return receipt
         except CodexArtifactCompleted as completed:
             stdout_text = completed.stdout.decode("utf-8", errors="replace")
@@ -531,7 +538,8 @@ class CodexProvider(AIProvider):
         request_id = 0
         thread_id: str | None = None
         turn_id: str | None = None
-        steered = False
+        steer_request_id: int | None = None
+        steer_accepted = False
         completed = False
         monitor = CodexEventBudget(
             max_tool_calls=(budget or {}).get("max_provider_tool_calls"),
@@ -578,7 +586,7 @@ class CodexProvider(AIProvider):
             return True
 
         async def run() -> tuple[int, bytes, bytes]:
-            nonlocal thread_id, turn_id, steered, completed
+            nonlocal thread_id, turn_id, steer_request_id, steer_accepted, completed
             initialize = await send("initialize", {
                 "clientInfo": {"name": "universal-agent-platform", "title": "UAP",
                                "version": __version__},
@@ -618,6 +626,16 @@ class CodexProvider(AIProvider):
                 method = event.get("method")
                 params = event.get("params")
                 item = params.get("item") if isinstance(params, dict) else None
+                if steer_request_id is not None and event.get("id") == steer_request_id:
+                    if event.get("error"):
+                        events.append((json.dumps({"type": "uap.completion_steer_failed"}) + "\n").encode())
+                        steer_request_id = None
+                    else:
+                        result = event.get("result")
+                        if isinstance(result, dict) and result.get("turnId"):
+                            turn_id = str(result["turnId"])
+                        events.append((json.dumps({"type": "uap.completion_steered"}) + "\n").encode())
+                        steer_accepted = True
                 if method == "item/completed" and isinstance(item, dict):
                     synthetic = {"type": "item.completed", "item": {
                         "type": {"commandExecution": "command_execution",
@@ -628,7 +646,7 @@ class CodexProvider(AIProvider):
                     if reason:
                         raise CodexBudgetExceeded(reason, monitor.tool_calls,
                                                   monitor.assistant_messages)
-                    if (not steered and item.get("type") in
+                    if (steer_request_id is None and not steer_accepted and item.get("type") in
                             {"commandExecution", "mcpToolCall", "webSearch", "fileChange"}
                             and await artifact_is_complete()):
                         steer_id = await send("turn/steer", {
@@ -638,14 +656,14 @@ class CodexProvider(AIProvider):
                                 "tool use now; return the required final JSON receipt immediately."),
                                 "text_elements": []}],
                         })
-                        events.append((json.dumps({"type": "uap.completion_steered",
-                                                  "request_id": steer_id}) + "\n").encode())
-                        steered = True
+                        steer_request_id = int(steer_id)
+                        events.append((json.dumps({"type": "uap.completion_steer_requested"}) + "\n").encode())
                 if method == "turn/completed" and isinstance(params, dict):
                     completed_turn = params.get("turn", {})
                     if str(completed_turn.get("id")) == turn_id:
                         completed = completed_turn.get("status") == "completed"
-                        break
+                        if completed or not (steer_request_id is not None or steer_accepted):
+                            break
             if not completed:
                 raise RuntimeError("Codex app-server turn did not complete")
             process.stdin.close()
@@ -809,6 +827,16 @@ class CodexProvider(AIProvider):
         return any('"type": "uap.completion_steered"' in line or
                    '"type":"uap.completion_steered"' in line
                    for line in output.splitlines())
+
+    @staticmethod
+    def _completion_steer_state(output: str) -> str | None:
+        if CodexProvider._has_completion_steer(output):
+            return "accepted"
+        if any('"type": "uap.completion_steer_requested"' in line or
+               '"type":"uap.completion_steer_requested"' in line
+               for line in output.splitlines()):
+            return "requested"
+        return None
 
     @staticmethod
     def _usage_breakdown(usage: dict[str, int]) -> dict[str, int]:
