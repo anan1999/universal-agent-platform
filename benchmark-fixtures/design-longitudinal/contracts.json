@@ -1,0 +1,44 @@
+{
+  "ui-ux": [
+    {
+      "goal": "Create the responsive and accessible medication-planner prototype described by the local brief and requirements.",
+      "required_files": ["prototype.html"]
+    },
+    {
+      "goal": "Extend the existing prototype with a medication status filter, a visible conflict alert, and an aria-live status region. Preserve the established design tokens and responsive layout.",
+      "required_files": ["prototype.html"]
+    },
+    {
+      "goal": "Add an accessible Add medication dialog to the existing prototype, including labelled fields, Escape-key close behavior, focus return, and reduced-motion support. Preserve prior behavior.",
+      "required_files": ["prototype.html"]
+    }
+  ],
+  "graphic-design": [
+    {
+      "goal": "Create the standalone vector event poster described by the local assignment and poster brief.",
+      "required_files": ["poster.svg"]
+    },
+    {
+      "goal": "Extend the existing poster with a sponsor strip labelled exactly SUPPORTED BY HARBOR LAB. Keep the approved palette, hierarchy, and original layers intact.",
+      "required_files": ["poster.svg"]
+    },
+    {
+      "goal": "Create a companion square social.svg adaptation with viewBox 0 0 1080 1080. Reuse the poster palette and include the exact event, date, and venue copy with accessible title and description.",
+      "required_files": ["poster.svg", "social.svg"]
+    }
+  ],
+  "three-d-design": [
+    {
+      "goal": "Create the valid Wavefront information kiosk described by the local assignment and model brief.",
+      "required_files": ["kiosk.obj", "kiosk.mtl"]
+    },
+    {
+      "goal": "Extend the kiosk with a distinct keypad group using a new AccentMetal material. Preserve the existing model bounds, groups, and material assignments.",
+      "required_files": ["kiosk.obj", "kiosk.mtl"]
+    },
+    {
+      "goal": "Extend the kiosk with a canopy group using a new Canopy material while preserving all earlier geometry and the exact model bounds. Keep every face index valid.",
+      "required_files": ["kiosk.obj", "kiosk.mtl"]
+    }
+  ]
+}
