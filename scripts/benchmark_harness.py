@@ -24,6 +24,21 @@ def tree_hash(root: Path) -> str:
     return digest.hexdigest()
 
 
+def changed_files(before: Path, after: Path) -> list[str]:
+    """Return content changes without depending on a provider's final receipt."""
+    def manifest(root: Path) -> dict[str, str]:
+        values: dict[str, str] = {}
+        for path in sorted(root.rglob("*")):
+            relative = path.relative_to(root)
+            if not path.is_file() or any(part in IGNORED_PARTS for part in relative.parts):
+                continue
+            values[relative.as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
+        return values
+
+    old, new = manifest(before), manifest(after)
+    return sorted(path for path in old.keys() | new.keys() if old.get(path) != new.get(path))
+
+
 def write_json(path: Path, payload: dict[str, Any]) -> None:
     """Write a checkpoint atomically so interruption cannot leave valid-looking JSON."""
     path.parent.mkdir(parents=True, exist_ok=True)

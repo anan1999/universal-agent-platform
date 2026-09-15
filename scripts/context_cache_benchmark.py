@@ -22,7 +22,9 @@ from adaptive_agent.core.orchestrator import Orchestrator
 from adaptive_agent.project.context_index import ProjectContextIndex
 from adaptive_agent.providers.registry import providers
 from adaptive_agent.storage.database import Database
-from scripts.benchmark_harness import Checkpoints, PreparedFixture, experiment_signature, tree_hash
+from scripts.benchmark_harness import (
+    Checkpoints, PreparedFixture, changed_files, experiment_signature, tree_hash,
+)
 
 FIXTURE_ROOT = ROOT / "benchmark-fixtures" / "context-cache"
 FIXTURE = FIXTURE_ROOT / "base"
@@ -219,6 +221,7 @@ async def _run_arm(args: argparse.Namespace, spec: dict[str, Any], fixture: Prep
         **metrics,
         "status": "completed" if receipt.status == "completed" and quality["passed"] else "failed",
         "quality": quality, "post_source_hash": tree_hash(root), "resumed": False,
+        "files_changed": changed_files(fixture.prepared, root),
         "project_context_chars": int(composition.project_intelligence.get("context_chars", 0)),
         "relevant_paths": composition.project_intelligence.get("relevant_paths", []),
         "pre_task_ai_calls": composition.project_intelligence.get("pre_task_ai_calls", 0),
@@ -281,7 +284,8 @@ def reanalyze(args: argparse.Namespace) -> dict[str, Any]:
             quality = acceptance(root, spec["id"])
             result = {**result, "quality": quality,
                       "status": ("completed" if result.get("provider_status") == "completed"
-                                 and quality["passed"] else "failed")}
+                                 and quality["passed"] else "failed"),
+                      "files_changed": changed_files(fixture.prepared, root)}
             checkpoints.save(spec["id"], arm, signature, result)
             arms[arm] = result
         pairs.append(_pair(spec, arms["disabled"], arms["enabled"]))

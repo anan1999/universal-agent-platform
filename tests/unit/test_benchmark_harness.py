@@ -1,7 +1,9 @@
 import json
 from types import SimpleNamespace
 
-from scripts.benchmark_harness import Checkpoints, PreparedFixture, experiment_signature, tree_hash
+from scripts.benchmark_harness import (
+    Checkpoints, PreparedFixture, changed_files, experiment_signature, tree_hash,
+)
 from scripts import context_cache_benchmark as benchmark
 
 
@@ -46,6 +48,20 @@ def test_prepared_fixture_excludes_runtime_cache_even_when_source_contains_it(tm
     prepared.prepare()
     assert (prepared.prepared / "app" / "main.py").is_file()
     assert not (prepared.prepared / "app" / "__pycache__").exists()
+
+
+def test_changed_files_ignores_runtime_artifacts_and_detects_content(tmp_path):
+    before, after = tmp_path / "before", tmp_path / "after"
+    before.mkdir()
+    after.mkdir()
+    (before / "same.py").write_text("same\n", encoding="utf-8")
+    (after / "same.py").write_text("same\n", encoding="utf-8")
+    (before / "changed.py").write_text("old\n", encoding="utf-8")
+    (after / "changed.py").write_text("new\n", encoding="utf-8")
+    (after / "added.py").write_text("added\n", encoding="utf-8")
+    (after / "__pycache__").mkdir()
+    (after / "__pycache__" / "same.pyc").write_bytes(b"runtime")
+    assert changed_files(before, after) == ["added.py", "changed.py"]
 
 
 def test_checkpoint_only_resumes_matching_completed_arm(tmp_path):
