@@ -8,7 +8,7 @@ from adaptive_agent.core.execution_packet import ExecutionPacketBuilder
 from adaptive_agent.core.models import Receipt, Task
 from adaptive_agent.providers.codex import RESULT_SCHEMA, CodexCapabilities, CodexErrorCode, CodexProvider
 from adaptive_agent.providers.codex.provider import (
-    CodexArtifactCompleted, CodexEventBudget, CodexTimeout,
+    CodexArtifactCompleted, CodexControlledStop, CodexEventBudget, CodexTimeout,
 )
 
 
@@ -363,7 +363,8 @@ def test_streaming_completion_probe_requires_two_passes_before_stopping(monkeypa
     assert process.terminated is True
 
 
-def test_app_server_accepts_original_turn_completion_after_steer(monkeypatch, tmp_path):
+@pytest.mark.parametrize("terminal_status", ["completed", "interrupted"])
+def test_app_server_accepts_terminal_turn_after_steer(monkeypatch, tmp_path, terminal_status):
     result = {"status": "completed", "summary": "done"}
     server_events = [
         {"id": 1, "result": {"userAgent": "test"}},
@@ -381,7 +382,7 @@ def test_app_server_accepts_original_turn_completion_after_steer(monkeypatch, tm
          "turnId": "turn-steered", "item": {"type": "agentMessage", "id": "msg-1",
          "text": json.dumps(result), "phase": "final_answer"}}},
         {"method": "turn/completed", "params": {"threadId": "thread-live",
-         "turn": {"id": "turn-live", "status": "completed", "items": []}}},
+         "turn": {"id": "turn-live", "status": terminal_status, "items": []}}},
     ]
 
     class Input:
@@ -423,10 +424,16 @@ def test_app_server_accepts_original_turn_completion_after_steer(monkeypatch, tm
     monkeypatch.setattr(asyncio, "create_subprocess_exec", create)
     provider = CodexProvider(command_prefix=["fake"], capabilities=CodexCapabilities(
         available=True, supports_noninteractive=True, supports_jsonl=True), timeout=5)
-    code, stdout, _ = asyncio.run(provider._communicate_app_server(
+    invocation = lambda: asyncio.run(provider._communicate_app_server(
         "prompt", tmp_path, {"completion_probe_passes": 2,
                              "completion_probe_grace_seconds": 0},
         lambda: True, model="model", reasoning="low", read_only=False))
+    if terminal_status == "interrupted":
+        with pytest.raises(CodexControlledStop) as stopped:
+            invocation()
+        code, stdout = 0, stopped.value.stdout
+    else:
+        code, stdout, _ = invocation()
     requests = [json.loads(value) for value in process.stdin.values]
     assert code == 0
     assert process.subprocess_options["limit"] == 8 * 1024 * 1024

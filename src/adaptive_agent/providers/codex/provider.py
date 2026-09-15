@@ -66,6 +66,15 @@ class CodexArtifactCompleted(RuntimeError):
         self.stderr = stderr
 
 
+class CodexControlledStop(RuntimeError):
+    """A steered turn reached an interrupted terminal state after acceptance."""
+
+    def __init__(self, stdout: bytes, stderr: bytes):
+        super().__init__("Accepted artifact reached a controlled provider stop")
+        self.stdout = stdout
+        self.stderr = stderr
+
+
 @dataclass(slots=True)
 class CodexEventBudget:
     max_tool_calls: int | None = None
@@ -338,6 +347,30 @@ class CodexProvider(AIProvider):
                     "steer_state": steer_state,
                 }
             return receipt
+        except CodexControlledStop as stopped:
+            stdout_text = stopped.stdout.decode("utf-8", errors="replace")
+            usage, execution_id = self._parse_telemetry(stdout_text)
+            source = "measured" if usage else "unavailable"
+            token_usage: dict[str, int | bool | str] = {
+                "input": int(usage.get("input_tokens", 0)),
+                "output": int(usage.get("output_tokens", 0)),
+                "cached": int(usage.get("cached_input_tokens", 0)),
+                "source": source, "estimated": False, "complete": bool(usage),
+                "invocation_count": 1, **self._execution_counts(stdout_text),
+                **self._usage_breakdown(usage),
+            }
+            if execution_id:
+                token_usage["execution_id"] = execution_id
+            self._accumulate(token_usage)
+            return Receipt(
+                task_id=task.id, agent=task.owner, status="completed",
+                summary="External acceptance passed; Codex reached a controlled terminal stop.",
+                token_usage=token_usage, confidence="high", provider=self.id,
+                model=str(model) if model else None,
+                completion={"artifact": "completed", "provider": "controlled_stop",
+                            "reason": "interrupted_after_accepted_completion_steer"},
+                duration_seconds=time.monotonic() - started,
+            )
         except CodexArtifactCompleted as completed:
             stdout_text = completed.stdout.decode("utf-8", errors="replace")
             usage, execution_id = self._parse_telemetry(stdout_text)
@@ -544,6 +577,11 @@ class CodexProvider(AIProvider):
         relevant_turn_ids: set[str] = set()
         steer_request_id: int | None = None
         steer_accepted = False
+        steer_deadline: float | None = None
+        interrupt_request_id: int | None = None
+        interrupt_deadline: float | None = None
+        artifact_completed = False
+        controlled_stop = False
         completed = False
         monitor = CodexEventBudget(
             max_tool_calls=(budget or {}).get("max_provider_tool_calls"),
@@ -590,7 +628,9 @@ class CodexProvider(AIProvider):
             return True
 
         async def run() -> tuple[int, bytes, bytes]:
-            nonlocal thread_id, turn_id, steer_request_id, steer_accepted, completed
+            nonlocal thread_id, turn_id, steer_request_id, steer_accepted
+            nonlocal steer_deadline, interrupt_request_id, interrupt_deadline
+            nonlocal artifact_completed, controlled_stop, completed
             initialize = await send("initialize", {
                 "clientInfo": {"name": "universal-agent-platform", "title": "UAP",
                                "version": __version__},
@@ -623,7 +663,24 @@ class CodexProvider(AIProvider):
             turn_id = str(turn_result["turn"]["id"])
             relevant_turn_ids.add(turn_id)
             while True:
-                line = await process.stdout.readline()
+                deadline = interrupt_deadline or steer_deadline
+                try:
+                    if deadline is None:
+                        line = await process.stdout.readline()
+                    else:
+                        remaining = max(0.001, deadline - time.monotonic())
+                        line = await asyncio.wait_for(process.stdout.readline(), timeout=remaining)
+                except TimeoutError:
+                    if interrupt_request_id is not None or not artifact_completed:
+                        raise
+                    interrupt_id = await send("turn/interrupt", {
+                        "threadId": thread_id, "turnId": turn_id})
+                    interrupt_request_id = int(interrupt_id)
+                    steer_deadline = None
+                    interrupt_deadline = time.monotonic() + max(
+                        1.0, float((budget or {}).get("completion_interrupt_grace_seconds", 15.0)))
+                    events.append((json.dumps({"type": "uap.completion_interrupt_requested"}) + "\n").encode())
+                    continue
                 if not line:
                     break
                 events.append(line)
@@ -646,6 +703,11 @@ class CodexProvider(AIProvider):
                             relevant_turn_ids.add(turn_id)
                         events.append((json.dumps({"type": "uap.completion_steered"}) + "\n").encode())
                         steer_accepted = True
+                if interrupt_request_id is not None and event.get("id") == interrupt_request_id:
+                    if event.get("error"):
+                        events.append((json.dumps({"type": "uap.completion_interrupt_failed"}) + "\n").encode())
+                    else:
+                        events.append((json.dumps({"type": "uap.completion_interrupted"}) + "\n").encode())
                 if method == "item/completed" and isinstance(item, dict):
                     synthetic = {"type": "item.completed", "item": {
                         "type": {"commandExecution": "command_execution",
@@ -659,6 +721,7 @@ class CodexProvider(AIProvider):
                     if (steer_request_id is None and not steer_accepted and item.get("type") in
                             {"commandExecution", "mcpToolCall", "webSearch", "fileChange"}
                             and await artifact_is_complete()):
+                        artifact_completed = True
                         steer_id = await send("turn/steer", {
                             "threadId": thread_id, "expectedTurnId": turn_id,
                             "input": [{"type": "text", "text": (
@@ -667,14 +730,23 @@ class CodexProvider(AIProvider):
                                 "text_elements": []}],
                         })
                         steer_request_id = int(steer_id)
+                        steer_deadline = time.monotonic() + max(
+                            1.0, float((budget or {}).get("completion_steer_grace_seconds", 20.0)))
                         events.append((json.dumps({"type": "uap.completion_steer_requested"}) + "\n").encode())
                 if method == "turn/completed" and isinstance(params, dict):
                     completed_turn = params.get("turn", {})
                     completed_id = str(completed_turn.get("id"))
                     if completed_id in relevant_turn_ids:
-                        completed = completed_turn.get("status") == "completed"
-                        if completed or not (steer_request_id is not None or steer_accepted):
+                        terminal_status = completed_turn.get("status")
+                        completed = terminal_status == "completed"
+                        controlled_stop = bool(
+                            artifact_completed and terminal_status == "interrupted")
+                        if completed or controlled_stop or not (
+                                steer_request_id is not None or steer_accepted):
                             break
+            if controlled_stop:
+                events.append((json.dumps({"type": "uap.completion_controlled_stop"}) + "\n").encode())
+                raise CodexControlledStop(b"".join(events), b"")
             if not completed:
                 raise RuntimeError("Codex app-server turn did not complete")
             process.stdin.close()

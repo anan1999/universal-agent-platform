@@ -256,6 +256,8 @@ async def _run_arm(args: argparse.Namespace, spec: dict[str, Any], fixture: Prep
         task.metadata.setdefault("execution_budget", {}).update({
             "completion_probe_passes": 2,
             "completion_probe_grace_seconds": 1.0,
+            "completion_steer_grace_seconds": 20.0,
+            "completion_interrupt_grace_seconds": 15.0,
         })
     if live_usage:
         task.metadata["codex_live_usage"] = True
