@@ -116,9 +116,11 @@ def test_api_exposes_intelligence_status_and_context(tmp_path, monkeypatch):
     assert "project_intelligence" in client.get("/api/bootstrap-status").json()
 
 
-def test_schema_v7_is_additive(tmp_path):
+def test_schema_v8_is_additive(tmp_path):
     db = Database(tmp_path / "schema.db")
-    assert SCHEMA_VERSION == 7
-    assert db.query("SELECT version FROM schema_migrations WHERE version=7")
+    assert SCHEMA_VERSION == 8
+    assert db.query("SELECT version FROM schema_migrations WHERE version=8")
     columns = {row["name"] for row in db.query("PRAGMA table_info(project_intelligence_runs)")}
     assert {"temperature", "reuse_hits", "context_chars", "estimated_tokens"} <= columns
+    usage_columns = {row["name"] for row in db.query("PRAGMA table_info(token_usage)")}
+    assert {"provider_tool_calls", "provider_messages", "attribution_json"} <= usage_columns
