@@ -334,11 +334,14 @@ def summarize_uap_run(db: Database, run_id: str, provider_id: str,
     run_skills = db.query("SELECT context_tokens FROM run_skills WHERE run_id=?", (run_id,))
     files = []
     retries = 0
+    errors: list[str] = []
     for row in db.query("SELECT data_json FROM receipts WHERE task_id IN "
                         "(SELECT id FROM tasks WHERE run_id=?)", (run_id,)):
         receipt = json.loads(row["data_json"])
         files.extend(receipt.get("files", []))
         retries += int(receipt.get("retry_count", 0))
+        if receipt.get("error_code"):
+            errors.append(str(receipt["error_code"]))
     lifecycle_data = (json.loads(lifecycle["data_json"]) if lifecycle
                       else fallback_lifecycle)
     return {"run_id": run_id, "status": run["status"], "provider": provider_id,
@@ -357,6 +360,7 @@ def summarize_uap_run(db: Database, run_id: str, provider_id: str,
             "decision_context_items": sum(item.get("kind") == "decision"
                                           for item in lifecycle_data.get("items", [])),
             "files_modified": sorted(set(files)),
+            "error": errors[0] if errors else None,
             "temperature": (lifecycle["temperature"] if lifecycle else
                             fallback_lifecycle.get("temperature", "unknown")),
             "reuse_hits": int(lifecycle["reuse_hits"] if lifecycle else
@@ -694,14 +698,16 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
             "SELECT id FROM runs WHERE goal=? AND status='completed' ORDER BY created_at DESC", (goal,))
         recovered_run_id = next((row["id"] for row in recovered_rows
                                  if row["id"] not in used_run_ids), None)
+        pending = resume_payload.get("pending", {})
+        pending_baseline = (pending.get("baseline") if pending.get("task_number") == number
+                            and pending.get("baseline", {}).get("status") == "completed" else None)
         if number > 1:
-            reset_source(canonical, baseline)
+            if pending_baseline is None:
+                reset_source(canonical, baseline)
             if recovered_run_id is None:
                 reset_source(canonical, uap, preserve_agent=True)
         before_baseline = source_snapshot(canonical)
-        pending = resume_payload.get("pending", {})
-        baseline_result = (pending.get("baseline") if pending.get("task_number") == number
-                           and pending.get("baseline", {}).get("status") == "completed" else None)
+        baseline_result = pending_baseline
         if baseline_result is None:
             baseline_result = await baseline_run(
                 provider, baseline, goal, args.model, args.reasoning, number)

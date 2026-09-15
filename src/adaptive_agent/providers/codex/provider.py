@@ -399,8 +399,11 @@ class CodexProvider(AIProvider):
             )
         except TimeoutError:
             return self._failure(task, CodexErrorCode.TIMEOUT, f"Codex exceeded {self.timeout:g}s timeout.", started, model=model)
-        except OSError as error:
+        except FileNotFoundError as error:
             return self._failure(task, CodexErrorCode.NOT_FOUND, str(error), started, model=model)
+        except OSError as error:
+            return self._failure(task, CodexErrorCode.EXECUTION_FAILED,
+                                 f"Codex could not be started: {error}", started, model=model)
         except RuntimeError as error:
             return self._failure(task, CodexErrorCode.EXECUTION_FAILED,
                                  self._bounded_error(str(error)), started, model=model)

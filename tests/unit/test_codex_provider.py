@@ -148,6 +148,39 @@ def test_policy_block_is_environment_failure_without_escalation(tmp_path):
     assert receipt.needs_escalation is False
 
 
+def test_launch_permission_error_is_not_misreported_as_missing_executable(tmp_path):
+    capabilities = CodexCapabilities(
+        available=True, supports_noninteractive=True, supports_working_directory=True)
+
+    class PermissionDeniedProvider(CodexProvider):
+        async def _communicate(self, args, prompt, working_directory, budget=None):
+            raise PermissionError("access denied")
+
+    provider = PermissionDeniedProvider(command_prefix=["fake"], capabilities=capabilities)
+    task = Task("T", "R", "Modify a file", "developer",
+                metadata={"working_directory": str(tmp_path)})
+    receipt = asyncio.run(provider.execute(task))
+
+    assert receipt.error_code == CodexErrorCode.EXECUTION_FAILED.value
+    assert "could not be started" in receipt.summary
+
+
+def test_missing_executable_remains_a_not_found_error(tmp_path):
+    capabilities = CodexCapabilities(
+        available=True, supports_noninteractive=True, supports_working_directory=True)
+
+    class MissingProvider(CodexProvider):
+        async def _communicate(self, args, prompt, working_directory, budget=None):
+            raise FileNotFoundError("missing")
+
+    provider = MissingProvider(command_prefix=["fake"], capabilities=capabilities)
+    task = Task("T", "R", "Modify a file", "developer",
+                metadata={"working_directory": str(tmp_path)})
+    receipt = asyncio.run(provider.execute(task))
+
+    assert receipt.error_code == CodexErrorCode.NOT_FOUND.value
+
+
 def test_timeout_preserves_partial_measured_usage(tmp_path):
     output = "\n".join([
         json.dumps({"type": "thread.started", "thread_id": "thread-timeout-1"}),
