@@ -1,0 +1,264 @@
+{
+  "suite": "reuse-first-scale-v1",
+  "schema_version": 1,
+  "environment": {
+    "uap": "2.3.1",
+    "commit": "df8f6bf8de65a2a1c15c7e7ba2077134a8d6dafc",
+    "execution_commit": "df8f6bf8de65a2a1c15c7e7ba2077134a8d6dafc",
+    "provider": "codex",
+    "model": "gpt-6-astra",
+    "reasoning": "low",
+    "source_hash": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+  },
+  "prepared_fixture": {
+    "source_hash": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+    "prepared_path": "prepared/base",
+    "reused": false
+  },
+  "same_uap_execution_path": true,
+  "only_variable": "reusable_context_enabled",
+  "pairs": [
+    {
+      "task_id": "large",
+      "scale": 3,
+      "round": 1,
+      "order": [
+        "disabled",
+        "enabled"
+      ],
+      "goal": "Add a GET /reports/monthly/{month} API endpoint that returns the selected month, total spending, and totals by category, then display that monthly total and category breakdown in the existing React dashboard. Preserve existing expense behavior and validate the work.",
+      "acceptance_contract": "context-cache-monthly-fullstack-v1",
+      "baseline": {
+        "provider_status": "completed",
+        "provider": "codex",
+        "model": "gpt-6-astra",
+        "input_tokens": 77936,
+        "cached_input_tokens": 37120,
+        "non_cached_input_tokens": 40816,
+        "output_tokens": 1470,
+        "reasoning_output_tokens": 27,
+        "cache_write_input_tokens": 0,
+        "total_tokens": 79406,
+        "token_source": "measured",
+        "usage_complete": true,
+        "duration_seconds": 104.344,
+        "ai_invocations": 1,
+        "provider_tool_calls": 3,
+        "provider_messages": 2,
+        "completion": {
+          "artifact": "completed",
+          "provider": "controlled_stop",
+          "reason": "interrupted_after_accepted_completion_steer"
+        },
+        "provider_protocol_status": "controlled_stop",
+        "files_read": "UNAVAILABLE",
+        "files_changed": [
+          "app/main.py",
+          "frontend/src/App.jsx"
+        ],
+        "error": null,
+        "status": "completed",
+        "quality": {
+          "passed": true,
+          "contract": "context-cache-monthly-fullstack-v1",
+          "error": null,
+          "returncode": 0
+        },
+        "post_source_hash": "2c0ef6a7298cf2d1cd78e9ad85444442ca535a2f1d676d07a7fcccc6f763cb50",
+        "resumed": false,
+        "project_context_chars": 0,
+        "relevant_paths": [],
+        "pre_task_ai_calls": 0,
+        "orchestration_wall_ms": 19000.539
+      },
+      "uap": {
+        "provider_status": "completed",
+        "provider": "codex",
+        "model": "gpt-6-astra",
+        "input_tokens": 81561,
+        "cached_input_tokens": 58240,
+        "non_cached_input_tokens": 23321,
+        "output_tokens": 2232,
+        "reasoning_output_tokens": 42,
+        "cache_write_input_tokens": 0,
+        "total_tokens": 83793,
+        "token_source": "measured",
+        "usage_complete": true,
+        "duration_seconds": 120.657,
+        "ai_invocations": 1,
+        "provider_tool_calls": 4,
+        "provider_messages": 2,
+        "completion": {
+          "artifact": "completed",
+          "provider": "controlled_stop",
+          "reason": "interrupted_after_accepted_completion_steer"
+        },
+        "provider_protocol_status": "controlled_stop",
+        "files_read": "UNAVAILABLE",
+        "files_changed": [
+          "app/main.py",
+          "frontend/src/App.jsx",
+          "tests/test_reports.py"
+        ],
+        "error": null,
+        "status": "completed",
+        "quality": {
+          "passed": true,
+          "contract": "context-cache-monthly-fullstack-v1",
+          "error": null,
+          "returncode": 0
+        },
+        "post_source_hash": "57884fcc168376edfa96152cfb9b59cb4a9e2fcdda9f8fe05075a5f7c12014ef",
+        "resumed": false,
+        "project_context_chars": 617,
+        "relevant_paths": [
+          "app/",
+          "frontend/"
+        ],
+        "pre_task_ai_calls": 0,
+        "orchestration_wall_ms": 15616.026
+      },
+      "equal_quality": true,
+      "decision_evidence": {
+        "measured_complete_tokens": true,
+        "fewer_tokens": false,
+        "equal_tokens": false,
+        "materially_faster_10_percent": false
+      },
+      "conclusion": "NO",
+      "claim": "no benefit claim is supported by this pair"
+    }
+  ],
+  "summary": {
+    "selected_tasks": 1,
+    "rounds": 1,
+    "pairs": 1,
+    "provider_calls_max": 2,
+    "provider_calls_actual": 2,
+    "conclusive_pairs": 1,
+    "yes": 0,
+    "no": 1,
+    "inconclusive": 0,
+    "observed": {
+      "accepted_pairs": 1,
+      "uap_faster_pairs": 0,
+      "baseline_duration_seconds": 104.344,
+      "uap_duration_seconds": 120.657,
+      "uap_duration_reduction_percent": -15.63,
+      "baseline_tool_calls": 3,
+      "uap_tool_calls": 4,
+      "artifact_probe_stops": 0,
+      "provider_timeouts": 0,
+      "complete_measured_pairs": 1,
+      "token_comparison_available": true
+    }
+  },
+  "task_id": "large",
+  "scale": 3,
+  "round": 1,
+  "order": [
+    "disabled",
+    "enabled"
+  ],
+  "goal": "Add a GET /reports/monthly/{month} API endpoint that returns the selected month, total spending, and totals by category, then display that monthly total and category breakdown in the existing React dashboard. Preserve existing expense behavior and validate the work.",
+  "acceptance_contract": "context-cache-monthly-fullstack-v1",
+  "baseline": {
+    "provider_status": "completed",
+    "provider": "codex",
+    "model": "gpt-6-astra",
+    "input_tokens": 77936,
+    "cached_input_tokens": 37120,
+    "non_cached_input_tokens": 40816,
+    "output_tokens": 1470,
+    "reasoning_output_tokens": 27,
+    "cache_write_input_tokens": 0,
+    "total_tokens": 79406,
+    "token_source": "measured",
+    "usage_complete": true,
+    "duration_seconds": 104.344,
+    "ai_invocations": 1,
+    "provider_tool_calls": 3,
+    "provider_messages": 2,
+    "completion": {
+      "artifact": "completed",
+      "provider": "controlled_stop",
+      "reason": "interrupted_after_accepted_completion_steer"
+    },
+    "provider_protocol_status": "controlled_stop",
+    "files_read": "UNAVAILABLE",
+    "files_changed": [
+      "app/main.py",
+      "frontend/src/App.jsx"
+    ],
+    "error": null,
+    "status": "completed",
+    "quality": {
+      "passed": true,
+      "contract": "context-cache-monthly-fullstack-v1",
+      "error": null,
+      "returncode": 0
+    },
+    "post_source_hash": "2c0ef6a7298cf2d1cd78e9ad85444442ca535a2f1d676d07a7fcccc6f763cb50",
+    "resumed": false,
+    "project_context_chars": 0,
+    "relevant_paths": [],
+    "pre_task_ai_calls": 0,
+    "orchestration_wall_ms": 19000.539
+  },
+  "uap": {
+    "provider_status": "completed",
+    "provider": "codex",
+    "model": "gpt-6-astra",
+    "input_tokens": 81561,
+    "cached_input_tokens": 58240,
+    "non_cached_input_tokens": 23321,
+    "output_tokens": 2232,
+    "reasoning_output_tokens": 42,
+    "cache_write_input_tokens": 0,
+    "total_tokens": 83793,
+    "token_source": "measured",
+    "usage_complete": true,
+    "duration_seconds": 120.657,
+    "ai_invocations": 1,
+    "provider_tool_calls": 4,
+    "provider_messages": 2,
+    "completion": {
+      "artifact": "completed",
+      "provider": "controlled_stop",
+      "reason": "interrupted_after_accepted_completion_steer"
+    },
+    "provider_protocol_status": "controlled_stop",
+    "files_read": "UNAVAILABLE",
+    "files_changed": [
+      "app/main.py",
+      "frontend/src/App.jsx",
+      "tests/test_reports.py"
+    ],
+    "error": null,
+    "status": "completed",
+    "quality": {
+      "passed": true,
+      "contract": "context-cache-monthly-fullstack-v1",
+      "error": null,
+      "returncode": 0
+    },
+    "post_source_hash": "57884fcc168376edfa96152cfb9b59cb4a9e2fcdda9f8fe05075a5f7c12014ef",
+    "resumed": false,
+    "project_context_chars": 617,
+    "relevant_paths": [
+      "app/",
+      "frontend/"
+    ],
+    "pre_task_ai_calls": 0,
+    "orchestration_wall_ms": 15616.026
+  },
+  "equal_quality": true,
+  "decision_evidence": {
+    "measured_complete_tokens": true,
+    "fewer_tokens": false,
+    "equal_tokens": false,
+    "materially_faster_10_percent": false
+  },
+  "conclusion": "NO",
+  "claim": "no benefit claim is supported by this pair"
+}
