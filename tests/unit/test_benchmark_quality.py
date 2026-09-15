@@ -1,4 +1,5 @@
 from adaptive_agent.observability.benchmark_quality import assess_implementation_quality
+from scripts.pocketflow_longitudinal_benchmark import source_snapshot
 
 
 def test_independent_quality_scores_external_evidence_only():
@@ -35,3 +36,10 @@ def test_independent_quality_exposes_scope_drift_without_hiding_correctness():
     assert result["score"] == 95
     assert result["passed"] is True
     assert result["unexpected_paths"] == ["unrelated/notes.txt"]
+
+
+def test_product_snapshot_excludes_uap_instruction_marker(tmp_path):
+    (tmp_path / "AGENTS.md").write_text("<!-- UAP:START -->", encoding="utf-8")
+    (tmp_path / "main.py").write_text("print('product')", encoding="utf-8")
+
+    assert list(source_snapshot(tmp_path)) == ["main.py"]

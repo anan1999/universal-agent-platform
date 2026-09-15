@@ -415,6 +415,21 @@ def render_report(payload: dict[str, Any]) -> str:
             return ", ".join(str(item) for item in value) or "default"
         return str(value or "default")
 
+    def attribution_label(result: dict[str, Any]) -> str:
+        attribution = result.get("token_attribution") or {}
+        groups = attribution.get("invocations", [attribution])
+        totals: dict[str, int] = {}
+        windows = 0
+        for group in groups:
+            for window in group.get("windows", []):
+                kind = str(window.get("kind", "unknown"))
+                totals[kind] = totals.get(kind, 0) + int(window.get("total_tokens", 0))
+                windows += 1
+        if not windows:
+            return "not collected"
+        detail = ", ".join(f"{kind}={value}" for kind, value in sorted(totals.items()))
+        return f"{windows} windows ({detail})"
+
     providers_used = sorted({str(side.get("provider", "unknown"))
                              for task in payload["tasks"] for side in (task["baseline"], task["uap"])})
     provider_note = (f"All paired tasks used the single provider {providers_used[0]}."
@@ -451,6 +466,8 @@ def render_report(payload: dict[str, Any]) -> str:
                   f"UAP={uap_score if uap_score is not None else 'not collected'}",
                   f"- Provider tool windows: baseline={task['baseline'].get('provider_tool_calls', 'not collected')}; "
                   f"UAP={task['uap'].get('provider_tool_calls', 'not collected')}",
+                  f"- Baseline token attribution: {attribution_label(task['baseline'])}",
+                  f"- UAP token attribution: {attribution_label(task['uap'])}",
                   f"- State: {task['cold_or_warm'].upper()}",
                   f"- Paired comparison valid: {task['comparison_valid']}",
                   f"- Canonical source: {task.get('canonical_source', 'baseline')}",
@@ -684,6 +701,7 @@ def source_snapshot(path: Path) -> dict[str, str]:
     ignored = {".agent", ".git", ".pytest_cache", "__pycache__", "node_modules"}
     paths = [item.relative_to(path).as_posix() for item in path.rglob("*")
              if item.is_file() and not ignored.intersection(item.relative_to(path).parts)
+             and item.relative_to(path).as_posix() != "AGENTS.md"
              and item.suffix not in {".db", ".sqlite", ".sqlite3", ".pyc"}]
     return ProjectIntelligenceStore(path).hash_paths(paths)
 
