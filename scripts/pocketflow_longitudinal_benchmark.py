@@ -386,7 +386,11 @@ def render_report(payload: dict[str, Any]) -> str:
                      if len(providers_used) == 1 else
                      f"This is a mixed-provider sequence: {', '.join(providers_used)}.")
     canonical = payload["environment"].get("canonical_source", "baseline")
-    lines = ["# PocketFlow longitudinal results", "", "## Environment", "",
+    lines = ["# PocketFlow longitudinal results", "", "## Method", "",
+             "Five implementation tasks were executed sequentially in the same fresh project. "
+             "Each task compared direct Codex against UAP from the same accepted source checkpoint; "
+             "provider sessions were ephemeral while UAP retained project-local reusable state.", "",
+             "## Environment", "",
              f"- UAP: {payload['environment']['uap']}",
              f"- Commit: {payload['environment']['commit']}",
              f"- Provider: {payload['environment']['provider']}",
@@ -394,11 +398,17 @@ def render_report(payload: dict[str, Any]) -> str:
              f"- Canonical source: {payload['environment'].get('canonical_source', 'baseline')}",
              f"- Date: {payload['environment']['date']}", ""]
     for task in payload["tasks"]:
+        baseline_tokens = int(task["baseline_tokens"])
+        uap_tokens = int(task["uap_tokens"])
+        reduction = ((baseline_tokens - uap_tokens) / baseline_tokens * 100
+                     if baseline_tokens else 0.0)
         lines += [f"## Task {task['task_number']}", "",
+                  f"- Goal: {task['goal']}",
                   f"- Provider/model: baseline={task['baseline']['provider']}/{model_label(task['baseline'].get('model'))}; "
                   f"UAP={task['uap']['provider']}/{model_label(task['uap'].get('model'))}",
                   f"- Baseline: {task['baseline']['status']}, {task['baseline_tokens']} tokens ({task['baseline']['token_source']})",
                   f"- UAP: {task['uap']['status']}, {task['uap_tokens']} tokens ({task['uap']['token_source']})",
+                  f"- Token reduction: {reduction:.2f}%",
                   f"- Quality: baseline={task['quality']['baseline']['passed']}, UAP={task['quality']['uap']['passed']}",
                   f"- State: {task['cold_or_warm'].upper()}",
                   f"- Paired comparison valid: {task['comparison_valid']}",
@@ -412,9 +422,14 @@ def render_report(payload: dict[str, Any]) -> str:
                   f"- Status: {stopped.get('status') or 'unknown'}",
                   f"- Error: {stopped.get('error') or 'none'}",
                   f"- Detail: {stopped.get('summary') or stopped.get('message') or 'unavailable'}", ""]
+    baseline_total = int(payload["cumulative"]["baseline_tokens"])
+    uap_total = int(payload["cumulative"]["uap_tokens"])
+    total_reduction = ((baseline_total - uap_total) / baseline_total * 100
+                       if baseline_total else 0.0)
     lines += ["## Cumulative", "",
               f"- Baseline total: {payload['cumulative']['baseline_tokens']}",
               f"- UAP total: {payload['cumulative']['uap_tokens']}",
+              f"- Token reduction: {total_reduction:.2f}%",
               f"- Valid paired tasks: {payload['cumulative']['comparison_valid_tasks']}",
               f"- Paired measurement claimable: {payload['cumulative'].get('paired_measurement_claimable', False)}",
               f"- Savings claimable: {payload['cumulative'].get('savings_claimable', False)}",
@@ -427,6 +442,29 @@ def render_report(payload: dict[str, Any]) -> str:
               "Provider sessions are ephemeral, but provider-side caching may still exist. Files explored are unavailable unless the provider reports them. "
              f"Paired task inputs are reset to the same accepted source checkpoint. When both systems pass, the predeclared canonical source is {canonical}; if only one passes, the passing result is canonical. Token outcomes never choose the checkpoint. {provider_note} A valid paired measurement and validated learning reuse do not imply token savings; break-even must also be reached. UAP alone retains durable `.agent` intelligence.\n"]
     return "\n".join(lines)
+
+
+def longitudinal_intelligence(root: Path, tasks: list[dict[str, Any]]) -> dict[str, Any]:
+    """Report reuse-first state instead of presenting the legacy store as truth."""
+    index_path = root / ".agent" / "project-index.json"
+    index = (json.loads(index_path.read_text(encoding="utf-8"))
+             if index_path.exists() else {})
+    sources = index.get("sources", [])
+    if not sources:
+        sources = index.get("project", {}).get("sources", [])
+    return {
+        "measurement_source": "paired task receipts and project index",
+        "project_index_present": bool(index),
+        "project_index_sources": len(sources),
+        "benchmark_runs": len(tasks),
+        "warm_runs": sum(item.get("cold_or_warm") == "warm" for item in tasks),
+        "revalidation_runs": sum(item.get("cold_or_warm") == "revalidation" for item in tasks),
+        "reuse_hits": sum(int(item.get("reuse_hits", 0)) for item in tasks),
+        "rediscovery": sum(int(item.get("rediscovery", 0)) for item in tasks),
+        "decision_context_items": sum(
+            int(item.get("uap", {}).get("decision_context_items", 0)) for item in tasks),
+        "legacy_store": ProjectIntelligenceStore(root).status(),
+    }
 
 
 def rollback_invalid_runs(db: Database, intelligence_root: Path,
@@ -502,7 +540,7 @@ def write_interruption(args: argparse.Namespace, tasks: list[dict[str, Any]],
                        "learning_reuse_validated": False,
                        "learning_savings_claimable": False,
                        "comparison_valid_tasks": sum(bool(item.get("comparison_valid")) for item in tasks)},
-        "intelligence": ProjectIntelligenceStore(uap_root).status(),
+        "intelligence": longitudinal_intelligence(uap_root, tasks),
     }
     args.output.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     Path("docs/pocketflow-longitudinal-results.md").write_text(render_report(payload), encoding="utf-8")
@@ -794,7 +832,7 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
                               "learning_reuse_validated": learning_reuse,
                               "learning_savings_claimable": learning_reuse and observed_savings,
                               "comparison_valid_tasks": sum(item["comparison_valid"] for item in tasks)},
-               "intelligence": ProjectIntelligenceStore(uap).status()}
+               "intelligence": longitudinal_intelligence(uap, tasks)}
     args.output.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     report = Path("docs/pocketflow-longitudinal-results.md")
     report.write_text(render_report(payload), encoding="utf-8")
