@@ -29,3 +29,15 @@ def test_render_includes_problem_text_and_limitations():
     assert "goal" in text
     assert "UI" not in text or "ui-ux" in text
     assert "aesthetic preference" in text
+
+
+def test_only_one_completed_measured_quality_failure_is_repairable():
+    current = row("ui-ux", 100, 70, False)
+    current["baseline"] = {"status": "completed", "token_source": "measured",
+                           "usage_complete": True}
+    current["uap"] = {"status": "completed", "token_source": "measured",
+                      "usage_complete": True}
+    current["quality"]["baseline"]["passed"] = False
+    assert benchmark.repairable_side(current) == "baseline"
+    current["quality"]["uap"]["passed"] = False
+    assert benchmark.repairable_side(current) is None

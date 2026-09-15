@@ -63,6 +63,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rounds", type=int, choices=(1, 2, 3), default=3)
     parser.add_argument("--domains", nargs="*", choices=DOMAINS, default=list(DOMAINS))
     parser.add_argument("--max-provider-calls", type=int, default=18)
+    parser.add_argument("--max-repair-calls", type=int, default=0,
+                        help="explicit ceiling for retrying one retained invalid arm")
     parser.add_argument("--timeout", type=float, default=600)
     parser.add_argument("--workspace", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -180,6 +182,19 @@ def valid_pair(row: dict[str, Any]) -> bool:
         and row["quality"]["uap"]["passed"])
 
 
+def repairable_side(row: dict[str, Any]) -> str | None:
+    """Return the sole quality-failing arm; never retry ambiguous failures."""
+    baseline_ok = bool(row["quality"]["baseline"]["passed"])
+    uap_ok = bool(row["quality"]["uap"]["passed"])
+    if baseline_ok == uap_ok:
+        return None
+    side = "uap" if baseline_ok else "baseline"
+    result = row[side]
+    return side if (result.get("status") == "completed"
+                    and result.get("token_source") == "measured"
+                    and result.get("usage_complete")) else None
+
+
 def summarize(tracks: list[dict[str, Any]]) -> dict[str, Any]:
     rows = [row for track in tracks for row in track["rounds"]]
     valid = [row for row in rows if row.get("comparison_valid")]
@@ -282,9 +297,12 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
                    "uap_memory_retained": True, "quality_contract": "design-longitudinal-v1"},
         "tracks": [], "summary": {},
     }
+    repair_calls = 0
+    payload["environment"]["max_repair_calls"] = args.max_repair_calls
     for domain in args.domains:
         domain_root = args.workspace / domain
         canonical, baseline, uap = (domain_root / name for name in ("canonical", "baseline", "uap"))
+        db = Database(domain_root / "uap-history.db")
         existing = next((item for item in payload["tracks"] if item["domain"] == domain), None)
         if existing is None:
             seed(canonical, domain)
@@ -303,6 +321,36 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
                     "uap": evaluate(evidence / "uap", domain, number),
                 }
                 row["comparison_valid"] = valid_pair(row)
+            invalid = [row for row in track["rounds"] if not row["comparison_valid"]]
+            if len(invalid) == 1 and repair_calls < args.max_repair_calls:
+                row = invalid[0]
+                side = repairable_side(row)
+                number = int(row["round"])
+                if side is not None and number == len(track["rounds"]):
+                    spec = specs[domain][number - 1]
+                    before = source_snapshot(canonical)
+                    if side == "baseline":
+                        reset_source(canonical, baseline)
+                        result = await baseline_run(provider, baseline, domain, number,
+                                                    spec["goal"], args.model, args.reasoning)
+                        root = baseline
+                    else:
+                        reset_source(canonical, uap, preserve_agent=True)
+                        result = await uap_run(provider, uap, domain, number, spec["goal"],
+                                               db, args.provider, args.model)
+                        root = uap
+                    paths = changed_paths(before, source_snapshot(root))
+                    result["source_changed"] = bool(paths)
+                    result["changed_paths"] = paths
+                    row[side] = result
+                    row[f"{side}_tokens"] = _tokens(result)
+                    row["quality"][side] = evaluate(root, domain, number)
+                    row["comparison_valid"] = valid_pair(row)
+                    row.setdefault("repairs", []).append({"side": side,
+                                                          "reason": "retained quality gate failure"})
+                    evidence = domain_root / "evidence" / f"round-{number}" / side
+                    reset_source(root, evidence)
+                    repair_calls += 1
             if any(not row["comparison_valid"] for row in track["rounds"]):
                 save(payload, args)
                 raise SystemExit(f"Retained evidence is still invalid: {domain}")
@@ -310,7 +358,6 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
                 last = int(track["rounds"][-1]["round"])
                 if not evaluate(canonical, domain, last)["passed"]:
                     reset_source(domain_root / "evidence" / f"round-{last}" / "baseline", canonical)
-        db = Database(domain_root / "uap-history.db")
         for number, spec in enumerate(specs[domain][:args.rounds], 1):
             if number <= len(track["rounds"]):
                 continue
@@ -356,6 +403,8 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
                 raise SystemExit(f"Quality or measurement gate failed: {domain} round {number}")
             reset_source(baseline, canonical)
         (domain_root / "partial.json").unlink(missing_ok=True)
+    save(payload, args)
+    payload["environment"]["repair_calls_used"] = repair_calls
     save(payload, args)
     return payload
 
