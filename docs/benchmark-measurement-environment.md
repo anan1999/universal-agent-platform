@@ -41,6 +41,15 @@ python scripts/context_cache_benchmark.py --execute --task medium --provider cod
 python scripts/context_cache_benchmark.py --execute --task large --provider codex --resume
 ```
 
+若要測試 artifact-aware completion，可在 A/B 兩邊同時加入：
+
+```bash
+python scripts/context_cache_benchmark.py \
+  --execute --task small --provider codex --early-completion
+```
+
+這個機制預設關閉。它只會在 provider 回報工具操作完成後執行 benchmark-owned acceptance，連續兩次 PASS 才停止 provider。它不接受任意 shell command，也不把 retrieval suggestion 當權限。報表會將 `artifact=completed` 與 `provider=stopped` 分開記錄；因為未收到 provider final receipt，token usage 只能標記為 `partial_measured` 或 `unavailable`，不能拿來宣稱節省。
+
 也可以明確要求六次呼叫跑完整 suite：
 
 ```bash

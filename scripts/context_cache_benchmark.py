@@ -42,6 +42,8 @@ def arguments() -> argparse.Namespace:
     parser.add_argument("--task", choices=(*TASKS, "all"), default="large")
     parser.add_argument("--resume", action="store_true",
                         help="reuse matching, acceptance-passing arm checkpoints")
+    parser.add_argument("--early-completion", action="store_true",
+                        help="stop an agentic provider after two independent acceptance passes")
     parser.add_argument("--provider", default="codex")
     parser.add_argument("--model")
     parser.add_argument("--reasoning", default="low", choices=("low", "medium", "high", "xhigh"))
@@ -98,6 +100,9 @@ def receipt_metrics(receipt, duration: float) -> dict[str, Any]:
         "ai_invocations": int(usage.get("invocation_count", 1) or 1),
         "provider_tool_calls": usage.get("provider_tool_calls"),
         "provider_messages": usage.get("provider_messages"),
+        "completion": dict(receipt.completion),
+        "provider_protocol_status": receipt.completion.get(
+            "provider", "completed" if receipt.status == "completed" else receipt.status),
         "files_read": "UNAVAILABLE", "files_changed": receipt.files,
         "error": receipt.error_code or receipt.uncertainty_reason or None,
     }
@@ -167,6 +172,7 @@ def _signature(args: argparse.Namespace, spec: dict[str, Any], source: str, arm:
         "task_id": spec["id"], "goal": spec["goal"], "arm": arm,
         "reuse_context_enabled": arm == "enabled", "provider": args.provider,
         "model": args.model, "reasoning": args.reasoning, "timeout": args.timeout,
+        "early_completion": bool(getattr(args, "early_completion", False)),
     })
 
 
@@ -196,10 +202,17 @@ async def _run_arm(args: argparse.Namespace, spec: dict[str, Any], fixture: Prep
     task = agent_tasks[0]
     task.metadata["model"] = args.model
     task.reasoning = args.reasoning
+    early_completion = bool(getattr(args, "early_completion", False))
+    if early_completion:
+        task.metadata.setdefault("execution_budget", {}).update({
+            "completion_probe_passes": 2,
+            "completion_probe_grace_seconds": 1.0,
+        })
     packet = ExecutionPacketBuilder().build(task, root, "Pocket Expense", "benchmark")
     print(f"[{spec['id']}/{arm}] provider call started (timeout={args.timeout:g}s)", flush=True)
     started = time.monotonic()
-    receipt = await provider.execute(task, packet=packet)
+    probe = (lambda: acceptance(root, spec["id"])["passed"]) if early_completion else None
+    receipt = await provider.execute(task, packet=packet, completion_probe=probe)
     metrics = receipt_metrics(receipt, time.monotonic() - started)
     quality = acceptance(root, spec["id"])
     result = {
@@ -381,6 +394,7 @@ def render(payload: dict[str, Any]) -> str:
                 f"{row['cached_input_tokens']}, output {row['output_tokens']}, tools "
                 f"{row['provider_tool_calls'] if row['provider_tool_calls'] is not None else 'UNAVAILABLE'}, "
                 f"messages {row['provider_messages'] if row['provider_messages'] is not None else 'UNAVAILABLE'}, "
+                f"protocol `{row.get('provider_protocol_status', row['provider_status'])}`, "
                 f"error `{row['error'] or 'none'}`.")
         lines.append(f"- Conclusion: `{pair['conclusion']}` — {pair['claim']}.")
     lines.extend(["", "A token comparison is conclusive only when both arms pass acceptance and both "

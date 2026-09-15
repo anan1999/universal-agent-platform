@@ -1,6 +1,8 @@
 import json
+from types import SimpleNamespace
 
 from scripts.benchmark_harness import Checkpoints, PreparedFixture, experiment_signature, tree_hash
+from scripts import context_cache_benchmark as benchmark
 
 
 def test_prepared_fixture_is_reused_until_source_changes(tmp_path):
@@ -63,3 +65,25 @@ def test_atomic_checkpoint_leaves_no_temporary_file(tmp_path):
     path = tmp_path / "checkpoints" / "large" / "disabled.json"
     assert json.loads(path.read_text(encoding="utf-8"))["terminal"] is True
     assert not path.with_suffix(".json.tmp").exists()
+
+
+def test_early_completion_is_part_of_experiment_signature():
+    common = dict(provider="codex", model="model", reasoning="low", timeout=30)
+    disabled = SimpleNamespace(**common, early_completion=False)
+    enabled = SimpleNamespace(**common, early_completion=True)
+    spec = benchmark.TASKS["small"]
+    assert benchmark._signature(disabled, spec, "hash", "disabled") != benchmark._signature(
+        enabled, spec, "hash", "disabled")
+
+
+def test_receipt_metrics_separates_artifact_and_provider_completion():
+    receipt = SimpleNamespace(
+        status="completed", provider="codex", model="model", files=[], error_code=None,
+        uncertainty_reason="", completion={"artifact": "completed", "provider": "stopped"},
+        token_usage={"input": 0, "output": 0, "cached": 0, "source": "unavailable",
+                     "invocation_count": 1, "provider_tool_calls": 2},
+    )
+    metrics = benchmark.receipt_metrics(receipt, 2.5)
+    assert metrics["completion"] == {"artifact": "completed", "provider": "stopped"}
+    assert metrics["provider_protocol_status"] == "stopped"
+    assert metrics["usage_complete"] is False
