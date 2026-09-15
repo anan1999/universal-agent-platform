@@ -1,0 +1,578 @@
+{
+  "environment": {
+    "uap": "2.3.1",
+    "commit": "dd6116062ee2f3bbf65bf8bc4ce5be520b8b9156",
+    "provider": "codex",
+    "model": "gpt-6-astra",
+    "reasoning": "low",
+    "rounds": 1,
+    "max_provider_calls": 2,
+    "canonical_source": "baseline",
+    "date": "2026-09-15T05:16:53Z"
+  },
+  "tasks": [
+    {
+      "task_number": 1,
+      "goal": "Implement the backend foundation for a personal expense app: FastAPI, SQLite, an Expense model, CRUD API, and backend tests.",
+      "baseline": {
+        "status": "completed",
+        "provider": "codex",
+        "model": "gpt-6-astra",
+        "reasoning": "low",
+        "input_tokens": 149061,
+        "cached_input": 122240,
+        "output_tokens": 3666,
+        "token_source": "measured",
+        "usage_complete": true,
+        "ai_invocations": 1,
+        "provider_tool_calls": 3,
+        "provider_messages": 3,
+        "token_attribution": {
+          "method": "provider_cumulative_usage_delta_by_event_window",
+          "token_totals_exact": true,
+          "causal_labels_exact": false,
+          "reset_count": 0,
+          "windows": [
+            {
+              "sequence": 1,
+              "kind": "after_command_execution",
+              "item_id": "exec-54fe9e6c-287c-4d3c-89ff-8b9fcc7a1465",
+              "input_tokens": 18565,
+              "cached_input_tokens": 0,
+              "uncached_input_tokens": 18565,
+              "output_tokens": 96,
+              "total_tokens": 18661
+            },
+            {
+              "sequence": 2,
+              "kind": "after_command_execution",
+              "item_id": "exec-ac7fca8e-6251-4dae-89d1-c7a0c87c77a3",
+              "input_tokens": 18805,
+              "cached_input_tokens": 18432,
+              "uncached_input_tokens": 373,
+              "output_tokens": 56,
+              "total_tokens": 18861
+            },
+            {
+              "sequence": 3,
+              "kind": "after_file_change",
+              "item_id": "exec-4b0d33a7-8862-43fa-bfb2-4d67cc85f634",
+              "input_tokens": 19067,
+              "cached_input_tokens": 18688,
+              "uncached_input_tokens": 379,
+              "output_tokens": 3051,
+              "total_tokens": 22118
+            },
+            {
+              "sequence": 3,
+              "kind": "after_file_change",
+              "item_id": "exec-4b0d33a7-8862-43fa-bfb2-4d67cc85f634",
+              "input_tokens": 22147,
+              "cached_input_tokens": 18944,
+              "uncached_input_tokens": 3203,
+              "output_tokens": 31,
+              "total_tokens": 22178
+            },
+            {
+              "sequence": 3,
+              "kind": "after_file_change",
+              "item_id": "exec-4b0d33a7-8862-43fa-bfb2-4d67cc85f634",
+              "input_tokens": 22206,
+              "cached_input_tokens": 22016,
+              "uncached_input_tokens": 190,
+              "output_tokens": 41,
+              "total_tokens": 22247
+            },
+            {
+              "sequence": 4,
+              "kind": "after_command_execution",
+              "item_id": "exec-801791b4-eb9f-478a-acc4-91e685ec5c3d",
+              "input_tokens": 22306,
+              "cached_input_tokens": 22016,
+              "uncached_input_tokens": 290,
+              "output_tokens": 39,
+              "total_tokens": 22345
+            },
+            {
+              "sequence": 4,
+              "kind": "after_command_execution",
+              "item_id": "exec-801791b4-eb9f-478a-acc4-91e685ec5c3d",
+              "input_tokens": 25965,
+              "cached_input_tokens": 22144,
+              "uncached_input_tokens": 3821,
+              "output_tokens": 352,
+              "total_tokens": 26317
+            }
+          ]
+        },
+        "handoffs": 0,
+        "deterministic_tool_calls": 0,
+        "files_explored": {
+          "value": null,
+          "source": "unavailable"
+        },
+        "skill_context_tokens": 0,
+        "knowledge_context_tokens": 0,
+        "decision_context_items": 0,
+        "duration_seconds": 165.61000000004424,
+        "retries": 0,
+        "files_modified": [
+          "pocketflow/__init__.py",
+          "pocketflow/models.py",
+          "pocketflow/database.py",
+          "pocketflow/main.py",
+          "tests/test_expenses.py",
+          "pyproject.toml",
+          "README.md",
+          ".gitignore"
+        ],
+        "error": null,
+        "summary": "Implemented the FastAPI and SQLite expense backend. External acceptance passed as reported by the user.",
+        "findings": [
+          "Added validated Expense models and create, list, read, replace, and delete endpoints.",
+          "SQLite stores amounts as integer cents and uses parameterized queries.",
+          "Added tests for CRUD, validation, pagination, persistence, and SQL input handling.",
+          "Local testing was blocked by permissions on pytest's temporary directory; external acceptance subsequently passed."
+        ],
+        "uncertainty_reason": "External acceptance is user-reported; the local test run encountered an environment permission error.",
+        "needs_escalation": false,
+        "source_changed": true
+      },
+      "uap": {
+        "run_id": "RUN-F2D8408F3D",
+        "status": "completed",
+        "provider": "codex",
+        "model": [
+          "gpt-6-astra"
+        ],
+        "input_tokens": 123145,
+        "cached_input": 99200,
+        "output_tokens": 3728,
+        "token_source": "measured",
+        "usage_complete": true,
+        "ai_invocations": 1,
+        "retries": 0,
+        "provider_tool_calls": 4,
+        "provider_messages": 2,
+        "token_attribution": {
+          "method": "provider_cumulative_usage_delta_by_event_window",
+          "token_totals_exact": true,
+          "causal_labels_exact": false,
+          "reset_count": 0,
+          "windows": [
+            {
+              "sequence": 1,
+              "kind": "after_command_execution",
+              "item_id": "exec-daabe86a-31f3-425d-a045-85b90fa4ca2e",
+              "input_tokens": 18729,
+              "cached_input_tokens": 0,
+              "uncached_input_tokens": 18729,
+              "output_tokens": 104,
+              "total_tokens": 18833
+            },
+            {
+              "sequence": 2,
+              "kind": "after_command_execution",
+              "item_id": "exec-d9af5f57-a931-4ea1-865b-6a9764c7bbfc",
+              "input_tokens": 18961,
+              "cached_input_tokens": 18560,
+              "uncached_input_tokens": 401,
+              "output_tokens": 67,
+              "total_tokens": 19028
+            },
+            {
+              "sequence": 3,
+              "kind": "after_command_execution",
+              "item_id": "exec-c865d429-4f07-4849-9e8d-2c52fa078c35",
+              "input_tokens": 19471,
+              "cached_input_tokens": 18816,
+              "uncached_input_tokens": 655,
+              "output_tokens": 125,
+              "total_tokens": 19596
+            },
+            {
+              "sequence": 4,
+              "kind": "after_file_change",
+              "item_id": "exec-bb77edbb-f74b-46d0-a96a-8335e3624269",
+              "input_tokens": 19880,
+              "cached_input_tokens": 19328,
+              "uncached_input_tokens": 552,
+              "output_tokens": 3081,
+              "total_tokens": 22961
+            },
+            {
+              "sequence": 4,
+              "kind": "after_file_change",
+              "item_id": "exec-bb77edbb-f74b-46d0-a96a-8335e3624269",
+              "input_tokens": 22990,
+              "cached_input_tokens": 19712,
+              "uncached_input_tokens": 3278,
+              "output_tokens": 39,
+              "total_tokens": 23029
+            },
+            {
+              "sequence": 5,
+              "kind": "after_command_execution",
+              "item_id": "exec-8fa22b50-32c9-44d6-9226-7e61f3295c1f",
+              "input_tokens": 23114,
+              "cached_input_tokens": 22784,
+              "uncached_input_tokens": 330,
+              "output_tokens": 312,
+              "total_tokens": 23426
+            }
+          ]
+        },
+        "duration_seconds": 184.204000000027,
+        "handoffs": 0,
+        "deterministic_tool_calls": 1,
+        "files_explored": {
+          "value": null,
+          "source": "unavailable"
+        },
+        "skill_context_tokens": 0,
+        "decision_context_items": 0,
+        "files_modified": [
+          "README.md",
+          "backend/__init__.py",
+          "backend/main.py",
+          "backend/models.py",
+          "backend/storage.py",
+          "pyproject.toml",
+          "tests/test_expenses.py"
+        ],
+        "error": null,
+        "temperature": "warm",
+        "reuse_hits": 0,
+        "rediscovery": 0,
+        "knowledge_context_chars": 440,
+        "knowledge_context_tokens_estimated": 110,
+        "source_changed": true
+      },
+      "baseline_tokens": 152727,
+      "uap_tokens": 126873,
+      "cumulative_baseline": 152727,
+      "cumulative_uap": 126873,
+      "quality": {
+        "baseline": {
+          "passed": true,
+          "checks": [
+            {
+              "name": "pytest",
+              "passed": true
+            },
+            {
+              "name": "backend",
+              "passed": true
+            }
+          ],
+          "duration_seconds": 2.9839999999967404,
+          "stdout": "................                                                         [100%]\n============================== warnings summary ===============================\n..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1\n  C:\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n16 passed, 1 warning in 1.56s\n",
+          "stderr": "",
+          "independent": {
+            "method": "deterministic_external_quality_v1",
+            "provider_self_report_used": false,
+            "score": 98.75,
+            "passed": true,
+            "dimensions": {
+              "functional_contract": {
+                "weight": 50,
+                "score": 50.0,
+                "passed": true,
+                "evidence": "1/1 required checks passed"
+              },
+              "regression_safety": {
+                "weight": 20,
+                "score": 20,
+                "passed": true,
+                "evidence": "project test command passed"
+              },
+              "test_evidence": {
+                "weight": 15,
+                "score": 15,
+                "passed": true,
+                "evidence": "1 changed test file(s)"
+              },
+              "change_focus": {
+                "weight": 10,
+                "score": 8.75,
+                "passed": true,
+                "evidence": "7/8 changed paths in expected scope"
+              },
+              "implementation_evidence": {
+                "weight": 5,
+                "score": 5,
+                "passed": true,
+                "evidence": "8 source path(s) changed"
+              }
+            },
+            "changed_paths": [
+              "README.md",
+              "gitignore",
+              "pocketflow/__init__.py",
+              "pocketflow/database.py",
+              "pocketflow/main.py",
+              "pocketflow/models.py",
+              "pyproject.toml",
+              "tests/test_expenses.py"
+            ],
+            "unexpected_paths": [
+              "gitignore"
+            ]
+          }
+        },
+        "uap": {
+          "passed": true,
+          "checks": [
+            {
+              "name": "pytest",
+              "passed": true
+            },
+            {
+              "name": "backend",
+              "passed": true
+            }
+          ],
+          "duration_seconds": 3.0939999999827705,
+          "stdout": ".................                                                        [100%]\n============================== warnings summary ===============================\n..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1\n  C:\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n17 passed, 1 warning in 1.78s\n",
+          "stderr": "",
+          "independent": {
+            "method": "deterministic_external_quality_v1",
+            "provider_self_report_used": false,
+            "score": 98.75,
+            "passed": true,
+            "dimensions": {
+              "functional_contract": {
+                "weight": 50,
+                "score": 50.0,
+                "passed": true,
+                "evidence": "1/1 required checks passed"
+              },
+              "regression_safety": {
+                "weight": 20,
+                "score": 20,
+                "passed": true,
+                "evidence": "project test command passed"
+              },
+              "test_evidence": {
+                "weight": 15,
+                "score": 15,
+                "passed": true,
+                "evidence": "1 changed test file(s)"
+              },
+              "change_focus": {
+                "weight": 10,
+                "score": 8.75,
+                "passed": true,
+                "evidence": "7/8 changed paths in expected scope"
+              },
+              "implementation_evidence": {
+                "weight": 5,
+                "score": 5,
+                "passed": true,
+                "evidence": "8 source path(s) changed"
+              }
+            },
+            "changed_paths": [
+              "AGENTS.md",
+              "README.md",
+              "backend/__init__.py",
+              "backend/main.py",
+              "backend/models.py",
+              "backend/storage.py",
+              "pyproject.toml",
+              "tests/test_expenses.py"
+            ],
+            "unexpected_paths": [
+              "AGENTS.md"
+            ]
+          }
+        }
+      },
+      "reuse_hits": 0,
+      "rediscovery": 0,
+      "cold_or_warm": "warm",
+      "comparison_valid": true,
+      "canonical_source": "baseline",
+      "paired_source_files": 4
+    }
+  ],
+  "cumulative": {
+    "baseline_tokens": 152727,
+    "uap_tokens": 126873,
+    "break_even_task": 1,
+    "paired_measurement_claimable": true,
+    "savings_claimable": true,
+    "learning_reuse_validated": false,
+    "learning_savings_claimable": false,
+    "comparison_valid_tasks": 1,
+    "quality_adjusted_savings_claimable": true
+  },
+  "intelligence": {
+    "measurement_source": "paired task receipts and project index",
+    "project_index_present": true,
+    "project_index_sources": 0,
+    "benchmark_runs": 1,
+    "warm_runs": 1,
+    "revalidation_runs": 0,
+    "reuse_hits": 0,
+    "rediscovery": 0,
+    "decision_context_items": 0,
+    "legacy_store": {
+      "schema_version": 1,
+      "level": 0,
+      "level_name": "unknown",
+      "items": 0,
+      "current": 0,
+      "counts": {
+        "knowledge": 0,
+        "decision": 0,
+        "skill": 0,
+        "agent": 0,
+        "command": 0,
+        "evaluation": 0,
+        "artifact": 0,
+        "known_issue": 0,
+        "task_history": 0,
+        "receipt": 0
+      },
+      "runs": 0,
+      "reuse_hits": 0,
+      "reusable_intelligence_hits": 0,
+      "validated_reusable_hits": 0,
+      "historical": {
+        "task_history": 0,
+        "receipt": 0
+      },
+      "typed_reuse_hits": {
+        "agent": 0,
+        "skill": 0,
+        "command": 0,
+        "knowledge": 0,
+        "decision": 0,
+        "evaluation": 0,
+        "known_issue": 0
+      },
+      "selected_only": 0,
+      "selected_reuse_hits": 0,
+      "validated_reuse": 0,
+      "knowledge_created": 0,
+      "skill_reuse_hits": 0,
+      "agent_reuse_hits": 0,
+      "rediscovery_count": 0,
+      "context_chars": 0,
+      "estimated_context_tokens": 0,
+      "cold_runs": 0,
+      "warm_runs": 0,
+      "revalidation_runs": 0
+    }
+  },
+  "posthoc_quality_audit": {
+    "method": "deterministic_external_quality_v1",
+    "tasks": [
+      {
+        "task_number": 1,
+        "baseline": {
+          "method": "deterministic_external_quality_v1",
+          "provider_self_report_used": false,
+          "score": 98.75,
+          "passed": true,
+          "dimensions": {
+            "functional_contract": {
+              "weight": 50,
+              "score": 50.0,
+              "passed": true,
+              "evidence": "1/1 required checks passed"
+            },
+            "regression_safety": {
+              "weight": 20,
+              "score": 20,
+              "passed": true,
+              "evidence": "project test command passed"
+            },
+            "test_evidence": {
+              "weight": 15,
+              "score": 15,
+              "passed": true,
+              "evidence": "1 changed test file(s)"
+            },
+            "change_focus": {
+              "weight": 10,
+              "score": 8.75,
+              "passed": true,
+              "evidence": "7/8 changed paths in expected scope"
+            },
+            "implementation_evidence": {
+              "weight": 5,
+              "score": 5,
+              "passed": true,
+              "evidence": "8 source path(s) changed"
+            }
+          },
+          "changed_paths": [
+            "README.md",
+            "gitignore",
+            "pocketflow/__init__.py",
+            "pocketflow/database.py",
+            "pocketflow/main.py",
+            "pocketflow/models.py",
+            "pyproject.toml",
+            "tests/test_expenses.py"
+          ],
+          "unexpected_paths": [
+            "gitignore"
+          ]
+        },
+        "uap": {
+          "method": "deterministic_external_quality_v1",
+          "provider_self_report_used": false,
+          "score": 100.0,
+          "passed": true,
+          "dimensions": {
+            "functional_contract": {
+              "weight": 50,
+              "score": 50.0,
+              "passed": true,
+              "evidence": "1/1 required checks passed"
+            },
+            "regression_safety": {
+              "weight": 20,
+              "score": 20,
+              "passed": true,
+              "evidence": "project test command passed"
+            },
+            "test_evidence": {
+              "weight": 15,
+              "score": 15,
+              "passed": true,
+              "evidence": "1 changed test file(s)"
+            },
+            "change_focus": {
+              "weight": 10,
+              "score": 10.0,
+              "passed": true,
+              "evidence": "7/7 changed paths in expected scope"
+            },
+            "implementation_evidence": {
+              "weight": 5,
+              "score": 5,
+              "passed": true,
+              "evidence": "7 source path(s) changed"
+            }
+          },
+          "changed_paths": [
+            "README.md",
+            "backend/__init__.py",
+            "backend/main.py",
+            "backend/models.py",
+            "backend/storage.py",
+            "pyproject.toml",
+            "tests/test_expenses.py"
+          ],
+          "unexpected_paths": []
+        }
+      }
+    ],
+    "quality_equivalent": true,
+    "limitation": "Only the latest paired arm artifacts remain available; earlier task arms were intentionally replaced by canonical checkpoints."
+  }
+}
