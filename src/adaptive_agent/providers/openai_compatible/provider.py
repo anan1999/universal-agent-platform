@@ -117,7 +117,8 @@ class OpenAICompatibleProvider(AIProvider):
     def usage(self) -> UsageReport:
         return self._usage
 
-    async def execute(self, task: Task, progress: ProgressCallback | None = None, packet=None) -> Receipt:
+    async def execute(self, task: Task, progress: ProgressCallback | None = None, packet=None,
+                      completion_probe=None) -> Receipt:
         started = time.monotonic()
         model = str(task.metadata.get("model") or self.model)
         if model.startswith("env:"):

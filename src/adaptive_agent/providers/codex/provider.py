@@ -17,6 +17,7 @@ from adaptive_agent.core.execution_packet import ExecutionPacket, ExecutionPacke
 from adaptive_agent.core.models import Receipt, Task
 from adaptive_agent.providers.base import (
     AIProvider,
+    CompletionProbe,
     ExecutionMode,
     ProgressCallback,
     ProviderCapabilities,
@@ -51,6 +52,15 @@ class CodexTimeout(TimeoutError):
 
     def __init__(self, stdout: bytes, stderr: bytes):
         super().__init__("Codex execution timed out")
+        self.stdout = stdout
+        self.stderr = stderr
+
+
+class CodexArtifactCompleted(RuntimeError):
+    """The external artifact probe passed before Codex emitted its final receipt."""
+
+    def __init__(self, stdout: bytes, stderr: bytes):
+        super().__init__("Artifact completion probe passed")
         self.stdout = stdout
         self.stderr = stderr
 
@@ -247,7 +257,8 @@ class CodexProvider(AIProvider):
         )
 
     async def execute(self, task: Task, progress: ProgressCallback | None = None,
-                      packet: ExecutionPacket | None = None) -> Receipt:
+                      packet: ExecutionPacket | None = None,
+                      completion_probe: CompletionProbe | None = None) -> Receipt:
         started = time.monotonic()
         probed = self.codex_capabilities
         if not self.command_prefix or not probed.available:
@@ -279,8 +290,12 @@ class CodexProvider(AIProvider):
             progress(1, f"Spawning Codex for {task.title}")
         try:
             budget = task.metadata.get("execution_budget", {})
-            returncode, stdout, stderr = await self._communicate(
-                args, packet.render(), packet.working_directory, budget)
+            if completion_probe is None:
+                returncode, stdout, stderr = await self._communicate(
+                    args, packet.render(), packet.working_directory, budget)
+            else:
+                returncode, stdout, stderr = await self._communicate(
+                    args, packet.render(), packet.working_directory, budget, completion_probe)
         except CodexBudgetExceeded as error:
             return self._failure(
                 task, CodexErrorCode.BUDGET_EXHAUSTED,
@@ -309,6 +324,31 @@ class CodexProvider(AIProvider):
             receipt = self._failure(task, CodexErrorCode.TIMEOUT, message, started, model=model)
             receipt.token_usage = token_usage
             return receipt
+        except CodexArtifactCompleted as completed:
+            stdout_text = completed.stdout.decode("utf-8", errors="replace")
+            usage, execution_id = self._parse_telemetry(stdout_text)
+            source = "partial_measured" if usage else "unavailable"
+            token_usage: dict[str, int | bool | str] = {
+                "input": int(usage.get("input_tokens", 0)),
+                "output": int(usage.get("output_tokens", 0)),
+                "cached": int(usage.get("cached_input_tokens", 0)),
+                "source": source, "estimated": False, "complete": False,
+                "invocation_count": 1, **self._execution_counts(stdout_text),
+            }
+            if execution_id:
+                token_usage["execution_id"] = execution_id
+            self._accumulate(token_usage)
+            if progress:
+                progress(100, f"Artifact completion probe passed for {task.title}")
+            return Receipt(
+                task_id=task.id, agent=task.owner, status="completed",
+                summary="Artifact completion probe passed; provider stopped before final receipt.",
+                token_usage=token_usage, confidence="medium", provider=self.id,
+                model=str(model) if model else None,
+                completion={"artifact": "completed", "provider": "stopped",
+                            "reason": "external_completion_probe"},
+                duration_seconds=time.monotonic() - started,
+            )
         except TimeoutError:
             return self._failure(task, CodexErrorCode.TIMEOUT, f"Codex exceeded {self.timeout:g}s timeout.", started, model=model)
         except OSError as error:
@@ -361,7 +401,8 @@ class CodexProvider(AIProvider):
                                           if isinstance(result.get("learning_evidence", []), list) else []),
                        duration_seconds=time.monotonic() - started)
     async def _communicate(self, args: list[str], prompt: str, working_directory: Path,
-                           budget: dict[str, Any] | None = None) -> tuple[int, bytes, bytes]:
+                           budget: dict[str, Any] | None = None,
+                           completion_probe: CompletionProbe | None = None) -> tuple[int, bytes, bytes]:
         child_environment = self.child_environment()
         process = await asyncio.create_subprocess_exec(
             *args, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
@@ -373,6 +414,25 @@ class CodexProvider(AIProvider):
         )
         stdout_parts: list[bytes] = []
         stderr_task = asyncio.create_task(process.stderr.read())
+        probe_passes = max(1, int((budget or {}).get("completion_probe_passes", 2)))
+        probe_grace = min(10.0, max(0.0, float(
+            (budget or {}).get("completion_probe_grace_seconds", 1.0))))
+
+        async def artifact_is_complete() -> bool:
+            if completion_probe is None:
+                return False
+            for attempt in range(probe_passes):
+                try:
+                    passed = await asyncio.to_thread(completion_probe)
+                except Exception:
+                    return False
+                if not passed:
+                    return False
+                if attempt + 1 < probe_passes and probe_grace:
+                    await asyncio.sleep(probe_grace)
+                if process.returncode is not None:
+                    return False
+            return True
 
         async def communicate() -> tuple[bytes, bytes]:
             assert process.stdin is not None and process.stdout is not None
@@ -404,6 +464,14 @@ class CodexProvider(AIProvider):
                         stderr_task.cancel()
                     raise CodexBudgetExceeded(reason, monitor.tool_calls,
                                               monitor.assistant_messages)
+                if self._is_completed_tool_event(line) and await artifact_is_complete():
+                    try:
+                        process.terminate()
+                    except OSError:
+                        process.kill()
+                    await process.wait()
+                    stderr = await stderr_task if not stderr_task.cancelled() else b""
+                    raise CodexArtifactCompleted(b"".join(stdout_parts), stderr)
             await process.wait()
             return b"".join(stdout_parts), await stderr_task
 
@@ -429,6 +497,16 @@ class CodexProvider(AIProvider):
                 stderr_task.cancel()
             raise
         return process.returncode or 0, stdout, stderr
+
+    @staticmethod
+    def _is_completed_tool_event(line: bytes) -> bool:
+        try:
+            event = json.loads(line.decode("utf-8", errors="replace"))
+        except (ValueError, json.JSONDecodeError):
+            return False
+        item = event.get("item")
+        return bool(event.get("type") == "item.completed" and isinstance(item, dict)
+                    and item.get("type") in {"command_execution", "mcp_tool_call", "web_search"})
 
     @staticmethod
     def child_environment() -> dict[str, str]:

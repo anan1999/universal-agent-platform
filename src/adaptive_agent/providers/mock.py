@@ -47,7 +47,8 @@ class MockProvider(AIProvider):
     def usage(self) -> UsageReport:
         return self._usage
 
-    async def execute(self, task: Task, progress: ProgressCallback | None = None, packet=None) -> Receipt:
+    async def execute(self, task: Task, progress: ProgressCallback | None = None, packet=None,
+                      completion_probe=None) -> Receipt:
         for percent in (10, 50, 100):
             if progress:
                 progress(percent, f"{task.owner} processing {task.title}")

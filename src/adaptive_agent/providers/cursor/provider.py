@@ -179,7 +179,7 @@ class CursorProvider(AIProvider):
                 "cursor": self.cursor_capabilities.to_dict(), **self.probe().to_dict()}
 
     async def execute(self, task: Task, progress: ProgressCallback | None = None,
-                      packet: ExecutionPacket | None = None) -> Receipt:
+                      packet: ExecutionPacket | None = None, completion_probe=None) -> Receipt:
         started = time.monotonic()
         probed = self.cursor_capabilities
         model = task.metadata.get("model")

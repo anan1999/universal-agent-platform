@@ -80,6 +80,8 @@ class Receipt:
     # Compact, externalized facts/procedures explicitly emitted by a worker.
     # Never use this field for hidden reasoning or transcripts.
     learning_evidence: list[dict[str, Any]] = field(default_factory=list)
+    # Separates artifact evidence from provider-protocol termination.
+    completion: dict[str, str] = field(default_factory=dict)
     created_at: str = field(default_factory=now_iso)
 
     def to_dict(self) -> dict[str, Any]:

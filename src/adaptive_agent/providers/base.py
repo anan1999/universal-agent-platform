@@ -22,6 +22,7 @@ if False:  # pragma: no cover - typing-only import without a runtime cycle
 
 
 ProgressCallback = Callable[[int, str], None]
+CompletionProbe = Callable[[], bool]
 
 
 class ProviderState(StrEnum):
@@ -158,6 +159,7 @@ class AIProvider(ABC):
         task: Task,
         progress: ProgressCallback | None = None,
         packet: "ExecutionPacket | None" = None,
+        completion_probe: CompletionProbe | None = None,
     ) -> Receipt:
         raise NotImplementedError
 

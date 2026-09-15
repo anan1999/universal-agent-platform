@@ -60,7 +60,8 @@ class PlannedProvider(AIProvider):
         return ProviderCapabilities({**{name: Support.UNKNOWN for name in self.declared},
                                      **self.declared})
 
-    async def execute(self, task: Task, progress: ProgressCallback | None = None, packet=None) -> Receipt:
+    async def execute(self, task: Task, progress: ProgressCallback | None = None, packet=None,
+                      completion_probe=None) -> Receipt:
         started = time.monotonic()
         message = (f"{self.display_name} is plugin-ready but has no execution adapter in this build. "
                    f"Route this task to an implemented provider or install a {self.id} provider plugin.")

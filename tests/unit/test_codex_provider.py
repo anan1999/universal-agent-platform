@@ -7,7 +7,9 @@ import pytest
 from adaptive_agent.core.execution_packet import ExecutionPacketBuilder
 from adaptive_agent.core.models import Receipt, Task
 from adaptive_agent.providers.codex import RESULT_SCHEMA, CodexCapabilities, CodexErrorCode, CodexProvider
-from adaptive_agent.providers.codex.provider import CodexEventBudget, CodexTimeout
+from adaptive_agent.providers.codex.provider import (
+    CodexArtifactCompleted, CodexEventBudget, CodexTimeout,
+)
 
 
 def test_capability_detection_from_fake_executable(tmp_path):
@@ -178,6 +180,35 @@ def test_timeout_preserves_partial_measured_usage(tmp_path):
     }
 
 
+def test_artifact_probe_completion_is_distinct_from_provider_receipt(tmp_path):
+    output = "\n".join([
+        json.dumps({"type": "thread.started", "thread_id": "thread-probe-1"}),
+        json.dumps({"type": "item.completed", "item": {"type": "command_execution"}}),
+    ])
+    capabilities = CodexCapabilities(
+        available=True, supports_noninteractive=True, supports_structured_output=True,
+        supports_working_directory=True, supports_jsonl=True,
+    )
+
+    class ProbeCompletedProvider(CodexProvider):
+        async def _communicate(self, args, prompt, working_directory, budget=None,
+                               completion_probe=None):
+            assert completion_probe is not None
+            raise CodexArtifactCompleted(output.encode(), b"")
+
+    provider = ProbeCompletedProvider(command_prefix=["fake"], capabilities=capabilities)
+    task = Task("T", "R", "Modify a file", "developer",
+                metadata={"working_directory": str(tmp_path)})
+    receipt = asyncio.run(provider.execute(task, completion_probe=lambda: True))
+    assert receipt.status == "completed"
+    assert receipt.completion == {
+        "artifact": "completed", "provider": "stopped",
+        "reason": "external_completion_probe",
+    }
+    assert receipt.token_usage["source"] == "unavailable"
+    assert receipt.token_usage["provider_tool_calls"] == 1
+
+
 def test_live_event_budget_stops_before_accepting_an_extra_tool():
     monitor = CodexEventBudget(max_tool_calls=2, max_assistant_messages=1)
     completed = lambda kind: (json.dumps({"type": "item.completed", "item": {"type": kind}}) + "\n").encode()
@@ -247,4 +278,56 @@ def test_streaming_subprocess_is_terminated_when_next_tool_exceeds_budget(monkey
         asyncio.run(provider._communicate(
             ["fake"], "prompt", tmp_path, {"max_provider_tool_calls": 2}))
     assert type(error.value).__name__ == "CodexBudgetExceeded"
+    assert process.terminated is True
+
+
+def test_streaming_completion_probe_requires_two_passes_before_stopping(monkeypatch, tmp_path):
+    class Input:
+        def write(self, value):
+            self.value = value
+        async def drain(self):
+            return None
+        def close(self):
+            return None
+
+    class Reader:
+        def __init__(self, lines=()):
+            self.lines = list(lines)
+        async def readline(self):
+            return self.lines.pop(0) if self.lines else b""
+        async def read(self):
+            return b""
+
+    class Process:
+        def __init__(self):
+            self.stdin = Input()
+            event = {"type": "item.completed", "item": {"type": "command_execution"}}
+            self.stdout = Reader([(json.dumps(event) + "\n").encode()])
+            self.stderr = Reader()
+            self.returncode = None
+            self.terminated = False
+        def terminate(self):
+            self.terminated = True
+            self.returncode = -15
+        def kill(self):
+            self.terminate()
+        async def wait(self):
+            return self.returncode
+
+    process = Process()
+    async def create(*args, **kwargs):
+        return process
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", create)
+    provider = CodexProvider(command_prefix=["fake"], capabilities=CodexCapabilities(
+        available=True, supports_noninteractive=True, supports_jsonl=True), timeout=5)
+    calls = 0
+    def probe():
+        nonlocal calls
+        calls += 1
+        return True
+    with pytest.raises(CodexArtifactCompleted):
+        asyncio.run(provider._communicate(
+            ["fake"], "prompt", tmp_path,
+            {"completion_probe_passes": 2, "completion_probe_grace_seconds": 0}, probe))
+    assert calls == 2
     assert process.terminated is True
