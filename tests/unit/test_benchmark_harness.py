@@ -119,3 +119,22 @@ def test_receipt_metrics_separates_artifact_and_provider_completion():
     assert metrics["completion"] == {"artifact": "completed", "provider": "stopped"}
     assert metrics["provider_protocol_status"] == "stopped"
     assert metrics["usage_complete"] is False
+
+
+def test_pair_aggregation_separates_time_observation_from_token_proof():
+    def arm(seconds, tools):
+        return {"duration_seconds": seconds, "provider_tool_calls": tools,
+                "provider_protocol_status": "stopped", "error": None}
+    pairs = [
+        {"equal_quality": True, "baseline": arm(60, 3), "uap": arm(54, 3),
+         "decision_evidence": {"measured_complete_tokens": False}},
+        {"equal_quality": True, "baseline": arm(40, 2), "uap": arm(36, 2),
+         "decision_evidence": {"measured_complete_tokens": False}},
+    ]
+    observed = benchmark.aggregate_pairs(pairs)
+    assert observed["accepted_pairs"] == 2
+    assert observed["uap_faster_pairs"] == 2
+    assert observed["uap_duration_reduction_percent"] == 10.0
+    assert observed["baseline_tool_calls"] == observed["uap_tool_calls"] == 5
+    assert observed["artifact_probe_stops"] == 4
+    assert observed["token_comparison_available"] is False

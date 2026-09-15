@@ -290,6 +290,39 @@ def _pair(spec: dict[str, Any], baseline: dict[str, Any], uap: dict[str, Any],
     }
 
 
+def aggregate_pairs(pairs: list[dict[str, Any]]) -> dict[str, Any]:
+    accepted = [pair for pair in pairs if pair["equal_quality"]]
+    baseline_seconds = sum(pair["baseline"]["duration_seconds"] for pair in accepted)
+    uap_seconds = sum(pair["uap"]["duration_seconds"] for pair in accepted)
+    duration_reduction = (None if baseline_seconds <= 0 else
+                          round((baseline_seconds - uap_seconds) / baseline_seconds * 100, 2))
+    all_tools = [pair[arm].get("provider_tool_calls")
+                 for pair in accepted for arm in ("baseline", "uap")]
+    measured = [pair for pair in accepted
+                if pair["decision_evidence"]["measured_complete_tokens"]]
+    return {
+        "accepted_pairs": len(accepted),
+        "uap_faster_pairs": sum(
+            pair["uap"]["duration_seconds"] < pair["baseline"]["duration_seconds"]
+            for pair in accepted),
+        "baseline_duration_seconds": round(baseline_seconds, 3),
+        "uap_duration_seconds": round(uap_seconds, 3),
+        "uap_duration_reduction_percent": duration_reduction,
+        "baseline_tool_calls": (sum(pair["baseline"]["provider_tool_calls"] for pair in accepted)
+                                if accepted and all(value is not None for value in all_tools) else None),
+        "uap_tool_calls": (sum(pair["uap"]["provider_tool_calls"] for pair in accepted)
+                           if accepted and all(value is not None for value in all_tools) else None),
+        "artifact_probe_stops": sum(
+            pair[arm].get("provider_protocol_status") == "stopped"
+            for pair in pairs for arm in ("baseline", "uap")),
+        "provider_timeouts": sum(
+            pair[arm].get("error") == "CODEX_TIMEOUT"
+            for pair in pairs for arm in ("baseline", "uap")),
+        "complete_measured_pairs": len(measured),
+        "token_comparison_available": len(measured) == len(accepted) and bool(accepted),
+    }
+
+
 def reanalyze(args: argparse.Namespace) -> dict[str, Any]:
     """Re-evaluate durable artifacts after an acceptance/reporting correction."""
     workspace = args.workspace.resolve()
@@ -341,7 +374,8 @@ def reanalyze(args: argparse.Namespace) -> dict[str, Any]:
                     "conclusive_pairs": sum(p["conclusion"] != "INCONCLUSIVE" for p in pairs),
                     "yes": sum(p["conclusion"] == "YES" for p in pairs),
                     "no": sum(p["conclusion"] == "NO" for p in pairs),
-                    "inconclusive": sum(p["conclusion"] == "INCONCLUSIVE" for p in pairs)},
+                    "inconclusive": sum(p["conclusion"] == "INCONCLUSIVE" for p in pairs),
+                    "observed": aggregate_pairs(pairs)},
     }
     if len(pairs) == 1:
         payload.update(pairs[0])
@@ -406,6 +440,7 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
                     "no": sum(pair["conclusion"] == "NO" for pair in pairs),
                     "inconclusive": sum(pair["conclusion"] == "INCONCLUSIVE" for pair in pairs)},
     }
+    payload["summary"]["observed"] = aggregate_pairs(pairs)
     if len(pairs) == 1:
         payload.update(pairs[0])
     args.output.write_text(json.dumps(payload, indent=2), encoding="utf-8")
@@ -443,6 +478,20 @@ def render(payload: dict[str, Any]) -> str:
                 f"protocol `{row.get('provider_protocol_status', row['provider_status'])}`, "
                 f"error `{row['error'] or 'none'}`.")
         lines.append(f"- Conclusion: `{pair['conclusion']}` — {pair['claim']}.")
+    observed = payload.get("summary", {}).get("observed", {})
+    if observed:
+        lines.extend([
+            "", "## Pooled observations", "",
+            f"- Accepted pairs: {observed['accepted_pairs']}.",
+            f"- UAP faster pairs: {observed['uap_faster_pairs']}.",
+            f"- Provider duration: baseline {observed['baseline_duration_seconds']}s; "
+            f"UAP {observed['uap_duration_seconds']}s; reduction "
+            f"{observed['uap_duration_reduction_percent']}%.",
+            f"- Tool calls: baseline {observed['baseline_tool_calls']}; UAP {observed['uap_tool_calls']}.",
+            f"- Artifact-probe stops: {observed['artifact_probe_stops']}; provider timeouts: "
+            f"{observed['provider_timeouts']}.",
+            f"- Exact token comparison available: {observed['token_comparison_available']}.",
+        ])
     lines.extend(["", "A token comparison is conclusive only when both arms pass acceptance and both "
                   "providers report complete measured usage. Partial timeout telemetry is retained but never "
                   "counted as proof of savings.", ""])

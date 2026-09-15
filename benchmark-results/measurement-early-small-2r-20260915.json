@@ -1,0 +1,258 @@
+{
+  "suite": "reuse-first-scale-v1",
+  "schema_version": 1,
+  "environment": {
+    "uap": "2.3.1",
+    "execution_commit": "f6c0925be7ce682e341006ac2012485bd6f5aa73",
+    "provider": "codex",
+    "model": "gpt-6-astra",
+    "reasoning": "low",
+    "source_hash": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+  },
+  "prepared_fixture": {
+    "source_hash": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+    "prepared_path": "prepared/base",
+    "reused": true
+  },
+  "same_uap_execution_path": true,
+  "only_variable": "reusable_context_enabled",
+  "provider_calls": 0,
+  "historical_provider_calls": 4,
+  "pairs": [
+    {
+      "task_id": "small",
+      "scale": 1,
+      "round": 1,
+      "order": [
+        "disabled",
+        "enabled"
+      ],
+      "goal": "Add a GET /reports/summary API endpoint that returns the expense count and total spending. Preserve existing expense behavior and validate the work.",
+      "acceptance_contract": "context-cache-summary-v1",
+      "baseline": {
+        "provider_status": "completed",
+        "provider": "codex",
+        "model": "gpt-6-astra",
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "non_cached_input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0,
+        "token_source": "unavailable",
+        "usage_complete": false,
+        "duration_seconds": 62.265,
+        "ai_invocations": 1,
+        "provider_tool_calls": 3,
+        "provider_messages": 2,
+        "completion": {
+          "artifact": "completed",
+          "provider": "stopped",
+          "reason": "external_completion_probe"
+        },
+        "provider_protocol_status": "stopped",
+        "files_read": "UNAVAILABLE",
+        "files_changed": [
+          "README.md",
+          "app/main.py",
+          "tests/test_expenses.py"
+        ],
+        "error": null,
+        "status": "completed",
+        "quality": {
+          "passed": true,
+          "contract": "context-cache-summary-v1",
+          "error": null,
+          "returncode": 0
+        },
+        "post_source_hash": "4028523c23aa9c67ac0c421addf59b344ec33f40263200df9bac04b02e3725e8",
+        "resumed": false,
+        "project_context_chars": 0,
+        "relevant_paths": [],
+        "pre_task_ai_calls": 0,
+        "orchestration_wall_ms": 14307.672
+      },
+      "uap": {
+        "provider_status": "completed",
+        "provider": "codex",
+        "model": "gpt-6-astra",
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "non_cached_input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0,
+        "token_source": "unavailable",
+        "usage_complete": false,
+        "duration_seconds": 55.125,
+        "ai_invocations": 1,
+        "provider_tool_calls": 3,
+        "provider_messages": 2,
+        "completion": {
+          "artifact": "completed",
+          "provider": "stopped",
+          "reason": "external_completion_probe"
+        },
+        "provider_protocol_status": "stopped",
+        "files_read": "UNAVAILABLE",
+        "files_changed": [
+          "app/main.py",
+          "tests/test_reports.py"
+        ],
+        "error": null,
+        "status": "completed",
+        "quality": {
+          "passed": true,
+          "contract": "context-cache-summary-v1",
+          "error": null,
+          "returncode": 0
+        },
+        "post_source_hash": "880f9ed319f1366d593c107ec91c0af078d6d7c7bfdae8d2e325c0378567a936",
+        "resumed": false,
+        "project_context_chars": 608,
+        "relevant_paths": [
+          "app/"
+        ],
+        "pre_task_ai_calls": 0,
+        "orchestration_wall_ms": 7285.248
+      },
+      "equal_quality": true,
+      "decision_evidence": {
+        "measured_complete_tokens": false,
+        "fewer_tokens": false,
+        "equal_tokens": false,
+        "materially_faster_10_percent": true
+      },
+      "conclusion": "INCONCLUSIVE",
+      "claim": "no benefit claim is supported by this pair"
+    },
+    {
+      "task_id": "small",
+      "scale": 1,
+      "round": 2,
+      "order": [
+        "enabled",
+        "disabled"
+      ],
+      "goal": "Add a GET /reports/summary API endpoint that returns the expense count and total spending. Preserve existing expense behavior and validate the work.",
+      "acceptance_contract": "context-cache-summary-v1",
+      "baseline": {
+        "provider_status": "completed",
+        "provider": "codex",
+        "model": "gpt-6-astra",
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "non_cached_input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0,
+        "token_source": "unavailable",
+        "usage_complete": false,
+        "duration_seconds": 63.468,
+        "ai_invocations": 1,
+        "provider_tool_calls": 3,
+        "provider_messages": 2,
+        "completion": {
+          "artifact": "completed",
+          "provider": "stopped",
+          "reason": "external_completion_probe"
+        },
+        "provider_protocol_status": "stopped",
+        "files_read": "UNAVAILABLE",
+        "files_changed": [
+          "README.md",
+          "app/main.py",
+          "tests/test_expenses.py"
+        ],
+        "error": null,
+        "status": "completed",
+        "quality": {
+          "passed": true,
+          "contract": "context-cache-summary-v1",
+          "error": null,
+          "returncode": 0
+        },
+        "post_source_hash": "f68214b258a1d569a66791f50d05f80449ba326c7c4834183200d68b38fc9247",
+        "resumed": false,
+        "project_context_chars": 0,
+        "relevant_paths": [],
+        "pre_task_ai_calls": 0,
+        "orchestration_wall_ms": 10272.232
+      },
+      "uap": {
+        "provider_status": "completed",
+        "provider": "codex",
+        "model": "gpt-6-astra",
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "non_cached_input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0,
+        "token_source": "unavailable",
+        "usage_complete": false,
+        "duration_seconds": 59.407,
+        "ai_invocations": 1,
+        "provider_tool_calls": 3,
+        "provider_messages": 2,
+        "completion": {
+          "artifact": "completed",
+          "provider": "stopped",
+          "reason": "external_completion_probe"
+        },
+        "provider_protocol_status": "stopped",
+        "files_read": "UNAVAILABLE",
+        "files_changed": [
+          "README.md",
+          "app/main.py",
+          "tests/test_reports.py"
+        ],
+        "error": null,
+        "status": "completed",
+        "quality": {
+          "passed": true,
+          "contract": "context-cache-summary-v1",
+          "error": null,
+          "returncode": 0
+        },
+        "post_source_hash": "4f061642ebea656919a3496ea35e1025f336a49e9670bbcfbfd7ec27d5ab44cc",
+        "resumed": false,
+        "project_context_chars": 608,
+        "relevant_paths": [
+          "app/"
+        ],
+        "pre_task_ai_calls": 0,
+        "orchestration_wall_ms": 14781.598
+      },
+      "equal_quality": true,
+      "decision_evidence": {
+        "measured_complete_tokens": false,
+        "fewer_tokens": false,
+        "equal_tokens": false,
+        "materially_faster_10_percent": false
+      },
+      "conclusion": "INCONCLUSIVE",
+      "claim": "no benefit claim is supported by this pair"
+    }
+  ],
+  "summary": {
+    "selected_tasks": 1,
+    "rounds": 2,
+    "pairs": 2,
+    "reanalyze_provider_calls": 0,
+    "historical_provider_calls": 4,
+    "conclusive_pairs": 0,
+    "yes": 0,
+    "no": 0,
+    "inconclusive": 2,
+    "observed": {
+      "accepted_pairs": 2,
+      "uap_faster_pairs": 2,
+      "baseline_duration_seconds": 125.733,
+      "uap_duration_seconds": 114.532,
+      "uap_duration_reduction_percent": 8.91,
+      "baseline_tool_calls": 6,
+      "uap_tool_calls": 6,
+      "artifact_probe_stops": 4,
+      "provider_timeouts": 0,
+      "complete_measured_pairs": 0,
+      "token_comparison_available": false
+    }
+  }
+}
