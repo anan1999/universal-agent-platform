@@ -358,8 +358,13 @@ class Orchestrator:
                           and wanted & set(role.capabilities)]
         if analysis.read_only and review_as_work:
             roles = review_as_work
-        role = max(roles, key=lambda item: (len(wanted & set(item.capabilities)), -item.stage),
-                   default=None)
+        profile_priority = {profile_id: len(analysis.profiles) - index
+                            for index, profile_id in enumerate(analysis.profiles)}
+        role = max(roles, key=lambda item: (
+            len(wanted & set(item.capabilities)),
+            profile_priority.get(item.profile, 0),
+            -item.stage,
+        ), default=None)
         omitted = [{"role": item.name,
                     "reason": "one reasoning responsibility is sufficient for this execution plan"}
                    for item in roles if role is not None and item.id != role.id]

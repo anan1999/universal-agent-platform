@@ -98,6 +98,22 @@ def test_concrete_design_asset_selects_a_producing_role(project, goal, profiles,
     assert plan["analysis"]["read_only"] is False
 
 
+def test_design_follow_up_inherits_active_profile_without_repeating_domain_words(project):
+    plan = _dry_run(
+        "Extend the kiosk with a distinct keypad group and preserve the existing bounds.",
+        "mock", profiles=["design"])
+    assert plan["analysis"]["inferred"] is True
+    assert _agents(plan)[0]["agent"] == "visual_designer"
+    assert any("explicitly active" in line for line in plan["analysis"]["evidence"])
+
+
+def test_explicit_design_profile_wins_cross_profile_capability_tie(project):
+    plan = _dry_run(
+        "Extend the existing poster while preserving its hierarchy and original layers.",
+        "mock", profiles=["design"])
+    assert _agents(plan)[0]["agent"] == "visual_designer"
+
+
 # -- Scenario D: product -----------------------------------------------------
 
 def test_product_goal_produces_a_document_not_code(project):

@@ -72,10 +72,18 @@ class GoalAnalyzer:
         inferred = not capabilities
 
         if inferred and self.profiles is not None:
-            fallback = self.profiles.fallback()
-            capabilities = list(fallback.capabilities)
-            evidence.append("No capability keyword matched; inferred a generic capability set "
-                            f"from the {fallback.id} profile so the goal is still planned.")
+            declared, _ = self.profiles.resolve([str(item) for item in active_profiles])
+            if declared:
+                capabilities = sorted({capability for profile in declared
+                                       for capability in profile.capabilities})
+                evidence.append("No capability keyword matched; inherited capabilities from the "
+                                "explicitly active profile(s): "
+                                + ", ".join(profile.id for profile in declared) + ".")
+            else:
+                fallback = self.profiles.fallback()
+                capabilities = list(fallback.capabilities)
+                evidence.append("No capability keyword matched; inferred a generic capability set "
+                                f"from the {fallback.id} profile so the goal is still planned.")
 
         risk = self._risk(text, evidence)
         complexity = self._complexity(text, capabilities, risk, evidence)
