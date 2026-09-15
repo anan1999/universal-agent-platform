@@ -47,9 +47,11 @@ TASKS = [
 class CompletionProbedProvider:
     """Benchmark-only provider view that preserves exact Codex usage on acceptance."""
 
-    def __init__(self, delegate: Any, completion_probe: Any):
+    def __init__(self, delegate: Any, completion_probe: Any,
+                 model_override: str | None = None):
         self.delegate = delegate
         self.completion_probe = completion_probe
+        self.model_override = model_override
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self.delegate, name)
@@ -57,6 +59,8 @@ class CompletionProbedProvider:
     async def execute(self, task: Task, progress: Any = None, packet: Any = None,
                       completion_probe: Any = None) -> Any:
         probe = completion_probe or self.completion_probe
+        if self.model_override:
+            task.metadata["model"] = self.model_override
         if getattr(self.delegate, "id", None) == "codex":
             task.metadata["codex_live_usage"] = True
             task.metadata.setdefault("execution_budget", {}).update({
@@ -241,7 +245,7 @@ async def baseline_run(provider: Any, root: Path, goal: str, model: str | None,
                           "goal": goal, "read_only": False})
     packet = ExecutionPacketBuilder().build(task, root, "pocketflow-expenses", "python")
     measured_provider = CompletionProbedProvider(
-        provider, lambda: evaluate(root, task_number)["passed"])
+        provider, lambda: evaluate(root, task_number)["passed"], model)
     receipt = await measured_provider.execute(task, packet=packet)
     usage = receipt.token_usage
     return {"status": receipt.status, "provider": receipt.provider or getattr(provider, "id", "unknown"),
@@ -262,7 +266,8 @@ async def baseline_run(provider: Any, root: Path, goal: str, model: str | None,
 
 
 async def uap_run(provider: Any, root: Path, goal: str, db: Database,
-                  provider_id: str, task_number: int) -> dict[str, Any]:
+                  provider_id: str, task_number: int,
+                  model: str | None = None) -> dict[str, Any]:
     started = time.monotonic()
     info = discover(root)
     project_rows = db.query("SELECT id FROM projects WHERE path=?", (str(root.resolve()),))
@@ -271,7 +276,7 @@ async def uap_run(provider: Any, root: Path, goal: str, db: Database,
         db.execute("INSERT INTO projects(id,path,name,type,config_json) VALUES(?,?,?,?,?)",
                    (project_id, str(root.resolve()), info.name, info.type, "{}"))
     measured_provider = CompletionProbedProvider(
-        provider, lambda: evaluate(root, task_number)["passed"])
+        provider, lambda: evaluate(root, task_number)["passed"], model)
     orchestrator = Orchestrator(db, measured_provider, EventBus(db), provider_name=provider_id,
                                 provider_preference=[provider_id], active_profiles=["software-engineering"],
                                 consumption_mode="economy")
@@ -286,33 +291,33 @@ def summarize_uap_run(db: Database, run_id: str, provider_id: str,
     run = db.query("SELECT status,composition_json FROM runs WHERE id=?", (run_id,))[0]
     usage = db.query("SELECT SUM(input_tokens) input,SUM(output_tokens) output,"
                      "SUM(cached_tokens) cached,SUM(invocation_count) invocations,"
+                     "SUM(CASE WHEN invocation_count>0 AND token_source!='measured' THEN 1 ELSE 0 END) incomplete,"
                      "CASE WHEN SUM(CASE WHEN token_source='measured' THEN 1 ELSE 0 END)>0 "
                      "THEN 'measured' WHEN SUM(CASE WHEN token_source='estimated' THEN 1 ELSE 0 END)>0 "
                      "THEN 'estimated' ELSE 'unavailable' END source FROM token_usage WHERE run_id=?", (run_id,))[0]
-    lifecycle = db.query("SELECT * FROM project_intelligence_runs WHERE run_id=?", (run_id,))[0]
+    lifecycle_rows = db.query("SELECT * FROM project_intelligence_runs WHERE run_id=?", (run_id,))
+    composition = json.loads(run["composition_json"] or "{}")
+    fallback_lifecycle = composition.get("project_intelligence", {})
+    lifecycle = lifecycle_rows[0] if lifecycle_rows else None
     tasks = db.query("SELECT data_json FROM tasks WHERE run_id=?", (run_id,))
     task_payloads = [json.loads(row["data_json"]) for row in tasks]
     run_skills = db.query("SELECT context_tokens FROM run_skills WHERE run_id=?", (run_id,))
-    lifecycle_data = json.loads(lifecycle["data_json"])
     files = []
     retries = 0
-    usage_complete = True
-    measured_invocations = 0
     for row in db.query("SELECT data_json FROM receipts WHERE task_id IN "
                         "(SELECT id FROM tasks WHERE run_id=?)", (run_id,)):
         receipt = json.loads(row["data_json"])
         files.extend(receipt.get("files", []))
         retries += int(receipt.get("retry_count", 0))
-        token_usage = receipt.get("token_usage", {})
-        if int(token_usage.get("invocation_count", 0)) > 0:
-            measured_invocations += 1
-            usage_complete = usage_complete and bool(token_usage.get("complete", False))
+    lifecycle_data = (json.loads(lifecycle["data_json"]) if lifecycle
+                      else fallback_lifecycle)
     return {"run_id": run_id, "status": run["status"], "provider": provider_id,
             "model": sorted({json.loads(row["data_json"])["metadata"].get("model") for row in tasks
                              if json.loads(row["data_json"])["metadata"].get("model")}),
             "input_tokens": int(usage["input"] or 0), "cached_input": int(usage["cached"] or 0),
             "output_tokens": int(usage["output"] or 0), "token_source": usage["source"] or "unavailable",
-            "usage_complete": bool(measured_invocations and usage_complete),
+            "usage_complete": bool(int(usage["invocations"] or 0) > 0
+                                   and int(usage["incomplete"] or 0) == 0),
             "ai_invocations": int(usage["invocations"] or 0), "retries": retries,
             "duration_seconds": duration_seconds,
             "handoffs": max(0, sum(item.get("kind") == "agent" for item in task_payloads) - 1),
@@ -321,10 +326,18 @@ def summarize_uap_run(db: Database, run_id: str, provider_id: str,
             "skill_context_tokens": sum(int(item["context_tokens"] or 0) for item in run_skills),
             "decision_context_items": sum(item.get("kind") == "decision"
                                           for item in lifecycle_data.get("items", [])),
-            "files_modified": sorted(set(files)), "temperature": lifecycle["temperature"],
-            "reuse_hits": lifecycle["reuse_hits"], "rediscovery": lifecycle["rediscovery_count"],
-            "knowledge_context_chars": lifecycle["context_chars"],
-            "knowledge_context_tokens_estimated": lifecycle["estimated_tokens"]}
+            "files_modified": sorted(set(files)),
+            "temperature": (lifecycle["temperature"] if lifecycle else
+                            fallback_lifecycle.get("temperature", "unknown")),
+            "reuse_hits": int(lifecycle["reuse_hits"] if lifecycle else
+                              fallback_lifecycle.get("reuse_hits", 0)),
+            "rediscovery": int(lifecycle["rediscovery_count"] if lifecycle else
+                               fallback_lifecycle.get("rediscovery_count", 0)),
+            "knowledge_context_chars": int(lifecycle["context_chars"] if lifecycle else
+                                           fallback_lifecycle.get("context_chars", 0)),
+            "knowledge_context_tokens_estimated": int(
+                lifecycle["estimated_tokens"] if lifecycle else
+                fallback_lifecycle.get("estimated_tokens", 0))}
 
 
 def render_report(payload: dict[str, Any]) -> str:
@@ -606,10 +619,16 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
         }}, indent=2), encoding="utf-8")
         if recovered_run_id is not None:
             uap_result = summarize_uap_run(db, recovered_run_id, args.provider)
+            if not paired_models_match({"baseline": baseline_result, "uap": uap_result}):
+                recovered_run_id = None
+                reset_source(canonical, uap, preserve_agent=True)
+                uap_result = await uap_run(
+                    provider, uap, goal, db, args.provider, number, args.model)
         elif pending.get("task_number") == number and pending.get("uap", {}).get("status") == "completed":
             uap_result = pending["uap"]
         else:
-            uap_result = await uap_run(provider, uap, goal, db, args.provider, number)
+            uap_result = await uap_run(
+                provider, uap, goal, db, args.provider, number, args.model)
         args.output.write_text(json.dumps({"tasks": tasks, "pending": {
             "task_number": number, "goal": goal, "baseline": baseline_result, "uap": uap_result,
         }}, indent=2), encoding="utf-8")

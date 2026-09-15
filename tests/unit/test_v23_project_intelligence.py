@@ -179,6 +179,10 @@ def test_real_benchmark_requires_opt_in_and_forbids_mock():
     assert '"completion_steer_grace_seconds": 20.0' in script
     assert '"--max-provider-calls"' in script
     assert 'baseline_result.get("usage_complete") is True' in script
+    assert 'fallback_lifecycle = composition.get("project_intelligence", {})' in script
+    assert 'token_source!=\'measured\'' in script
+    assert 'task.metadata["model"] = self.model_override' in script
+    assert 'if not paired_models_match({"baseline": baseline_result, "uap": uap_result})' in script
     assert "chosen_name = args.canonical_source" in script
     assert 'path / "frontend" / "src", path / "src"' in script
     assert '("frontend/src/", "src/")' in script
