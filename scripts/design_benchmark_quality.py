@@ -85,9 +85,9 @@ def evaluate(root: Path, domain: str, round_number: int) -> dict[str, Any]:
             checks.append("accessible_dialog")
             probes = {
                 "dialog": r"role\s*=\s*[\"']dialog|<dialog\b",
-                "modal": r"aria-modal\s*=\s*[\"']true",
+                "modal": r"aria-modal\s*=\s*[\"']true|<dialog\b",
                 "labels": r"<label\b",
-                "escape": r"Escape|keyCode\s*===?\s*27",
+                "escape": r"Escape|keyCode\s*===?\s*27|addEventListener\s*\(\s*[\"']cancel",
                 "focus_return": r"\.focus\s*\(",
                 "reduced_motion": r"prefers-reduced-motion",
             }

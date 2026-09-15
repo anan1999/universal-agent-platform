@@ -55,6 +55,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--execute", action="store_true",
                         help="authorize real provider calls (domains * rounds * 2)")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--resume", action="store_true",
+                        help="revalidate retained evidence and continue an interrupted run")
     parser.add_argument("--provider", default="codex")
     parser.add_argument("--model", default="gpt-5.6-luna")
     parser.add_argument("--reasoning", default="low", choices=("low", "medium", "high"))
@@ -256,7 +258,8 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
     required_calls = len(args.domains) * args.rounds * 2
     if args.max_provider_calls != required_calls:
         raise SystemExit(f"max-provider-calls must equal the exact paired plan ({required_calls})")
-    if args.workspace.exists():
+    resuming = bool(args.resume and args.workspace.exists() and args.output.exists())
+    if args.workspace.exists() and not resuming:
         raise SystemExit("Use a new workspace; benchmark evidence is never overwritten.")
     registry = providers()
     if args.provider == "mock" or args.provider not in registry:
@@ -265,9 +268,9 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
     probe = provider.probe()
     if not probe.ready or not provider.capabilities().supports("filesystem", allow_uncertain=False):
         raise SystemExit(f"Provider is not ready for repository writing: {probe.detail}")
-    args.workspace.mkdir(parents=True)
+    args.workspace.mkdir(parents=True, exist_ok=True)
     specs = contracts()
-    payload = {
+    payload = json.loads(args.output.read_text(encoding="utf-8")) if resuming else {
         "experiment": "three_track_longitudinal_design_v1",
         "environment": {"uap": __version__, "commit": subprocess.run(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True,
@@ -282,14 +285,35 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
     for domain in args.domains:
         domain_root = args.workspace / domain
         canonical, baseline, uap = (domain_root / name for name in ("canonical", "baseline", "uap"))
-        seed(canonical, domain)
-        reset_source(canonical, baseline)
-        reset_source(canonical, uap)
-        initialize_project(uap, RESOURCE_ROOT / "templates", auto=True)
+        existing = next((item for item in payload["tracks"] if item["domain"] == domain), None)
+        if existing is None:
+            seed(canonical, domain)
+            reset_source(canonical, baseline)
+            reset_source(canonical, uap)
+            initialize_project(uap, RESOURCE_ROOT / "templates", auto=True)
+            track = {"domain": domain, "rounds": []}
+            payload["tracks"].append(track)
+        else:
+            track = existing
+            for row in track["rounds"]:
+                number = int(row["round"])
+                evidence = domain_root / "evidence" / f"round-{number}"
+                row["quality"] = {
+                    "baseline": evaluate(evidence / "baseline", domain, number),
+                    "uap": evaluate(evidence / "uap", domain, number),
+                }
+                row["comparison_valid"] = valid_pair(row)
+            if any(not row["comparison_valid"] for row in track["rounds"]):
+                save(payload, args)
+                raise SystemExit(f"Retained evidence is still invalid: {domain}")
+            if track["rounds"]:
+                last = int(track["rounds"][-1]["round"])
+                if not evaluate(canonical, domain, last)["passed"]:
+                    reset_source(domain_root / "evidence" / f"round-{last}" / "baseline", canonical)
         db = Database(domain_root / "uap-history.db")
-        track = {"domain": domain, "rounds": []}
-        payload["tracks"].append(track)
         for number, spec in enumerate(specs[domain][:args.rounds], 1):
+            if number <= len(track["rounds"]):
+                continue
             if number > 1:
                 reset_source(canonical, baseline)
                 reset_source(canonical, uap, preserve_agent=True)
