@@ -208,6 +208,15 @@ def canonical_side(row: dict[str, Any]) -> str | None:
     return None
 
 
+def retryable_sides(row: dict[str, Any]) -> list[str]:
+    """Retry only arms where the provider never started and reported no usage."""
+    return [side for side in ("baseline", "uap")
+            if row[side].get("status") == "failed"
+            and row[side].get("token_source") == "unavailable"
+            and int(row[side].get("input_tokens", 0)) == 0
+            and int(row[side].get("output_tokens", 0)) == 0]
+
+
 def summarize(tracks: list[dict[str, Any]]) -> dict[str, Any]:
     rows = [row for track in tracks for row in track["rounds"]]
     valid = [row for row in rows if row.get("comparison_valid")]
@@ -335,6 +344,38 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
                 }
                 row["comparison_valid"] = valid_pair(row)
             invalid = [row for row in track["rounds"] if not row["comparison_valid"]]
+            if len(invalid) == 1:
+                row = invalid[0]
+                number = int(row["round"])
+                if number == len(track["rounds"]):
+                    spec = specs[domain][number - 1]
+                    before = source_snapshot(canonical)
+                    for side in retryable_sides(row):
+                        if repair_calls >= args.max_repair_calls:
+                            break
+                        if side == "baseline":
+                            reset_source(canonical, baseline)
+                            result = await baseline_run(provider, baseline, domain, number,
+                                                        spec["goal"], args.model, args.reasoning)
+                            root = baseline
+                        else:
+                            reset_source(canonical, uap, preserve_agent=True)
+                            result = await uap_run(provider, uap, domain, number, spec["goal"],
+                                                   db, args.provider, args.model)
+                            root = uap
+                        paths = changed_paths(before, source_snapshot(root))
+                        result["source_changed"] = bool(paths)
+                        result["changed_paths"] = paths
+                        row[side] = result
+                        row[f"{side}_tokens"] = _tokens(result)
+                        row["quality"][side] = evaluate(root, domain, number)
+                        row.setdefault("repairs", []).append(
+                            {"side": side, "reason": "provider did not start; zero usage"})
+                        reset_source(root, domain_root / "evidence" / f"round-{number}" / side)
+                        repair_calls += 1
+                    row["comparison_valid"] = valid_pair(row)
+                    invalid = [item for item in track["rounds"]
+                               if not item["comparison_valid"]]
             if len(invalid) == 1 and repair_calls < args.max_repair_calls:
                 row = invalid[0]
                 side = repairable_side(row)

@@ -50,3 +50,14 @@ def test_canonical_is_selected_by_quality_and_never_tokens():
     assert benchmark.canonical_side(current) == "uap"
     current["quality"]["uap"]["passed"] = False
     assert benchmark.canonical_side(current) is None
+
+
+def test_only_zero_usage_provider_failures_are_execution_retryable():
+    current = row("ui-ux", 0, 0, False)
+    failed = {"status": "failed", "token_source": "unavailable",
+              "input_tokens": 0, "output_tokens": 0}
+    current["baseline"] = dict(failed)
+    current["uap"] = dict(failed)
+    assert benchmark.retryable_sides(current) == ["baseline", "uap"]
+    current["baseline"]["input_tokens"] = 1
+    assert benchmark.retryable_sides(current) == ["uap"]
