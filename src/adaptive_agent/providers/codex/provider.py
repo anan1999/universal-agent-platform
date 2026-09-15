@@ -422,6 +422,7 @@ class CodexProvider(AIProvider):
         token_usage: dict[str, int | bool | str] = {
             "input": int(usage.get("input_tokens", 0)), "output": int(usage.get("output_tokens", 0)),
             "cached": int(usage.get("cached_input_tokens", 0)), "source": source, "estimated": source != "measured",
+            "complete": source == "measured",
             "invocation_count": 1,
             **self._execution_counts(stdout_text),
             **self._usage_breakdown(usage),

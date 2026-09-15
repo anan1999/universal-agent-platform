@@ -175,6 +175,10 @@ def test_real_benchmark_requires_opt_in_and_forbids_mock():
     assert "Cannot safely roll back" in script
     assert '"Read(../**)"' in script and '"WebFetch(*)"' in script
     assert 'choices=("baseline", "uap")' in script
+    assert 'class CompletionProbedProvider' in script
+    assert '"completion_steer_grace_seconds": 20.0' in script
+    assert '"--max-provider-calls"' in script
+    assert 'baseline_result.get("usage_complete") is True' in script
     assert "chosen_name = args.canonical_source" in script
     assert 'path / "frontend" / "src", path / "src"' in script
     assert '("frontend/src/", "src/")' in script

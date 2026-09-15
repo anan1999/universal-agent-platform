@@ -44,6 +44,30 @@ TASKS = [
 ]
 
 
+class CompletionProbedProvider:
+    """Benchmark-only provider view that preserves exact Codex usage on acceptance."""
+
+    def __init__(self, delegate: Any, completion_probe: Any):
+        self.delegate = delegate
+        self.completion_probe = completion_probe
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self.delegate, name)
+
+    async def execute(self, task: Task, progress: Any = None, packet: Any = None,
+                      completion_probe: Any = None) -> Any:
+        probe = completion_probe or self.completion_probe
+        if getattr(self.delegate, "id", None) == "codex":
+            task.metadata["codex_live_usage"] = True
+            task.metadata.setdefault("execution_budget", {}).update({
+                "completion_probe_passes": 2,
+                "completion_probe_grace_seconds": 1.0,
+                "completion_steer_grace_seconds": 20.0,
+                "completion_interrupt_grace_seconds": 15.0,
+            })
+        return await self.delegate.execute(task, progress, packet, completion_probe=probe)
+
+
 def arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="PocketFlow real-provider longitudinal benchmark")
     parser.add_argument("--execute", action="store_true", help="confirm that real provider quota may be used")
@@ -54,6 +78,8 @@ def arguments() -> argparse.Namespace:
     parser.add_argument("--reasoning", default="medium", choices=("low", "medium", "high", "xhigh"))
     parser.add_argument("--canonical-source", default="baseline", choices=("baseline", "uap"),
                         help="fixed passing implementation used as the next paired checkpoint")
+    parser.add_argument("--rounds", type=int, choices=range(1, len(TASKS) + 1), default=len(TASKS))
+    parser.add_argument("--max-provider-calls", type=int, default=len(TASKS) * 2)
     parser.add_argument("--timeout", type=float, default=900)
     parser.add_argument("--workspace", type=Path, default=Path("build/pocketflow-longitudinal"))
     parser.add_argument("--output", type=Path,
@@ -207,19 +233,22 @@ def evaluate(path: Path, task_number: int) -> dict[str, Any]:
 
 
 async def baseline_run(provider: Any, root: Path, goal: str, model: str | None,
-                       reasoning: str) -> dict[str, Any]:
+                       reasoning: str, task_number: int) -> dict[str, Any]:
     task = Task(new_id("BASE"), "BASELINE", goal, "direct_provider",
                 ["coding", "filesystem", "write_access", "repository_access"],
                 reasoning=reasoning,
                 metadata={"working_directory": str(root), "model": model,
                           "goal": goal, "read_only": False})
     packet = ExecutionPacketBuilder().build(task, root, "pocketflow-expenses", "python")
-    receipt = await provider.execute(task, packet=packet)
+    measured_provider = CompletionProbedProvider(
+        provider, lambda: evaluate(root, task_number)["passed"])
+    receipt = await measured_provider.execute(task, packet=packet)
     usage = receipt.token_usage
     return {"status": receipt.status, "provider": receipt.provider or getattr(provider, "id", "unknown"),
             "model": receipt.model or model, "reasoning": reasoning,
             "input_tokens": int(usage.get("input", 0)), "cached_input": int(usage.get("cached", 0)),
             "output_tokens": int(usage.get("output", 0)), "token_source": usage.get("source", "unavailable"),
+            "usage_complete": bool(usage.get("complete", False)),
             "ai_invocations": int(usage.get("invocation_count", 1)),
             "handoffs": 0, "deterministic_tool_calls": 0,
             "files_explored": {"value": None, "source": "unavailable"},
@@ -233,7 +262,7 @@ async def baseline_run(provider: Any, root: Path, goal: str, model: str | None,
 
 
 async def uap_run(provider: Any, root: Path, goal: str, db: Database,
-                  provider_id: str) -> dict[str, Any]:
+                  provider_id: str, task_number: int) -> dict[str, Any]:
     started = time.monotonic()
     info = discover(root)
     project_rows = db.query("SELECT id FROM projects WHERE path=?", (str(root.resolve()),))
@@ -241,7 +270,9 @@ async def uap_run(provider: Any, root: Path, goal: str, db: Database,
     if not project_rows:
         db.execute("INSERT INTO projects(id,path,name,type,config_json) VALUES(?,?,?,?,?)",
                    (project_id, str(root.resolve()), info.name, info.type, "{}"))
-    orchestrator = Orchestrator(db, provider, EventBus(db), provider_name=provider_id,
+    measured_provider = CompletionProbedProvider(
+        provider, lambda: evaluate(root, task_number)["passed"])
+    orchestrator = Orchestrator(db, measured_provider, EventBus(db), provider_name=provider_id,
                                 provider_preference=[provider_id], active_profiles=["software-engineering"],
                                 consumption_mode="economy")
     run_id = await orchestrator.run_goal(goal, project_id, str(root), project_name=info.name,
@@ -265,16 +296,23 @@ def summarize_uap_run(db: Database, run_id: str, provider_id: str,
     lifecycle_data = json.loads(lifecycle["data_json"])
     files = []
     retries = 0
+    usage_complete = True
+    measured_invocations = 0
     for row in db.query("SELECT data_json FROM receipts WHERE task_id IN "
                         "(SELECT id FROM tasks WHERE run_id=?)", (run_id,)):
         receipt = json.loads(row["data_json"])
         files.extend(receipt.get("files", []))
         retries += int(receipt.get("retry_count", 0))
+        token_usage = receipt.get("token_usage", {})
+        if int(token_usage.get("invocation_count", 0)) > 0:
+            measured_invocations += 1
+            usage_complete = usage_complete and bool(token_usage.get("complete", False))
     return {"run_id": run_id, "status": run["status"], "provider": provider_id,
             "model": sorted({json.loads(row["data_json"])["metadata"].get("model") for row in tasks
                              if json.loads(row["data_json"])["metadata"].get("model")}),
             "input_tokens": int(usage["input"] or 0), "cached_input": int(usage["cached"] or 0),
             "output_tokens": int(usage["output"] or 0), "token_source": usage["source"] or "unavailable",
+            "usage_complete": bool(measured_invocations and usage_complete),
             "ai_invocations": int(usage["invocations"] or 0), "retries": retries,
             "duration_seconds": duration_seconds,
             "handoffs": max(0, sum(item.get("kind") == "agent" for item in task_payloads) - 1),
@@ -464,6 +502,9 @@ def paired_models_match(task: dict[str, Any]) -> bool:
 
 
 async def execute(args: argparse.Namespace) -> dict[str, Any]:
+    required_calls = args.rounds * 2
+    if args.max_provider_calls != required_calls or args.max_provider_calls > len(TASKS) * 2:
+        raise SystemExit("max-provider-calls must equal rounds * 2 and cannot exceed 10.")
     registry = providers()
     if args.provider == "mock" or args.provider not in registry:
         raise SystemExit("A registered real provider is required; Mock fallback is prohibited.")
@@ -530,7 +571,7 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
     cumulative_baseline = sum(int(item["baseline_tokens"]) for item in tasks)
     cumulative_uap = sum(int(item["uap_tokens"]) for item in tasks)
     break_even = None
-    for number, goal in enumerate(TASKS, 1):
+    for number, goal in enumerate(TASKS[:args.rounds], 1):
         if number <= len(tasks):
             prior = tasks[number - 1]
             if (all(item.get("comparison_valid") for item in tasks[:number])
@@ -552,7 +593,8 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
         baseline_result = (pending.get("baseline") if pending.get("task_number") == number
                            and pending.get("baseline", {}).get("status") == "completed" else None)
         if baseline_result is None:
-            baseline_result = await baseline_run(provider, baseline, goal, args.model, args.reasoning)
+            baseline_result = await baseline_run(
+                provider, baseline, goal, args.model, args.reasoning, number)
         if baseline_result["status"] != "completed":
             write_interruption(args, tasks, number, "baseline", baseline_result)
             raise SystemExit(
@@ -567,7 +609,7 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
         elif pending.get("task_number") == number and pending.get("uap", {}).get("status") == "completed":
             uap_result = pending["uap"]
         else:
-            uap_result = await uap_run(provider, uap, goal, db, args.provider)
+            uap_result = await uap_run(provider, uap, goal, db, args.provider, number)
         args.output.write_text(json.dumps({"tasks": tasks, "pending": {
             "task_number": number, "goal": goal, "baseline": baseline_result, "uap": uap_result,
         }}, indent=2), encoding="utf-8")
@@ -583,7 +625,9 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
                             paired_models_match({"baseline": baseline_result, "uap": uap_result}) and
                             baseline_quality["passed"] and uap_quality["passed"] and
                             baseline_result["token_source"] == "measured" and
-                            uap_result["token_source"] == "measured")
+                            uap_result["token_source"] == "measured" and
+                            baseline_result.get("usage_complete") is True and
+                            uap_result.get("usage_complete") is True)
         if comparison_valid and break_even is None and cumulative_uap <= cumulative_baseline:
             break_even = number
         # Fixed, pre-declared checkpoint rule; token outcome never selects it.
@@ -614,13 +658,15 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
 
     commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True,
                             text=True, check=False).stdout.strip() or "unknown"
-    paired_measurement = len(tasks) == len(TASKS) and all(
+    paired_measurement = len(tasks) == args.rounds and all(
         item.get("comparison_valid") for item in tasks)
     learning_reuse = paired_measurement and any(int(item.get("reuse_hits", 0)) > 0 for item in tasks)
     observed_savings = paired_measurement and cumulative_uap < cumulative_baseline
     payload = {"environment": {"uap": __version__, "commit": commit,
                                 "provider": args.provider, "model": args.model,
                                 "reasoning": args.reasoning,
+                                "rounds": args.rounds,
+                                "max_provider_calls": args.max_provider_calls,
                                 "canonical_source": args.canonical_source,
                                 "date": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())},
                "tasks": tasks,

@@ -483,6 +483,7 @@ def test_execute_uses_live_usage_as_complete_measured_receipt(tmp_path):
     receipt = asyncio.run(provider.execute(task, completion_probe=lambda: True))
     assert receipt.status == "completed"
     assert receipt.token_usage["source"] == "measured"
+    assert receipt.token_usage["complete"] is True
     assert receipt.token_usage["input"] == 500
     assert receipt.token_usage["cached"] == 300
     assert receipt.token_usage["output"] == 50
