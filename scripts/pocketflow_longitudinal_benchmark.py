@@ -28,6 +28,7 @@ from adaptive_agent.core.models import Task, new_id
 from adaptive_agent.core.orchestrator import Orchestrator
 from adaptive_agent.intelligence.project import ProjectIntelligenceStore
 from adaptive_agent.observability.event_bus import EventBus
+from adaptive_agent.observability.benchmark_quality import assess_implementation_quality
 from adaptive_agent.project.adapter import initialize_project
 from adaptive_agent.project.discovery import discover
 from adaptive_agent.providers.registry import providers
@@ -42,6 +43,19 @@ TASKS = [
     "Add GET /reports/monthly/{month} returning exactly month, total, and by_category, with money represented as two-decimal strings; include only dates inside that calendar month and add boundary regression tests.",
     "Add a dashboard month input that calls /reports/monthly/{month} and renders the returned total and by_category breakdown, with deterministic tests.",
 ]
+
+QUALITY_CONTRACTS = {
+    1: {"checks": ["backend"], "prefixes": ["app/", "tests/", "pyproject.toml", "README.md"],
+        "tests": True},
+    2: {"checks": ["react dashboard"], "prefixes": ["frontend/", "README.md", ".gitignore"],
+        "tests": False},
+    3: {"checks": ["csv export", "csv download link"],
+        "prefixes": ["app/", "tests/", "frontend/"], "tests": True},
+    4: {"checks": ["monthly boundary contract"], "prefixes": ["app/", "tests/"],
+        "tests": True},
+    5: {"checks": ["monthly dashboard request", "month input", "category breakdown"],
+        "prefixes": ["frontend/"], "tests": True},
+}
 
 
 class CompletionProbedProvider:
@@ -284,6 +298,9 @@ async def baseline_run(provider: Any, root: Path, goal: str, model: str | None,
             "output_tokens": int(usage.get("output", 0)), "token_source": usage.get("source", "unavailable"),
             "usage_complete": bool(usage.get("complete", False)),
             "ai_invocations": int(usage.get("invocation_count", 1)),
+            "provider_tool_calls": int(usage.get("provider_tool_calls", 0)),
+            "provider_messages": int(usage.get("provider_messages", 0)),
+            "token_attribution": usage.get("attribution", {}),
             "handoffs": 0, "deterministic_tool_calls": 0,
             "files_explored": {"value": None, "source": "unavailable"},
             "skill_context_tokens": 0, "knowledge_context_tokens": 0,
@@ -335,11 +352,19 @@ def summarize_uap_run(db: Database, run_id: str, provider_id: str,
     files = []
     retries = 0
     errors: list[str] = []
+    provider_tool_calls = 0
+    provider_messages = 0
+    attributions: list[dict[str, Any]] = []
     for row in db.query("SELECT data_json FROM receipts WHERE task_id IN "
                         "(SELECT id FROM tasks WHERE run_id=?)", (run_id,)):
         receipt = json.loads(row["data_json"])
         files.extend(receipt.get("files", []))
         retries += int(receipt.get("retry_count", 0))
+        receipt_usage = receipt.get("token_usage", {})
+        provider_tool_calls += int(receipt_usage.get("provider_tool_calls", 0))
+        provider_messages += int(receipt_usage.get("provider_messages", 0))
+        if receipt_usage.get("attribution"):
+            attributions.append(receipt_usage["attribution"])
         if receipt.get("error_code"):
             errors.append(str(receipt["error_code"]))
     lifecycle_data = (json.loads(lifecycle["data_json"]) if lifecycle
@@ -352,6 +377,11 @@ def summarize_uap_run(db: Database, run_id: str, provider_id: str,
             "usage_complete": bool(int(usage["invocations"] or 0) > 0
                                    and int(usage["incomplete"] or 0) == 0),
             "ai_invocations": int(usage["invocations"] or 0), "retries": retries,
+            "provider_tool_calls": provider_tool_calls,
+            "provider_messages": provider_messages,
+            "token_attribution": (attributions[0] if len(attributions) == 1 else
+                                  {"method": "multiple_provider_invocations",
+                                   "invocations": attributions}),
             "duration_seconds": duration_seconds,
             "handoffs": max(0, sum(item.get("kind") == "agent" for item in task_payloads) - 1),
             "deterministic_tool_calls": sum(item.get("kind") == "tool" for item in task_payloads),
@@ -402,6 +432,8 @@ def render_report(payload: dict[str, Any]) -> str:
         uap_tokens = int(task["uap_tokens"])
         reduction = ((baseline_tokens - uap_tokens) / baseline_tokens * 100
                      if baseline_tokens else 0.0)
+        baseline_score = task["quality"]["baseline"].get("independent", {}).get("score")
+        uap_score = task["quality"]["uap"].get("independent", {}).get("score")
         lines += [f"## Task {task['task_number']}", "",
                   f"- Goal: {task['goal']}",
                   f"- Provider/model: baseline={task['baseline']['provider']}/{model_label(task['baseline'].get('model'))}; "
@@ -410,6 +442,10 @@ def render_report(payload: dict[str, Any]) -> str:
                   f"- UAP: {task['uap']['status']}, {task['uap_tokens']} tokens ({task['uap']['token_source']})",
                   f"- Token reduction: {reduction:.2f}%",
                   f"- Quality: baseline={task['quality']['baseline']['passed']}, UAP={task['quality']['uap']['passed']}",
+                  f"- Independent quality score: baseline={baseline_score if baseline_score is not None else 'not collected'}; "
+                  f"UAP={uap_score if uap_score is not None else 'not collected'}",
+                  f"- Provider tool windows: baseline={task['baseline'].get('provider_tool_calls', 'not collected')}; "
+                  f"UAP={task['uap'].get('provider_tool_calls', 'not collected')}",
                   f"- State: {task['cold_or_warm'].upper()}",
                   f"- Paired comparison valid: {task['comparison_valid']}",
                   f"- Canonical source: {task.get('canonical_source', 'baseline')}",
@@ -595,6 +631,18 @@ def source_snapshot(path: Path) -> dict[str, str]:
     return ProjectIntelligenceStore(path).hash_paths(paths)
 
 
+def changed_paths(before: dict[str, str], after: dict[str, str]) -> list[str]:
+    return sorted(path for path in set(before) | set(after) if before.get(path) != after.get(path))
+
+
+def attach_independent_quality(quality: dict[str, Any], task_number: int,
+                               paths: list[str]) -> None:
+    contract = QUALITY_CONTRACTS[task_number]
+    quality["independent"] = assess_implementation_quality(
+        quality["checks"], paths, required_checks=contract["checks"],
+        expected_prefixes=contract["prefixes"], require_test_change=contract["tests"])
+
+
 def valid_pair(task: dict[str, Any]) -> bool:
     return bool(
         task["baseline"]["status"] == task["uap"]["status"] == "completed"
@@ -603,6 +651,8 @@ def valid_pair(task: dict[str, Any]) -> bool:
         and paired_models_match(task)
         and task["quality"]["baseline"]["passed"]
         and task["quality"]["uap"]["passed"]
+        and task["quality"]["baseline"].get("independent", {}).get("passed", True)
+        and task["quality"]["uap"].get("independent", {}).get("passed", True)
         and task["baseline"]["token_source"] == "measured"
         and task["uap"]["token_source"] == "measured"
         and task["baseline"].get("usage_complete") is True
@@ -774,8 +824,12 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
             "task_number": number, "goal": goal, "baseline": baseline_result, "uap": uap_result,
         }}, indent=2), encoding="utf-8")
         baseline_quality, uap_quality = evaluate(baseline, number), evaluate(uap, number)
-        baseline_result["source_changed"] = source_snapshot(baseline) != before_baseline
-        uap_result["source_changed"] = source_snapshot(uap) != before_baseline
+        baseline_paths = changed_paths(before_baseline, source_snapshot(baseline))
+        uap_paths = changed_paths(before_baseline, source_snapshot(uap))
+        baseline_result["source_changed"] = bool(baseline_paths)
+        uap_result["source_changed"] = bool(uap_paths)
+        attach_independent_quality(baseline_quality, number, baseline_paths)
+        attach_independent_quality(uap_quality, number, uap_paths)
         baseline_tokens = baseline_result["input_tokens"] + baseline_result["output_tokens"]
         uap_tokens = uap_result["input_tokens"] + uap_result["output_tokens"]
         cumulative_baseline += baseline_tokens
