@@ -1,0 +1,1370 @@
+{
+  "experiment": "three_track_longitudinal_design_v1",
+  "environment": {
+    "uap": "2.3.1",
+    "commit": "618882950601777a13ababb7a151dc730a7a3149",
+    "provider": "codex",
+    "model": "gpt-5.6-luna",
+    "reasoning": "low",
+    "date": "2026-09-15T09:08:09Z",
+    "max_provider_calls": 12,
+    "max_repair_calls": 0,
+    "repair_calls_used": 0
+  },
+  "method": {
+    "canonical_source": "baseline",
+    "fresh_provider_session": true,
+    "uap_memory_retained": true,
+    "quality_contract": "design-longitudinal-v1"
+  },
+  "tracks": [
+    {
+      "domain": "graphic-design",
+      "rounds": [
+        {
+          "round": 1,
+          "goal": "Create the standalone vector event poster described by the local assignment and poster brief.",
+          "baseline": {
+            "status": "completed",
+            "provider": "codex",
+            "model": "gpt-5.6-luna",
+            "reasoning": "low",
+            "input_tokens": 120563,
+            "cached_input": 80640,
+            "output_tokens": 2959,
+            "token_source": "measured",
+            "usage_complete": true,
+            "ai_invocations": 1,
+            "provider_tool_calls": 4,
+            "provider_messages": 3,
+            "token_attribution": {
+              "method": "provider_cumulative_usage_delta_by_event_window",
+              "token_totals_exact": true,
+              "causal_labels_exact": false,
+              "reset_count": 0,
+              "windows": [
+                {
+                  "sequence": 1,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-6250edfa-119f-44e8-8c87-2b7baa23f6a9",
+                  "input_tokens": 15528,
+                  "cached_input_tokens": 0,
+                  "uncached_input_tokens": 15528,
+                  "output_tokens": 216,
+                  "total_tokens": 15744
+                },
+                {
+                  "sequence": 2,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-61eb5727-672e-4099-97af-c325f4b7e848",
+                  "input_tokens": 15963,
+                  "cached_input_tokens": 15104,
+                  "uncached_input_tokens": 859,
+                  "output_tokens": 111,
+                  "total_tokens": 16074
+                },
+                {
+                  "sequence": 3,
+                  "kind": "after_file_change",
+                  "item_id": "exec-c5580c85-26c6-4053-81d9-c20ecf0d4f0d",
+                  "input_tokens": 16295,
+                  "cached_input_tokens": 15104,
+                  "uncached_input_tokens": 1191,
+                  "output_tokens": 1270,
+                  "total_tokens": 17565
+                },
+                {
+                  "sequence": 4,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-18280f05-7c8b-4994-b7c8-74cb264b3665",
+                  "input_tokens": 17586,
+                  "cached_input_tokens": 16128,
+                  "uncached_input_tokens": 1458,
+                  "output_tokens": 326,
+                  "total_tokens": 17912
+                },
+                {
+                  "sequence": 5,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-1b4aa696-a101-46b3-b82c-400deee949f8",
+                  "input_tokens": 17970,
+                  "cached_input_tokens": 17152,
+                  "uncached_input_tokens": 818,
+                  "output_tokens": 345,
+                  "total_tokens": 18315
+                },
+                {
+                  "sequence": 6,
+                  "kind": "after_file_change",
+                  "item_id": "exec-b1a42528-e885-437b-b238-4ca7b9bb54b7",
+                  "input_tokens": 18400,
+                  "cached_input_tokens": 0,
+                  "uncached_input_tokens": 18400,
+                  "output_tokens": 397,
+                  "total_tokens": 18797
+                },
+                {
+                  "sequence": 6,
+                  "kind": "after_file_change",
+                  "item_id": "exec-b1a42528-e885-437b-b238-4ca7b9bb54b7",
+                  "input_tokens": 18821,
+                  "cached_input_tokens": 17152,
+                  "uncached_input_tokens": 1669,
+                  "output_tokens": 294,
+                  "total_tokens": 19115
+                }
+              ]
+            },
+            "duration_seconds": 87.45299999999997,
+            "files_modified": [
+              "poster.svg"
+            ],
+            "error": null,
+            "summary": "Created and validated the standalone vector event poster.",
+            "source_changed": true,
+            "changed_paths": [
+              "poster.svg"
+            ]
+          },
+          "uap": {
+            "run_id": "RUN-C77EE4C13F",
+            "status": "completed",
+            "provider": "codex",
+            "model": [
+              "gpt-5.6-luna"
+            ],
+            "input_tokens": 86989,
+            "cached_input": 47360,
+            "output_tokens": 2499,
+            "token_source": "measured",
+            "usage_complete": true,
+            "ai_invocations": 1,
+            "retries": 0,
+            "provider_tool_calls": 3,
+            "provider_messages": 3,
+            "token_attribution": {
+              "method": "provider_cumulative_usage_delta_by_event_window",
+              "token_totals_exact": true,
+              "causal_labels_exact": false,
+              "reset_count": 0,
+              "windows": [
+                {
+                  "sequence": 1,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-18fae7ad-a997-4a87-a543-eee6842b9929",
+                  "input_tokens": 15965,
+                  "cached_input_tokens": 0,
+                  "uncached_input_tokens": 15965,
+                  "output_tokens": 242,
+                  "total_tokens": 16207
+                },
+                {
+                  "sequence": 2,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-2398f59f-59f4-4212-b058-0b70594ba917",
+                  "input_tokens": 16620,
+                  "cached_input_tokens": 15104,
+                  "uncached_input_tokens": 1516,
+                  "output_tokens": 144,
+                  "total_tokens": 16764
+                },
+                {
+                  "sequence": 3,
+                  "kind": "after_file_change",
+                  "item_id": "exec-9db9c97d-9f02-4c0b-9a68-2a423dc92503",
+                  "input_tokens": 16975,
+                  "cached_input_tokens": 0,
+                  "uncached_input_tokens": 16975,
+                  "output_tokens": 1467,
+                  "total_tokens": 18442
+                },
+                {
+                  "sequence": 4,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-a1090ef8-f969-4d91-b66d-0ba93a31c2b8",
+                  "input_tokens": 18463,
+                  "cached_input_tokens": 16128,
+                  "uncached_input_tokens": 2335,
+                  "output_tokens": 390,
+                  "total_tokens": 18853
+                },
+                {
+                  "sequence": 4,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-a1090ef8-f969-4d91-b66d-0ba93a31c2b8",
+                  "input_tokens": 18966,
+                  "cached_input_tokens": 16128,
+                  "uncached_input_tokens": 2838,
+                  "output_tokens": 256,
+                  "total_tokens": 19222
+                }
+              ]
+            },
+            "duration_seconds": 110.45299999999997,
+            "handoffs": 0,
+            "deterministic_tool_calls": 1,
+            "files_explored": {
+              "value": null,
+              "source": "unavailable"
+            },
+            "skill_context_tokens": 0,
+            "decision_context_items": 0,
+            "files_modified": [
+              "poster.svg"
+            ],
+            "error": null,
+            "temperature": "warm",
+            "reuse_hits": 0,
+            "rediscovery": 0,
+            "knowledge_context_chars": 387,
+            "knowledge_context_tokens_estimated": 97,
+            "source_changed": true,
+            "changed_paths": [
+              "poster.svg"
+            ]
+          },
+          "baseline_tokens": 123522,
+          "uap_tokens": 89488,
+          "quality": {
+            "baseline": {
+              "passed": false,
+              "domain": "graphic-design",
+              "round": 1,
+              "checks": [
+                "base_contract"
+              ],
+              "errors": [
+                "hierarchy"
+              ],
+              "contract": "design-longitudinal-v1"
+            },
+            "uap": {
+              "passed": true,
+              "domain": "graphic-design",
+              "round": 1,
+              "checks": [
+                "base_contract"
+              ],
+              "errors": [],
+              "contract": "design-longitudinal-v1"
+            }
+          },
+          "comparison_valid": false,
+          "canonical_source": "uap"
+        },
+        {
+          "round": 2,
+          "goal": "Extend the existing poster with a sponsor strip labelled exactly SUPPORTED BY HARBOR LAB. Keep the approved palette, hierarchy, and original layers intact.",
+          "baseline": {
+            "status": "completed",
+            "provider": "codex",
+            "model": "gpt-5.6-luna",
+            "reasoning": "low",
+            "input_tokens": 87537,
+            "cached_input": 66560,
+            "output_tokens": 1287,
+            "token_source": "measured",
+            "usage_complete": true,
+            "ai_invocations": 1,
+            "provider_tool_calls": 3,
+            "provider_messages": 3,
+            "token_attribution": {
+              "method": "provider_cumulative_usage_delta_by_event_window",
+              "token_totals_exact": true,
+              "causal_labels_exact": false,
+              "reset_count": 0,
+              "windows": [
+                {
+                  "sequence": 1,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-4c2e6fa9-9050-4d0f-b76e-f195588de72b",
+                  "input_tokens": 15982,
+                  "cached_input_tokens": 0,
+                  "uncached_input_tokens": 15982,
+                  "output_tokens": 266,
+                  "total_tokens": 16248
+                },
+                {
+                  "sequence": 2,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-25515df8-5b72-42bc-9cfc-edefafb774f8",
+                  "input_tokens": 16444,
+                  "cached_input_tokens": 15104,
+                  "uncached_input_tokens": 1340,
+                  "output_tokens": 130,
+                  "total_tokens": 16574
+                },
+                {
+                  "sequence": 3,
+                  "kind": "after_file_change",
+                  "item_id": "exec-54e8cc9d-8fa2-4394-9667-6169ae3f96a3",
+                  "input_tokens": 17889,
+                  "cached_input_tokens": 16128,
+                  "uncached_input_tokens": 1761,
+                  "output_tokens": 496,
+                  "total_tokens": 18385
+                },
+                {
+                  "sequence": 4,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-88a7287b-3261-4afb-a0ba-3807b74c7e86",
+                  "input_tokens": 18406,
+                  "cached_input_tokens": 17152,
+                  "uncached_input_tokens": 1254,
+                  "output_tokens": 282,
+                  "total_tokens": 18688
+                },
+                {
+                  "sequence": 4,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-88a7287b-3261-4afb-a0ba-3807b74c7e86",
+                  "input_tokens": 18816,
+                  "cached_input_tokens": 18176,
+                  "uncached_input_tokens": 640,
+                  "output_tokens": 113,
+                  "total_tokens": 18929
+                }
+              ]
+            },
+            "duration_seconds": 56.343999999999824,
+            "files_modified": [
+              "poster.svg"
+            ],
+            "error": null,
+            "summary": "Added the sponsor strip labelled exactly \u201cSUPPORTED BY HARBOR LAB\u201d while preserving the approved palette, required layers, and original poster structure.",
+            "source_changed": true,
+            "changed_paths": [
+              "poster.svg"
+            ]
+          },
+          "uap": {
+            "run_id": "RUN-773633E7A5",
+            "status": "completed",
+            "provider": "codex",
+            "model": [
+              "gpt-5.6-luna"
+            ],
+            "input_tokens": 98751,
+            "cached_input": 51456,
+            "output_tokens": 1386,
+            "token_source": "measured",
+            "usage_complete": true,
+            "ai_invocations": 1,
+            "retries": 0,
+            "provider_tool_calls": 3,
+            "provider_messages": 3,
+            "token_attribution": {
+              "method": "provider_cumulative_usage_delta_by_event_window",
+              "token_totals_exact": true,
+              "causal_labels_exact": false,
+              "reset_count": 0,
+              "windows": [
+                {
+                  "sequence": 1,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-1c2e8094-879e-4470-8432-d0156f8fdbf2",
+                  "input_tokens": 15717,
+                  "cached_input_tokens": 0,
+                  "uncached_input_tokens": 15717,
+                  "output_tokens": 273,
+                  "total_tokens": 15990
+                },
+                {
+                  "sequence": 2,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-3f408112-ec83-484e-81bc-d04c2b3b7878",
+                  "input_tokens": 16123,
+                  "cached_input_tokens": 15104,
+                  "uncached_input_tokens": 1019,
+                  "output_tokens": 176,
+                  "total_tokens": 16299
+                },
+                {
+                  "sequence": 3,
+                  "kind": "after_file_change",
+                  "item_id": "exec-67a28c08-ede2-473d-b490-5b3620d609be",
+                  "input_tokens": 21791,
+                  "cached_input_tokens": 15104,
+                  "uncached_input_tokens": 6687,
+                  "output_tokens": 544,
+                  "total_tokens": 22335
+                },
+                {
+                  "sequence": 4,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-4d0dc15f-8347-4e03-8ed9-763cce8d6e39",
+                  "input_tokens": 22356,
+                  "cached_input_tokens": 0,
+                  "uncached_input_tokens": 22356,
+                  "output_tokens": 259,
+                  "total_tokens": 22615
+                },
+                {
+                  "sequence": 4,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-4d0dc15f-8347-4e03-8ed9-763cce8d6e39",
+                  "input_tokens": 22764,
+                  "cached_input_tokens": 21248,
+                  "uncached_input_tokens": 1516,
+                  "output_tokens": 134,
+                  "total_tokens": 22898
+                }
+              ]
+            },
+            "duration_seconds": 68.54700000000003,
+            "handoffs": 0,
+            "deterministic_tool_calls": 1,
+            "files_explored": {
+              "value": null,
+              "source": "unavailable"
+            },
+            "skill_context_tokens": 0,
+            "decision_context_items": 0,
+            "files_modified": [
+              "poster.svg"
+            ],
+            "error": null,
+            "temperature": "warm",
+            "reuse_hits": 0,
+            "rediscovery": 0,
+            "knowledge_context_chars": 387,
+            "knowledge_context_tokens_estimated": 97,
+            "source_changed": true,
+            "changed_paths": [
+              "poster.svg"
+            ]
+          },
+          "baseline_tokens": 88824,
+          "uap_tokens": 100137,
+          "quality": {
+            "baseline": {
+              "passed": true,
+              "domain": "graphic-design",
+              "round": 2,
+              "checks": [
+                "base_contract",
+                "sponsor_extension"
+              ],
+              "errors": [],
+              "contract": "design-longitudinal-v1"
+            },
+            "uap": {
+              "passed": true,
+              "domain": "graphic-design",
+              "round": 2,
+              "checks": [
+                "base_contract",
+                "sponsor_extension"
+              ],
+              "errors": [],
+              "contract": "design-longitudinal-v1"
+            }
+          },
+          "comparison_valid": true,
+          "canonical_source": "baseline"
+        },
+        {
+          "round": 3,
+          "goal": "Create a companion square social.svg adaptation with viewBox 0 0 1080 1080. Reuse the poster palette and include the exact event, date, and venue copy with accessible title and description.",
+          "baseline": {
+            "status": "completed",
+            "provider": "codex",
+            "model": "gpt-5.6-luna",
+            "reasoning": "low",
+            "input_tokens": 89559,
+            "cached_input": 67584,
+            "output_tokens": 2367,
+            "token_source": "measured",
+            "usage_complete": true,
+            "ai_invocations": 1,
+            "provider_tool_calls": 3,
+            "provider_messages": 3,
+            "token_attribution": {
+              "method": "provider_cumulative_usage_delta_by_event_window",
+              "token_totals_exact": true,
+              "causal_labels_exact": false,
+              "reset_count": 0,
+              "windows": [
+                {
+                  "sequence": 1,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-bb9626c7-8b3b-4437-abc2-5ef4fc27d77e",
+                  "input_tokens": 16008,
+                  "cached_input_tokens": 0,
+                  "uncached_input_tokens": 16008,
+                  "output_tokens": 253,
+                  "total_tokens": 16261
+                },
+                {
+                  "sequence": 2,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-2c4ce4bb-d2b4-4950-87a8-b40a5e00f245",
+                  "input_tokens": 16366,
+                  "cached_input_tokens": 15104,
+                  "uncached_input_tokens": 1262,
+                  "output_tokens": 135,
+                  "total_tokens": 16501
+                },
+                {
+                  "sequence": 3,
+                  "kind": "after_file_change",
+                  "item_id": "exec-7ff1a91e-2f72-4908-9c8a-962c5eab9158",
+                  "input_tokens": 17855,
+                  "cached_input_tokens": 16128,
+                  "uncached_input_tokens": 1727,
+                  "output_tokens": 1564,
+                  "total_tokens": 19419
+                },
+                {
+                  "sequence": 4,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-7f25463b-b0dc-4ada-8db2-7a40f5462dab",
+                  "input_tokens": 19440,
+                  "cached_input_tokens": 17152,
+                  "uncached_input_tokens": 2288,
+                  "output_tokens": 304,
+                  "total_tokens": 19744
+                },
+                {
+                  "sequence": 4,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-7f25463b-b0dc-4ada-8db2-7a40f5462dab",
+                  "input_tokens": 19890,
+                  "cached_input_tokens": 19200,
+                  "uncached_input_tokens": 690,
+                  "output_tokens": 111,
+                  "total_tokens": 20001
+                }
+              ]
+            },
+            "duration_seconds": 62.608999999999924,
+            "files_modified": [
+              "social.svg"
+            ],
+            "error": null,
+            "summary": "Created the square social.svg adaptation with the required 1080\u00d71080 viewBox, poster palette, exact event/date/venue copy, and accessible title/description.",
+            "source_changed": true,
+            "changed_paths": [
+              "social.svg"
+            ]
+          },
+          "uap": {
+            "run_id": "RUN-049EDDA023",
+            "status": "completed",
+            "provider": "codex",
+            "model": [
+              "gpt-5.6-luna"
+            ],
+            "input_tokens": 88657,
+            "cached_input": 65536,
+            "output_tokens": 2290,
+            "token_source": "measured",
+            "usage_complete": true,
+            "ai_invocations": 1,
+            "retries": 0,
+            "provider_tool_calls": 3,
+            "provider_messages": 3,
+            "token_attribution": {
+              "method": "provider_cumulative_usage_delta_by_event_window",
+              "token_totals_exact": true,
+              "causal_labels_exact": false,
+              "reset_count": 0,
+              "windows": [
+                {
+                  "sequence": 1,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-e0a65322-508d-4e60-ba4b-151520d07a9a",
+                  "input_tokens": 15884,
+                  "cached_input_tokens": 0,
+                  "uncached_input_tokens": 15884,
+                  "output_tokens": 231,
+                  "total_tokens": 16115
+                },
+                {
+                  "sequence": 2,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-eb28c762-ca5e-4481-a366-7542c885208b",
+                  "input_tokens": 16221,
+                  "cached_input_tokens": 15104,
+                  "uncached_input_tokens": 1117,
+                  "output_tokens": 136,
+                  "total_tokens": 16357
+                },
+                {
+                  "sequence": 3,
+                  "kind": "after_file_change",
+                  "item_id": "exec-6f16a9a4-fb46-4b95-a71c-da1b7da9c2fd",
+                  "input_tokens": 17711,
+                  "cached_input_tokens": 15104,
+                  "uncached_input_tokens": 2607,
+                  "output_tokens": 1537,
+                  "total_tokens": 19248
+                },
+                {
+                  "sequence": 4,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-f94d6048-75ce-4bd8-b0ca-1eb8d4948bb1",
+                  "input_tokens": 19269,
+                  "cached_input_tokens": 17152,
+                  "uncached_input_tokens": 2117,
+                  "output_tokens": 243,
+                  "total_tokens": 19512
+                },
+                {
+                  "sequence": 4,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-f94d6048-75ce-4bd8-b0ca-1eb8d4948bb1",
+                  "input_tokens": 19572,
+                  "cached_input_tokens": 18176,
+                  "uncached_input_tokens": 1396,
+                  "output_tokens": 143,
+                  "total_tokens": 19715
+                }
+              ]
+            },
+            "duration_seconds": 71.23400000000015,
+            "handoffs": 0,
+            "deterministic_tool_calls": 1,
+            "files_explored": {
+              "value": null,
+              "source": "unavailable"
+            },
+            "skill_context_tokens": 0,
+            "decision_context_items": 0,
+            "files_modified": [
+              "social.svg"
+            ],
+            "error": null,
+            "temperature": "warm",
+            "reuse_hits": 0,
+            "rediscovery": 0,
+            "knowledge_context_chars": 387,
+            "knowledge_context_tokens_estimated": 97,
+            "source_changed": true,
+            "changed_paths": [
+              "social.svg"
+            ]
+          },
+          "baseline_tokens": 91926,
+          "uap_tokens": 90947,
+          "quality": {
+            "baseline": {
+              "passed": true,
+              "domain": "graphic-design",
+              "round": 3,
+              "checks": [
+                "base_contract",
+                "sponsor_extension",
+                "social_adaptation"
+              ],
+              "errors": [],
+              "contract": "design-longitudinal-v1"
+            },
+            "uap": {
+              "passed": true,
+              "domain": "graphic-design",
+              "round": 3,
+              "checks": [
+                "base_contract",
+                "sponsor_extension",
+                "social_adaptation"
+              ],
+              "errors": [],
+              "contract": "design-longitudinal-v1"
+            }
+          },
+          "comparison_valid": true,
+          "canonical_source": "baseline"
+        }
+      ]
+    },
+    {
+      "domain": "three-d-design",
+      "rounds": [
+        {
+          "round": 1,
+          "goal": "Create the valid Wavefront information kiosk described by the local assignment and model brief.",
+          "baseline": {
+            "status": "completed",
+            "provider": "codex",
+            "model": "gpt-5.6-luna",
+            "reasoning": "low",
+            "input_tokens": 85466,
+            "cached_input": 48384,
+            "output_tokens": 1933,
+            "token_source": "measured",
+            "usage_complete": true,
+            "ai_invocations": 1,
+            "provider_tool_calls": 3,
+            "provider_messages": 3,
+            "token_attribution": {
+              "method": "provider_cumulative_usage_delta_by_event_window",
+              "token_totals_exact": true,
+              "causal_labels_exact": false,
+              "reset_count": 0,
+              "windows": [
+                {
+                  "sequence": 1,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-0cb32cfe-04b8-4e1a-b50d-563ef702d4a2",
+                  "input_tokens": 15802,
+                  "cached_input_tokens": 0,
+                  "uncached_input_tokens": 15802,
+                  "output_tokens": 237,
+                  "total_tokens": 16039
+                },
+                {
+                  "sequence": 2,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-9ea01438-2af2-4856-9d6d-747bafeeae19",
+                  "input_tokens": 16135,
+                  "cached_input_tokens": 0,
+                  "uncached_input_tokens": 16135,
+                  "output_tokens": 133,
+                  "total_tokens": 16268
+                },
+                {
+                  "sequence": 3,
+                  "kind": "after_file_change",
+                  "item_id": "exec-a62520ce-c5b9-4a09-a4c1-e24a483f70bb",
+                  "input_tokens": 17005,
+                  "cached_input_tokens": 15104,
+                  "uncached_input_tokens": 1901,
+                  "output_tokens": 921,
+                  "total_tokens": 17926
+                },
+                {
+                  "sequence": 4,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-24dea2f8-5d46-4bbd-b28a-41fc379fe411",
+                  "input_tokens": 17947,
+                  "cached_input_tokens": 16128,
+                  "uncached_input_tokens": 1819,
+                  "output_tokens": 490,
+                  "total_tokens": 18437
+                },
+                {
+                  "sequence": 4,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-24dea2f8-5d46-4bbd-b28a-41fc379fe411",
+                  "input_tokens": 18577,
+                  "cached_input_tokens": 17152,
+                  "uncached_input_tokens": 1425,
+                  "output_tokens": 152,
+                  "total_tokens": 18729
+                }
+              ]
+            },
+            "duration_seconds": 63.077999999999975,
+            "files_modified": [
+              "kiosk.obj",
+              "kiosk.mtl"
+            ],
+            "error": null,
+            "summary": "Created the valid Wavefront information kiosk model and companion material file. External acceptance passed.",
+            "source_changed": true,
+            "changed_paths": [
+              "kiosk.mtl",
+              "kiosk.obj"
+            ]
+          },
+          "uap": {
+            "run_id": "RUN-53FA9B4DBA",
+            "status": "completed",
+            "provider": "codex",
+            "model": [
+              "gpt-5.6-luna"
+            ],
+            "input_tokens": 86065,
+            "cached_input": 64512,
+            "output_tokens": 2432,
+            "token_source": "measured",
+            "usage_complete": true,
+            "ai_invocations": 1,
+            "retries": 0,
+            "provider_tool_calls": 3,
+            "provider_messages": 3,
+            "token_attribution": {
+              "method": "provider_cumulative_usage_delta_by_event_window",
+              "token_totals_exact": true,
+              "causal_labels_exact": false,
+              "reset_count": 0,
+              "windows": [
+                {
+                  "sequence": 1,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-6db9ab98-fb80-4485-ac02-df90041992d0",
+                  "input_tokens": 15865,
+                  "cached_input_tokens": 0,
+                  "uncached_input_tokens": 15865,
+                  "output_tokens": 243,
+                  "total_tokens": 16108
+                },
+                {
+                  "sequence": 2,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-df517642-dea2-4e48-974d-f8aefe6a90d8",
+                  "input_tokens": 16375,
+                  "cached_input_tokens": 15104,
+                  "uncached_input_tokens": 1271,
+                  "output_tokens": 157,
+                  "total_tokens": 16532
+                },
+                {
+                  "sequence": 3,
+                  "kind": "after_file_change",
+                  "item_id": "exec-7296f731-c964-4277-8c22-5e613080640e",
+                  "input_tokens": 16915,
+                  "cached_input_tokens": 16128,
+                  "uncached_input_tokens": 787,
+                  "output_tokens": 1207,
+                  "total_tokens": 18122
+                },
+                {
+                  "sequence": 4,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-9409893a-ef05-4a9f-8074-1fb0e51e4eef",
+                  "input_tokens": 18143,
+                  "cached_input_tokens": 16128,
+                  "uncached_input_tokens": 2015,
+                  "output_tokens": 477,
+                  "total_tokens": 18620
+                },
+                {
+                  "sequence": 4,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-9409893a-ef05-4a9f-8074-1fb0e51e4eef",
+                  "input_tokens": 18767,
+                  "cached_input_tokens": 17152,
+                  "uncached_input_tokens": 1615,
+                  "output_tokens": 348,
+                  "total_tokens": 19115
+                }
+              ]
+            },
+            "duration_seconds": 76.4369999999999,
+            "handoffs": 0,
+            "deterministic_tool_calls": 1,
+            "files_explored": {
+              "value": null,
+              "source": "unavailable"
+            },
+            "skill_context_tokens": 0,
+            "decision_context_items": 0,
+            "files_modified": [
+              "kiosk.mtl",
+              "kiosk.obj"
+            ],
+            "error": null,
+            "temperature": "warm",
+            "reuse_hits": 0,
+            "rediscovery": 0,
+            "knowledge_context_chars": 387,
+            "knowledge_context_tokens_estimated": 97,
+            "source_changed": true,
+            "changed_paths": [
+              "kiosk.mtl",
+              "kiosk.obj"
+            ]
+          },
+          "baseline_tokens": 87399,
+          "uap_tokens": 88497,
+          "quality": {
+            "baseline": {
+              "passed": true,
+              "domain": "three-d-design",
+              "round": 1,
+              "checks": [
+                "base_contract"
+              ],
+              "errors": [],
+              "contract": "design-longitudinal-v1"
+            },
+            "uap": {
+              "passed": true,
+              "domain": "three-d-design",
+              "round": 1,
+              "checks": [
+                "base_contract"
+              ],
+              "errors": [],
+              "contract": "design-longitudinal-v1"
+            }
+          },
+          "comparison_valid": true,
+          "canonical_source": "baseline"
+        },
+        {
+          "round": 2,
+          "goal": "Extend the kiosk with a distinct keypad group using a new AccentMetal material. Preserve the existing model bounds, groups, and material assignments.",
+          "baseline": {
+            "status": "completed",
+            "provider": "codex",
+            "model": "gpt-5.6-luna",
+            "reasoning": "low",
+            "input_tokens": 67857,
+            "cached_input": 56320,
+            "output_tokens": 2421,
+            "token_source": "measured",
+            "usage_complete": true,
+            "ai_invocations": 1,
+            "provider_tool_calls": 3,
+            "provider_messages": 2,
+            "token_attribution": {
+              "method": "provider_cumulative_usage_delta_by_event_window",
+              "token_totals_exact": true,
+              "causal_labels_exact": false,
+              "reset_count": 0,
+              "windows": [
+                {
+                  "sequence": 1,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-fcec4c2f-26ea-435a-9373-0e862bd01d08",
+                  "input_tokens": 15715,
+                  "cached_input_tokens": 9984,
+                  "uncached_input_tokens": 5731,
+                  "output_tokens": 229,
+                  "total_tokens": 15944
+                },
+                {
+                  "sequence": 2,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-f9f37932-bd42-4d8f-b9ae-9468d7d34250",
+                  "input_tokens": 16212,
+                  "cached_input_tokens": 15104,
+                  "uncached_input_tokens": 1108,
+                  "output_tokens": 142,
+                  "total_tokens": 16354
+                },
+                {
+                  "sequence": 3,
+                  "kind": "after_file_change",
+                  "item_id": "exec-17b46fa6-6446-4a0d-a267-9f9ac9af0838",
+                  "input_tokens": 17198,
+                  "cached_input_tokens": 15104,
+                  "uncached_input_tokens": 2094,
+                  "output_tokens": 1513,
+                  "total_tokens": 18711
+                },
+                {
+                  "sequence": 4,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-27ead2ad-b1fe-4409-b37b-6a97c2b0d3e8",
+                  "input_tokens": 18732,
+                  "cached_input_tokens": 16128,
+                  "uncached_input_tokens": 2604,
+                  "output_tokens": 537,
+                  "total_tokens": 19269
+                }
+              ]
+            },
+            "duration_seconds": 82.15600000000018,
+            "files_modified": [],
+            "error": null,
+            "summary": "External acceptance passed; Codex reached a controlled terminal stop.",
+            "source_changed": true,
+            "changed_paths": [
+              "kiosk.mtl",
+              "kiosk.obj"
+            ]
+          },
+          "uap": {
+            "run_id": "RUN-252F126087",
+            "status": "completed",
+            "provider": "codex",
+            "model": [
+              "gpt-5.6-luna"
+            ],
+            "input_tokens": 229530,
+            "cached_input": 187904,
+            "output_tokens": 6175,
+            "token_source": "measured",
+            "usage_complete": true,
+            "ai_invocations": 1,
+            "retries": 0,
+            "provider_tool_calls": 7,
+            "provider_messages": 3,
+            "token_attribution": {
+              "method": "provider_cumulative_usage_delta_by_event_window",
+              "token_totals_exact": true,
+              "causal_labels_exact": false,
+              "reset_count": 0,
+              "windows": [
+                {
+                  "sequence": 1,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-1b734455-efc0-4280-8872-2573261ae6a1",
+                  "input_tokens": 15715,
+                  "cached_input_tokens": 12032,
+                  "uncached_input_tokens": 3683,
+                  "output_tokens": 227,
+                  "total_tokens": 15942
+                },
+                {
+                  "sequence": 2,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-0af95a45-b502-413e-bc41-397553ae7105",
+                  "input_tokens": 16370,
+                  "cached_input_tokens": 15104,
+                  "uncached_input_tokens": 1266,
+                  "output_tokens": 141,
+                  "total_tokens": 16511
+                },
+                {
+                  "sequence": 3,
+                  "kind": "after_file_change",
+                  "item_id": "exec-af5b6136-d51b-4a86-92a4-87b12f2550cd",
+                  "input_tokens": 17333,
+                  "cached_input_tokens": 16128,
+                  "uncached_input_tokens": 1205,
+                  "output_tokens": 2731,
+                  "total_tokens": 20064
+                },
+                {
+                  "sequence": 4,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-6feb3171-271b-4dc8-a2af-6ab048f3d416",
+                  "input_tokens": 20085,
+                  "cached_input_tokens": 17152,
+                  "uncached_input_tokens": 2933,
+                  "output_tokens": 479,
+                  "total_tokens": 20564
+                },
+                {
+                  "sequence": 5,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-8237f1cd-11fb-45a7-9479-648f8a129fce",
+                  "input_tokens": 20625,
+                  "cached_input_tokens": 19200,
+                  "uncached_input_tokens": 1425,
+                  "output_tokens": 532,
+                  "total_tokens": 21157
+                },
+                {
+                  "sequence": 6,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-300d96e1-099d-451a-a966-eabd13ac8463",
+                  "input_tokens": 21241,
+                  "cached_input_tokens": 20224,
+                  "uncached_input_tokens": 1017,
+                  "output_tokens": 261,
+                  "total_tokens": 21502
+                },
+                {
+                  "sequence": 7,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-865f5f2d-e1a5-44fa-9d6b-d9c221009502",
+                  "input_tokens": 22599,
+                  "cached_input_tokens": 20224,
+                  "uncached_input_tokens": 2375,
+                  "output_tokens": 250,
+                  "total_tokens": 22849
+                },
+                {
+                  "sequence": 7,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-865f5f2d-e1a5-44fa-9d6b-d9c221009502",
+                  "input_tokens": 23023,
+                  "cached_input_tokens": 22272,
+                  "uncached_input_tokens": 751,
+                  "output_tokens": 597,
+                  "total_tokens": 23620
+                },
+                {
+                  "sequence": 8,
+                  "kind": "after_file_change",
+                  "item_id": "exec-06b7fb3c-6dc3-4743-a951-6e81ee5a49aa",
+                  "input_tokens": 23838,
+                  "cached_input_tokens": 0,
+                  "uncached_input_tokens": 23838,
+                  "output_tokens": 233,
+                  "total_tokens": 24071
+                },
+                {
+                  "sequence": 9,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-b18781e8-3218-4321-8ba1-623d262908e9",
+                  "input_tokens": 24095,
+                  "cached_input_tokens": 22272,
+                  "uncached_input_tokens": 1823,
+                  "output_tokens": 401,
+                  "total_tokens": 24496
+                },
+                {
+                  "sequence": 9,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-b18781e8-3218-4321-8ba1-623d262908e9",
+                  "input_tokens": 24606,
+                  "cached_input_tokens": 23296,
+                  "uncached_input_tokens": 1310,
+                  "output_tokens": 323,
+                  "total_tokens": 24929
+                }
+              ]
+            },
+            "duration_seconds": 162.8900000000001,
+            "handoffs": 0,
+            "deterministic_tool_calls": 1,
+            "files_explored": {
+              "value": null,
+              "source": "unavailable"
+            },
+            "skill_context_tokens": 0,
+            "decision_context_items": 0,
+            "files_modified": [
+              "kiosk.mtl",
+              "kiosk.obj"
+            ],
+            "error": null,
+            "temperature": "warm",
+            "reuse_hits": 0,
+            "rediscovery": 0,
+            "knowledge_context_chars": 387,
+            "knowledge_context_tokens_estimated": 97,
+            "source_changed": true,
+            "changed_paths": [
+              "kiosk.mtl",
+              "kiosk.obj"
+            ]
+          },
+          "baseline_tokens": 70278,
+          "uap_tokens": 235705,
+          "quality": {
+            "baseline": {
+              "passed": true,
+              "domain": "three-d-design",
+              "round": 2,
+              "checks": [
+                "base_contract",
+                "keypad_extension"
+              ],
+              "errors": [],
+              "contract": "design-longitudinal-v1"
+            },
+            "uap": {
+              "passed": true,
+              "domain": "three-d-design",
+              "round": 2,
+              "checks": [
+                "base_contract",
+                "keypad_extension"
+              ],
+              "errors": [],
+              "contract": "design-longitudinal-v1"
+            }
+          },
+          "comparison_valid": true,
+          "canonical_source": "baseline"
+        },
+        {
+          "round": 3,
+          "goal": "Extend the kiosk with a canopy group using a new Canopy material while preserving all earlier geometry and the exact model bounds. Keep every face index valid.",
+          "baseline": {
+            "status": "completed",
+            "provider": "codex",
+            "model": "gpt-5.6-luna",
+            "reasoning": "low",
+            "input_tokens": 68392,
+            "cached_input": 47360,
+            "output_tokens": 1675,
+            "token_source": "measured",
+            "usage_complete": true,
+            "ai_invocations": 1,
+            "provider_tool_calls": 3,
+            "provider_messages": 2,
+            "token_attribution": {
+              "method": "provider_cumulative_usage_delta_by_event_window",
+              "token_totals_exact": true,
+              "causal_labels_exact": false,
+              "reset_count": 0,
+              "windows": [
+                {
+                  "sequence": 1,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-d032fcd2-508a-466f-9f89-8b481908a3ca",
+                  "input_tokens": 15721,
+                  "cached_input_tokens": 0,
+                  "uncached_input_tokens": 15721,
+                  "output_tokens": 232,
+                  "total_tokens": 15953
+                },
+                {
+                  "sequence": 2,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-34d068d1-759c-4b05-bc83-9160201973f7",
+                  "input_tokens": 16003,
+                  "cached_input_tokens": 15104,
+                  "uncached_input_tokens": 899,
+                  "output_tokens": 154,
+                  "total_tokens": 16157
+                },
+                {
+                  "sequence": 3,
+                  "kind": "after_file_change",
+                  "item_id": "exec-d84950d5-18f1-45e5-85b0-ad139c16e810",
+                  "input_tokens": 17952,
+                  "cached_input_tokens": 15104,
+                  "uncached_input_tokens": 2848,
+                  "output_tokens": 743,
+                  "total_tokens": 18695
+                },
+                {
+                  "sequence": 4,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-edab1eea-f4dc-420f-a112-68a1b53e2cda",
+                  "input_tokens": 18716,
+                  "cached_input_tokens": 17152,
+                  "uncached_input_tokens": 1564,
+                  "output_tokens": 546,
+                  "total_tokens": 19262
+                }
+              ]
+            },
+            "duration_seconds": 74.2349999999999,
+            "files_modified": [],
+            "error": null,
+            "summary": "External acceptance passed; Codex reached a controlled terminal stop.",
+            "source_changed": true,
+            "changed_paths": [
+              "kiosk.mtl",
+              "kiosk.obj"
+            ]
+          },
+          "uap": {
+            "run_id": "RUN-BF852B206A",
+            "status": "completed",
+            "provider": "codex",
+            "model": [
+              "gpt-5.6-luna"
+            ],
+            "input_tokens": 51992,
+            "cached_input": 32256,
+            "output_tokens": 1462,
+            "token_source": "measured",
+            "usage_complete": true,
+            "ai_invocations": 1,
+            "retries": 0,
+            "provider_tool_calls": 2,
+            "provider_messages": 2,
+            "token_attribution": {
+              "method": "provider_cumulative_usage_delta_by_event_window",
+              "token_totals_exact": true,
+              "causal_labels_exact": false,
+              "reset_count": 0,
+              "windows": [
+                {
+                  "sequence": 1,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-817f4333-588b-4912-baab-2e2674b4a566",
+                  "input_tokens": 15727,
+                  "cached_input_tokens": 0,
+                  "uncached_input_tokens": 15727,
+                  "output_tokens": 230,
+                  "total_tokens": 15957
+                },
+                {
+                  "sequence": 2,
+                  "kind": "after_file_change",
+                  "item_id": "exec-d29a9b80-7448-4267-a0e4-a684c84bddf7",
+                  "input_tokens": 17723,
+                  "cached_input_tokens": 15104,
+                  "uncached_input_tokens": 2619,
+                  "output_tokens": 798,
+                  "total_tokens": 18521
+                },
+                {
+                  "sequence": 3,
+                  "kind": "after_command_execution",
+                  "item_id": "exec-544a9d49-9bbc-4d02-86d2-c62c55f65cfc",
+                  "input_tokens": 18542,
+                  "cached_input_tokens": 17152,
+                  "uncached_input_tokens": 1390,
+                  "output_tokens": 434,
+                  "total_tokens": 18976
+                }
+              ]
+            },
+            "duration_seconds": 75.57799999999997,
+            "handoffs": 0,
+            "deterministic_tool_calls": 1,
+            "files_explored": {
+              "value": null,
+              "source": "unavailable"
+            },
+            "skill_context_tokens": 0,
+            "decision_context_items": 0,
+            "files_modified": [],
+            "error": null,
+            "temperature": "warm",
+            "reuse_hits": 0,
+            "rediscovery": 0,
+            "knowledge_context_chars": 410,
+            "knowledge_context_tokens_estimated": 103,
+            "source_changed": true,
+            "changed_paths": [
+              "kiosk.mtl",
+              "kiosk.obj"
+            ]
+          },
+          "baseline_tokens": 70067,
+          "uap_tokens": 53454,
+          "quality": {
+            "baseline": {
+              "passed": true,
+              "domain": "three-d-design",
+              "round": 3,
+              "checks": [
+                "base_contract",
+                "keypad_extension",
+                "canopy_extension"
+              ],
+              "errors": [],
+              "contract": "design-longitudinal-v1"
+            },
+            "uap": {
+              "passed": true,
+              "domain": "three-d-design",
+              "round": 3,
+              "checks": [
+                "base_contract",
+                "keypad_extension",
+                "canopy_extension"
+              ],
+              "errors": [],
+              "contract": "design-longitudinal-v1"
+            }
+          },
+          "comparison_valid": true,
+          "canonical_source": "baseline"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_rounds": 6,
+    "valid_rounds": 5,
+    "baseline_tokens": 408494,
+    "uap_tokens": 568740,
+    "reduction_percent": -39.23,
+    "quality_equivalent": false,
+    "savings_claimable": false,
+    "by_domain": {
+      "graphic-design": {
+        "valid_rounds": 2,
+        "rounds": 3,
+        "baseline_tokens": 180750,
+        "uap_tokens": 191084,
+        "reduction_percent": -5.72,
+        "quality_passed": false
+      },
+      "three-d-design": {
+        "valid_rounds": 3,
+        "rounds": 3,
+        "baseline_tokens": 227744,
+        "uap_tokens": 377656,
+        "reduction_percent": -65.82,
+        "quality_passed": true
+      }
+    }
+  }
+}
