@@ -89,7 +89,7 @@ class GoalAnalyzer:
         complexity = self._complexity(text, capabilities, risk, evidence)
         read_only = self._read_only(text, evidence)
         gates = self._approval_gates(text, profiles, evidence)
-        artifacts = self._artifacts(text, profiles)
+        artifacts = self._artifacts(text, profiles, active_profiles)
 
         floor = {Complexity.TRIVIAL: Level.LOW, Complexity.SMALL: Level.LOW,
                  Complexity.NORMAL: Level.MEDIUM, Complexity.COMPLEX: Level.HIGH,
@@ -183,11 +183,14 @@ class GoalAnalyzer:
                 evidence.append(f"Requires the {gate} approval gate ({hit!r} in the goal).")
         return sorted(set(gates))
 
-    def _artifacts(self, text: str, profiles: Sequence[str]) -> list[str]:
+    def _artifacts(self, text: str, profiles: Sequence[str],
+                   active_profiles: Sequence[str] = ()) -> list[str]:
         found = {kind for kind, phrases in (self.lexicon.get("artifacts") or {}).items()
                  if any(_contains(text, phrase) for phrase in phrases)}
         if not found and self.profiles is not None:
-            for profile_id in profiles:
+            declared, _ = self.profiles.resolve([str(item) for item in active_profiles])
+            source_profiles = [profile.id for profile in declared] or list(profiles)
+            for profile_id in source_profiles:
                 profile = self.profiles.get(profile_id)
                 if profile:
                     found.update(profile.artifact_types)

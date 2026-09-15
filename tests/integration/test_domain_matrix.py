@@ -104,6 +104,7 @@ def test_design_follow_up_inherits_active_profile_without_repeating_domain_words
         "mock", profiles=["design"])
     assert plan["analysis"]["inferred"] is True
     assert _agents(plan)[0]["agent"] == "visual_designer"
+    assert _agents(plan)[0]["artifact_type"] == "design_asset"
     assert any("explicitly active" in line for line in plan["analysis"]["evidence"])
 
 
