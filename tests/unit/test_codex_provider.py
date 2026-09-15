@@ -408,6 +408,7 @@ def test_app_server_accepts_original_turn_completion_after_steer(monkeypatch, tm
             self.stdout = Reader((json.dumps(event) + "\n").encode() for event in server_events)
             self.stderr = Reader()
             self.returncode = None
+            self.subprocess_options = {}
         def terminate(self):
             self.returncode = -15
         async def wait(self):
@@ -417,6 +418,7 @@ def test_app_server_accepts_original_turn_completion_after_steer(monkeypatch, tm
 
     process = Process()
     async def create(*args, **kwargs):
+        process.subprocess_options.update(kwargs)
         return process
     monkeypatch.setattr(asyncio, "create_subprocess_exec", create)
     provider = CodexProvider(command_prefix=["fake"], capabilities=CodexCapabilities(
@@ -427,6 +429,7 @@ def test_app_server_accepts_original_turn_completion_after_steer(monkeypatch, tm
         lambda: True, model="model", reasoning="low", read_only=False))
     requests = [json.loads(value) for value in process.stdin.values]
     assert code == 0
+    assert process.subprocess_options["limit"] == 8 * 1024 * 1024
     assert [item["method"] for item in requests] == [
         "initialize", "initialized", "thread/start", "turn/start", "turn/steer"]
     assert requests[-1]["params"]["expectedTurnId"] == "turn-live"

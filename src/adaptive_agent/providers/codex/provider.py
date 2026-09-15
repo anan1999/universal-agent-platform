@@ -531,6 +531,9 @@ class CodexProvider(AIProvider):
             stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE, cwd=str(working_directory),
             env=self.child_environment(),
+            # Completed file-change items can legitimately exceed asyncio's
+            # 64 KiB default even when delta notifications are disabled.
+            limit=8 * 1024 * 1024,
         )
         assert process.stdin is not None and process.stdout is not None
         stderr_task = asyncio.create_task(process.stderr.read())
