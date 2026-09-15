@@ -1,0 +1,266 @@
+{
+  "suite": "reuse-first-scale-v1",
+  "schema_version": 1,
+  "environment": {
+    "uap": "2.3.1",
+    "commit": "da94c6aa4a97a9ffb3558e33203cf6a3ce386cb4",
+    "execution_commit": "da94c6aa4a97a9ffb3558e33203cf6a3ce386cb4",
+    "provider": "codex",
+    "model": "gpt-6-astra",
+    "reasoning": "low",
+    "source_hash": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be"
+  },
+  "prepared_fixture": {
+    "source_hash": "517495ad8bbfae103bbb69bc502bce99878132ed8afbbf27eb97de46db7848be",
+    "prepared_path": "prepared/base",
+    "reused": true
+  },
+  "same_uap_execution_path": true,
+  "only_variable": "reusable_context_enabled",
+  "pairs": [
+    {
+      "task_id": "small",
+      "scale": 1,
+      "round": 1,
+      "order": [
+        "disabled",
+        "enabled"
+      ],
+      "goal": "Add a GET /reports/summary API endpoint that returns the expense count and total spending. Preserve existing expense behavior and validate the work.",
+      "acceptance_contract": "context-cache-summary-v1",
+      "baseline": {
+        "provider_status": "completed",
+        "provider": "codex",
+        "model": "gpt-6-astra",
+        "input_tokens": 79937,
+        "cached_input_tokens": 65280,
+        "non_cached_input_tokens": 14657,
+        "output_tokens": 1332,
+        "reasoning_output_tokens": 13,
+        "cache_write_input_tokens": 0,
+        "total_tokens": 81269,
+        "token_source": "measured",
+        "usage_complete": true,
+        "duration_seconds": 77.093,
+        "ai_invocations": 1,
+        "provider_tool_calls": 3,
+        "provider_messages": 2,
+        "completion": {
+          "artifact": "completed",
+          "provider": "completed",
+          "reason": "steered_after_external_completion_probe"
+        },
+        "provider_protocol_status": "completed",
+        "files_read": "UNAVAILABLE",
+        "files_changed": [
+          "README.md",
+          "app/main.py",
+          "tests/test_expenses.py"
+        ],
+        "error": "Local test execution was blocked; acceptance success was reported by the user.",
+        "status": "completed",
+        "quality": {
+          "passed": true,
+          "contract": "context-cache-summary-v1",
+          "error": null,
+          "returncode": 0
+        },
+        "post_source_hash": "568dcd46ca271874652041910f972b23bd73c3cf89db301189cce311bf8dcd32",
+        "resumed": true,
+        "project_context_chars": 0,
+        "relevant_paths": [],
+        "pre_task_ai_calls": 0,
+        "orchestration_wall_ms": 11433.651
+      },
+      "uap": {
+        "provider_status": "completed",
+        "provider": "codex",
+        "model": "gpt-6-astra",
+        "input_tokens": 102391,
+        "cached_input_tokens": 78464,
+        "non_cached_input_tokens": 23927,
+        "output_tokens": 1480,
+        "reasoning_output_tokens": 26,
+        "cache_write_input_tokens": 0,
+        "total_tokens": 103871,
+        "token_source": "measured",
+        "usage_complete": true,
+        "duration_seconds": 90.281,
+        "ai_invocations": 1,
+        "provider_tool_calls": 4,
+        "provider_messages": 3,
+        "completion": {
+          "artifact": "completed",
+          "provider": "completed",
+          "reason": "steered_after_external_completion_probe"
+        },
+        "provider_protocol_status": "completed",
+        "files_read": "UNAVAILABLE",
+        "files_changed": [
+          "README.md",
+          "app/main.py",
+          "pyproject.toml",
+          "tests/test_reports.py"
+        ],
+        "error": "Local summary tests were blocked by filesystem permissions; external acceptance passed per user report.",
+        "status": "completed",
+        "quality": {
+          "passed": true,
+          "contract": "context-cache-summary-v1",
+          "error": null,
+          "returncode": 0
+        },
+        "post_source_hash": "0ec79efe690687423a0a22052825bc9717172e025737dcabd8095b238922c455",
+        "resumed": false,
+        "project_context_chars": 608,
+        "relevant_paths": [
+          "app/"
+        ],
+        "pre_task_ai_calls": 0,
+        "orchestration_wall_ms": 10954.967
+      },
+      "equal_quality": true,
+      "decision_evidence": {
+        "measured_complete_tokens": true,
+        "fewer_tokens": false,
+        "equal_tokens": false,
+        "materially_faster_10_percent": false
+      },
+      "conclusion": "NO",
+      "claim": "no benefit claim is supported by this pair"
+    }
+  ],
+  "summary": {
+    "selected_tasks": 1,
+    "rounds": 1,
+    "pairs": 1,
+    "provider_calls_max": 2,
+    "provider_calls_actual": 1,
+    "conclusive_pairs": 1,
+    "yes": 0,
+    "no": 1,
+    "inconclusive": 0,
+    "observed": {
+      "accepted_pairs": 1,
+      "uap_faster_pairs": 0,
+      "baseline_duration_seconds": 77.093,
+      "uap_duration_seconds": 90.281,
+      "uap_duration_reduction_percent": -17.11,
+      "baseline_tool_calls": 3,
+      "uap_tool_calls": 4,
+      "artifact_probe_stops": 0,
+      "provider_timeouts": 0,
+      "complete_measured_pairs": 1,
+      "token_comparison_available": true
+    }
+  },
+  "task_id": "small",
+  "scale": 1,
+  "round": 1,
+  "order": [
+    "disabled",
+    "enabled"
+  ],
+  "goal": "Add a GET /reports/summary API endpoint that returns the expense count and total spending. Preserve existing expense behavior and validate the work.",
+  "acceptance_contract": "context-cache-summary-v1",
+  "baseline": {
+    "provider_status": "completed",
+    "provider": "codex",
+    "model": "gpt-6-astra",
+    "input_tokens": 79937,
+    "cached_input_tokens": 65280,
+    "non_cached_input_tokens": 14657,
+    "output_tokens": 1332,
+    "reasoning_output_tokens": 13,
+    "cache_write_input_tokens": 0,
+    "total_tokens": 81269,
+    "token_source": "measured",
+    "usage_complete": true,
+    "duration_seconds": 77.093,
+    "ai_invocations": 1,
+    "provider_tool_calls": 3,
+    "provider_messages": 2,
+    "completion": {
+      "artifact": "completed",
+      "provider": "completed",
+      "reason": "steered_after_external_completion_probe"
+    },
+    "provider_protocol_status": "completed",
+    "files_read": "UNAVAILABLE",
+    "files_changed": [
+      "README.md",
+      "app/main.py",
+      "tests/test_expenses.py"
+    ],
+    "error": "Local test execution was blocked; acceptance success was reported by the user.",
+    "status": "completed",
+    "quality": {
+      "passed": true,
+      "contract": "context-cache-summary-v1",
+      "error": null,
+      "returncode": 0
+    },
+    "post_source_hash": "568dcd46ca271874652041910f972b23bd73c3cf89db301189cce311bf8dcd32",
+    "resumed": true,
+    "project_context_chars": 0,
+    "relevant_paths": [],
+    "pre_task_ai_calls": 0,
+    "orchestration_wall_ms": 11433.651
+  },
+  "uap": {
+    "provider_status": "completed",
+    "provider": "codex",
+    "model": "gpt-6-astra",
+    "input_tokens": 102391,
+    "cached_input_tokens": 78464,
+    "non_cached_input_tokens": 23927,
+    "output_tokens": 1480,
+    "reasoning_output_tokens": 26,
+    "cache_write_input_tokens": 0,
+    "total_tokens": 103871,
+    "token_source": "measured",
+    "usage_complete": true,
+    "duration_seconds": 90.281,
+    "ai_invocations": 1,
+    "provider_tool_calls": 4,
+    "provider_messages": 3,
+    "completion": {
+      "artifact": "completed",
+      "provider": "completed",
+      "reason": "steered_after_external_completion_probe"
+    },
+    "provider_protocol_status": "completed",
+    "files_read": "UNAVAILABLE",
+    "files_changed": [
+      "README.md",
+      "app/main.py",
+      "pyproject.toml",
+      "tests/test_reports.py"
+    ],
+    "error": "Local summary tests were blocked by filesystem permissions; external acceptance passed per user report.",
+    "status": "completed",
+    "quality": {
+      "passed": true,
+      "contract": "context-cache-summary-v1",
+      "error": null,
+      "returncode": 0
+    },
+    "post_source_hash": "0ec79efe690687423a0a22052825bc9717172e025737dcabd8095b238922c455",
+    "resumed": false,
+    "project_context_chars": 608,
+    "relevant_paths": [
+      "app/"
+    ],
+    "pre_task_ai_calls": 0,
+    "orchestration_wall_ms": 10954.967
+  },
+  "equal_quality": true,
+  "decision_evidence": {
+    "measured_complete_tokens": true,
+    "fewer_tokens": false,
+    "equal_tokens": false,
+    "materially_faster_10_percent": false
+  },
+  "conclusion": "NO",
+  "claim": "no benefit claim is supported by this pair"
+}
