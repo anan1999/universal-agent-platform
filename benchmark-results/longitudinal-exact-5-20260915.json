@@ -1,0 +1,779 @@
+{
+  "environment": {
+    "uap": "2.3.1",
+    "commit": "4276959fb3ec930be83a263bcba9184d3f2bb188",
+    "provider": "codex",
+    "model": "gpt-6-astra",
+    "reasoning": "low",
+    "rounds": 5,
+    "max_provider_calls": 10,
+    "canonical_source": "baseline",
+    "date": "2026-09-15T04:12:03Z"
+  },
+  "tasks": [
+    {
+      "task_number": 1,
+      "goal": "Implement the backend foundation for a personal expense app: FastAPI, SQLite, an Expense model, CRUD API, and backend tests.",
+      "baseline": {
+        "status": "completed",
+        "provider": "codex",
+        "model": "gpt-6-astra",
+        "reasoning": "low",
+        "input_tokens": 121477,
+        "cached_input": 111232,
+        "output_tokens": 3434,
+        "token_source": "measured",
+        "usage_complete": true,
+        "ai_invocations": 1,
+        "handoffs": 0,
+        "deterministic_tool_calls": 0,
+        "files_explored": {
+          "value": null,
+          "source": "unavailable"
+        },
+        "skill_context_tokens": 0,
+        "knowledge_context_tokens": 0,
+        "decision_context_items": 0,
+        "duration_seconds": 186.26600000000326,
+        "retries": 0,
+        "files_modified": [],
+        "error": null,
+        "summary": "External acceptance passed; Codex reached a controlled terminal stop.",
+        "findings": [],
+        "uncertainty_reason": "",
+        "needs_escalation": false,
+        "source_changed": true
+      },
+      "uap": {
+        "run_id": "RUN-8D605B1894",
+        "status": "completed",
+        "provider": "codex",
+        "model": [
+          "gpt-6-astra"
+        ],
+        "input_tokens": 104215,
+        "cached_input": 80128,
+        "output_tokens": 3364,
+        "token_source": "measured",
+        "usage_complete": true,
+        "ai_invocations": 1,
+        "retries": 0,
+        "duration_seconds": 185.78200000000652,
+        "handoffs": 0,
+        "deterministic_tool_calls": 1,
+        "files_explored": {
+          "value": null,
+          "source": "unavailable"
+        },
+        "skill_context_tokens": 0,
+        "decision_context_items": 0,
+        "files_modified": [
+          "README.md",
+          "app/__init__.py",
+          "app/main.py",
+          "pyproject.toml",
+          "tests/test_expenses.py"
+        ],
+        "temperature": "warm",
+        "reuse_hits": 0,
+        "rediscovery": 0,
+        "knowledge_context_chars": 440,
+        "knowledge_context_tokens_estimated": 110,
+        "source_changed": true
+      },
+      "baseline_tokens": 124911,
+      "uap_tokens": 107579,
+      "cumulative_baseline": 124911,
+      "cumulative_uap": 107579,
+      "quality": {
+        "baseline": {
+          "passed": true,
+          "checks": [
+            {
+              "name": "pytest",
+              "passed": true
+            },
+            {
+              "name": "backend",
+              "passed": true
+            }
+          ],
+          "duration_seconds": 3.0160000000032596,
+          "stdout": "............                                                             [100%]\n============================== warnings summary ===============================\n..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1\n  C:\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n12 passed, 1 warning in 1.34s\n",
+          "stderr": ""
+        },
+        "uap": {
+          "passed": true,
+          "checks": [
+            {
+              "name": "pytest",
+              "passed": true
+            },
+            {
+              "name": "backend",
+              "passed": true
+            }
+          ],
+          "duration_seconds": 4.046999999962281,
+          "stdout": "...............                                                          [100%]\n============================== warnings summary ===============================\n..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1\n  C:\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n15 passed, 1 warning in 2.29s\n",
+          "stderr": ""
+        }
+      },
+      "reuse_hits": 0,
+      "rediscovery": 0,
+      "cold_or_warm": "warm",
+      "comparison_valid": true,
+      "canonical_source": "baseline",
+      "paired_source_files": 4
+    },
+    {
+      "task_number": 2,
+      "goal": "Implement a compact React expense dashboard that calls the existing API and handles loading and error states.",
+      "baseline": {
+        "status": "completed",
+        "provider": "codex",
+        "model": "gpt-6-astra",
+        "reasoning": "low",
+        "input_tokens": 267491,
+        "cached_input": 236800,
+        "output_tokens": 4610,
+        "token_source": "measured",
+        "usage_complete": true,
+        "ai_invocations": 1,
+        "handoffs": 0,
+        "deterministic_tool_calls": 0,
+        "files_explored": {
+          "value": null,
+          "source": "unavailable"
+        },
+        "skill_context_tokens": 0,
+        "knowledge_context_tokens": 0,
+        "decision_context_items": 0,
+        "duration_seconds": 221.93800000002375,
+        "retries": 0,
+        "files_modified": [
+          "frontend/package.json",
+          "frontend/index.html",
+          "frontend/vite.config.js",
+          "frontend/src/main.jsx",
+          "frontend/src/api.js",
+          "frontend/src/style.css",
+          "frontend/tests/api.test.js",
+          ".gitignore",
+          "README.md"
+        ],
+        "error": null,
+        "summary": "Implemented a compact React expense dashboard connected to the existing API. External acceptance passed.",
+        "findings": [
+          "Added responsive expense listing, pagination, page totals, and category summaries.",
+          "Added loading, empty, error, retry, refresh, and request cancellation handling.",
+          "Local validation was limited: npm was unavailable, Node tests encountered spawn EPERM, and pytest reported 9 passed with 3 temporary-directory permission errors.",
+          "Stopped further validation as instructed after external acceptance passed."
+        ],
+        "uncertainty_reason": "Frontend build and local test execution were constrained by the environment; external acceptance was confirmed by the user.",
+        "needs_escalation": false,
+        "source_changed": true
+      },
+      "uap": {
+        "run_id": "RUN-94D89877D8",
+        "status": "completed",
+        "provider": "codex",
+        "model": [
+          "gpt-6-astra"
+        ],
+        "input_tokens": 111137,
+        "cached_input": 84480,
+        "output_tokens": 4080,
+        "token_source": "measured",
+        "usage_complete": true,
+        "ai_invocations": 1,
+        "retries": 0,
+        "duration_seconds": 207.5470000000205,
+        "handoffs": 0,
+        "deterministic_tool_calls": 1,
+        "files_explored": {
+          "value": null,
+          "source": "unavailable"
+        },
+        "skill_context_tokens": 0,
+        "decision_context_items": 0,
+        "files_modified": [],
+        "temperature": "warm",
+        "reuse_hits": 1,
+        "rediscovery": 0,
+        "knowledge_context_chars": 688,
+        "knowledge_context_tokens_estimated": 172,
+        "source_changed": true
+      },
+      "baseline_tokens": 272101,
+      "uap_tokens": 115217,
+      "cumulative_baseline": 397012,
+      "cumulative_uap": 222796,
+      "quality": {
+        "baseline": {
+          "passed": true,
+          "checks": [
+            {
+              "name": "pytest",
+              "passed": true
+            },
+            {
+              "name": "backend",
+              "passed": true
+            },
+            {
+              "name": "react dashboard",
+              "passed": true
+            }
+          ],
+          "duration_seconds": 2.327999999979511,
+          "stdout": "............                                                             [100%]\n============================== warnings summary ===============================\n..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1\n  C:\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n12 passed, 1 warning in 1.10s\n",
+          "stderr": ""
+        },
+        "uap": {
+          "passed": true,
+          "checks": [
+            {
+              "name": "pytest",
+              "passed": true
+            },
+            {
+              "name": "backend",
+              "passed": true
+            },
+            {
+              "name": "react dashboard",
+              "passed": true
+            }
+          ],
+          "duration_seconds": 2.3130000000237487,
+          "stdout": "............                                                             [100%]\n============================== warnings summary ===============================\n..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1\n  C:\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n12 passed, 1 warning in 1.07s\n",
+          "stderr": ""
+        }
+      },
+      "reuse_hits": 1,
+      "rediscovery": 0,
+      "cold_or_warm": "warm",
+      "comparison_valid": true,
+      "canonical_source": "baseline",
+      "paired_source_files": 10
+    },
+    {
+      "task_number": 3,
+      "goal": "Add GET /exports/expenses.csv with columns id,amount,category,description,date, add a dashboard download link to that exact endpoint, and add deterministic tests.",
+      "baseline": {
+        "status": "completed",
+        "provider": "codex",
+        "model": "gpt-6-astra",
+        "reasoning": "low",
+        "input_tokens": 135381,
+        "cached_input": 107264,
+        "output_tokens": 1895,
+        "token_source": "measured",
+        "usage_complete": true,
+        "ai_invocations": 1,
+        "handoffs": 0,
+        "deterministic_tool_calls": 0,
+        "files_explored": {
+          "value": null,
+          "source": "unavailable"
+        },
+        "skill_context_tokens": 0,
+        "knowledge_context_tokens": 0,
+        "decision_context_items": 0,
+        "duration_seconds": 134.125,
+        "retries": 0,
+        "files_modified": [],
+        "error": null,
+        "summary": "External acceptance passed; Codex reached a controlled terminal stop.",
+        "findings": [],
+        "uncertainty_reason": "",
+        "needs_escalation": false,
+        "source_changed": true
+      },
+      "uap": {
+        "run_id": "RUN-E7AC64770F",
+        "status": "completed",
+        "provider": "codex",
+        "model": [
+          "gpt-6-astra"
+        ],
+        "input_tokens": 128723,
+        "cached_input": 84096,
+        "output_tokens": 1733,
+        "token_source": "measured",
+        "usage_complete": true,
+        "ai_invocations": 1,
+        "retries": 0,
+        "duration_seconds": 117.10999999998603,
+        "handoffs": 0,
+        "deterministic_tool_calls": 1,
+        "files_explored": {
+          "value": null,
+          "source": "unavailable"
+        },
+        "skill_context_tokens": 0,
+        "decision_context_items": 0,
+        "files_modified": [],
+        "temperature": "warm",
+        "reuse_hits": 0,
+        "rediscovery": 0,
+        "knowledge_context_chars": 440,
+        "knowledge_context_tokens_estimated": 110,
+        "source_changed": true
+      },
+      "baseline_tokens": 137276,
+      "uap_tokens": 130456,
+      "cumulative_baseline": 534288,
+      "cumulative_uap": 353252,
+      "quality": {
+        "baseline": {
+          "passed": true,
+          "checks": [
+            {
+              "name": "pytest",
+              "passed": true
+            },
+            {
+              "name": "backend",
+              "passed": true
+            },
+            {
+              "name": "react dashboard",
+              "passed": true
+            },
+            {
+              "name": "csv export",
+              "passed": true
+            },
+            {
+              "name": "csv download link",
+              "passed": true
+            }
+          ],
+          "duration_seconds": 9.577999999979511,
+          "stdout": "..............                                                           [100%]\n============================== warnings summary ===============================\n..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1\n  C:\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n14 passed, 1 warning in 4.73s\n",
+          "stderr": ""
+        },
+        "uap": {
+          "passed": true,
+          "checks": [
+            {
+              "name": "pytest",
+              "passed": true
+            },
+            {
+              "name": "backend",
+              "passed": true
+            },
+            {
+              "name": "react dashboard",
+              "passed": true
+            },
+            {
+              "name": "csv export",
+              "passed": true
+            },
+            {
+              "name": "csv download link",
+              "passed": true
+            }
+          ],
+          "duration_seconds": 9.953000000037719,
+          "stdout": "..............                                                           [100%]\n============================== warnings summary ===============================\n..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1\n  C:\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n14 passed, 1 warning in 4.96s\n",
+          "stderr": ""
+        }
+      },
+      "reuse_hits": 0,
+      "rediscovery": 0,
+      "cold_or_warm": "warm",
+      "comparison_valid": true,
+      "canonical_source": "baseline",
+      "paired_source_files": 17
+    },
+    {
+      "task_number": 4,
+      "goal": "Add GET /reports/monthly/{month} returning exactly month, total, and by_category, with money represented as two-decimal strings; include only dates inside that calendar month and add boundary regression tests.",
+      "baseline": {
+        "status": "completed",
+        "provider": "codex",
+        "model": "gpt-6-astra",
+        "reasoning": "low",
+        "input_tokens": 155042,
+        "cached_input": 128256,
+        "output_tokens": 2025,
+        "token_source": "measured",
+        "usage_complete": true,
+        "ai_invocations": 1,
+        "handoffs": 0,
+        "deterministic_tool_calls": 0,
+        "files_explored": {
+          "value": null,
+          "source": "unavailable"
+        },
+        "skill_context_tokens": 0,
+        "knowledge_context_tokens": 0,
+        "decision_context_items": 0,
+        "duration_seconds": 117.65600000001723,
+        "retries": 0,
+        "files_modified": [
+          "app/main.py",
+          "app/models.py",
+          "tests/test_reports.py"
+        ],
+        "error": null,
+        "summary": "Added GET /reports/monthly/{month} with exact response fields and calendar-month filtering.",
+        "findings": [
+          "Returns exactly month, total, and by_category, with monetary values formatted as two-decimal strings.",
+          "Regression tests cover adjacent-month exclusion, first and last days, leap years, year transitions, empty reports, and invalid months.",
+          "Validation passed: 29 tests. External acceptance also passed."
+        ],
+        "uncertainty_reason": "",
+        "needs_escalation": false,
+        "source_changed": true
+      },
+      "uap": {
+        "run_id": "RUN-712C414B91",
+        "status": "completed",
+        "provider": "codex",
+        "model": [
+          "gpt-6-astra"
+        ],
+        "input_tokens": 132183,
+        "cached_input": 105088,
+        "output_tokens": 1660,
+        "token_source": "measured",
+        "usage_complete": true,
+        "ai_invocations": 1,
+        "retries": 0,
+        "duration_seconds": 148.60899999999674,
+        "handoffs": 0,
+        "deterministic_tool_calls": 1,
+        "files_explored": {
+          "value": null,
+          "source": "unavailable"
+        },
+        "skill_context_tokens": 0,
+        "decision_context_items": 0,
+        "files_modified": [],
+        "temperature": "warm",
+        "reuse_hits": 0,
+        "rediscovery": 0,
+        "knowledge_context_chars": 440,
+        "knowledge_context_tokens_estimated": 110,
+        "source_changed": true
+      },
+      "baseline_tokens": 157067,
+      "uap_tokens": 133843,
+      "cumulative_baseline": 691355,
+      "cumulative_uap": 487095,
+      "quality": {
+        "baseline": {
+          "passed": true,
+          "checks": [
+            {
+              "name": "pytest",
+              "passed": true
+            },
+            {
+              "name": "backend",
+              "passed": true
+            },
+            {
+              "name": "react dashboard",
+              "passed": true
+            },
+            {
+              "name": "csv export",
+              "passed": true
+            },
+            {
+              "name": "csv download link",
+              "passed": true
+            },
+            {
+              "name": "monthly boundary contract",
+              "passed": true
+            }
+          ],
+          "duration_seconds": 14.125,
+          "stdout": ".............................                                            [100%]\n============================== warnings summary ===============================\n..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1\n  C:\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n29 passed, 1 warning in 8.19s\n",
+          "stderr": ""
+        },
+        "uap": {
+          "passed": true,
+          "checks": [
+            {
+              "name": "pytest",
+              "passed": true
+            },
+            {
+              "name": "backend",
+              "passed": true
+            },
+            {
+              "name": "react dashboard",
+              "passed": true
+            },
+            {
+              "name": "csv export",
+              "passed": true
+            },
+            {
+              "name": "csv download link",
+              "passed": true
+            },
+            {
+              "name": "monthly boundary contract",
+              "passed": true
+            }
+          ],
+          "duration_seconds": 12.10899999999674,
+          "stdout": "..............................                                           [100%]\n============================== warnings summary ===============================\n..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1\n  C:\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n30 passed, 1 warning in 5.91s\n",
+          "stderr": ""
+        }
+      },
+      "reuse_hits": 0,
+      "rediscovery": 0,
+      "cold_or_warm": "warm",
+      "comparison_valid": true,
+      "canonical_source": "baseline",
+      "paired_source_files": 19
+    },
+    {
+      "task_number": 5,
+      "goal": "Add a dashboard month input that calls /reports/monthly/{month} and renders the returned total and by_category breakdown, with deterministic tests.",
+      "baseline": {
+        "status": "completed",
+        "provider": "codex",
+        "model": "gpt-6-astra",
+        "reasoning": "low",
+        "input_tokens": 132339,
+        "cached_input": 105472,
+        "output_tokens": 2911,
+        "token_source": "measured",
+        "usage_complete": true,
+        "ai_invocations": 1,
+        "handoffs": 0,
+        "deterministic_tool_calls": 0,
+        "files_explored": {
+          "value": null,
+          "source": "unavailable"
+        },
+        "skill_context_tokens": 0,
+        "knowledge_context_tokens": 0,
+        "decision_context_items": 0,
+        "duration_seconds": 133.17199999996228,
+        "retries": 0,
+        "files_modified": [],
+        "error": null,
+        "summary": "External acceptance passed; Codex reached a controlled terminal stop.",
+        "findings": [],
+        "uncertainty_reason": "",
+        "needs_escalation": false,
+        "source_changed": true
+      },
+      "uap": {
+        "run_id": "RUN-5B14807E1F",
+        "status": "completed",
+        "provider": "codex",
+        "model": [
+          "gpt-6-astra"
+        ],
+        "input_tokens": 114244,
+        "cached_input": 86656,
+        "output_tokens": 2546,
+        "token_source": "measured",
+        "usage_complete": true,
+        "ai_invocations": 1,
+        "retries": 0,
+        "duration_seconds": 124.31300000002375,
+        "handoffs": 0,
+        "deterministic_tool_calls": 1,
+        "files_explored": {
+          "value": null,
+          "source": "unavailable"
+        },
+        "skill_context_tokens": 0,
+        "decision_context_items": 0,
+        "files_modified": [],
+        "error": null,
+        "temperature": "warm",
+        "reuse_hits": 0,
+        "rediscovery": 0,
+        "knowledge_context_chars": 477,
+        "knowledge_context_tokens_estimated": 120,
+        "source_changed": true
+      },
+      "baseline_tokens": 135250,
+      "uap_tokens": 116790,
+      "cumulative_baseline": 826605,
+      "cumulative_uap": 603885,
+      "quality": {
+        "baseline": {
+          "passed": true,
+          "checks": [
+            {
+              "name": "pytest",
+              "passed": true
+            },
+            {
+              "name": "backend",
+              "passed": true
+            },
+            {
+              "name": "react dashboard",
+              "passed": true
+            },
+            {
+              "name": "csv export",
+              "passed": true
+            },
+            {
+              "name": "csv download link",
+              "passed": true
+            },
+            {
+              "name": "monthly boundary contract",
+              "passed": true
+            },
+            {
+              "name": "monthly dashboard request",
+              "passed": true
+            },
+            {
+              "name": "month input",
+              "passed": true
+            },
+            {
+              "name": "category breakdown",
+              "passed": true
+            }
+          ],
+          "duration_seconds": 9.53100000001723,
+          "stdout": ".............................                                            [100%]\n============================== warnings summary ===============================\n..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1\n  C:\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n29 passed, 1 warning in 4.84s\n",
+          "stderr": ""
+        },
+        "uap": {
+          "passed": true,
+          "checks": [
+            {
+              "name": "pytest",
+              "passed": true
+            },
+            {
+              "name": "backend",
+              "passed": true
+            },
+            {
+              "name": "react dashboard",
+              "passed": true
+            },
+            {
+              "name": "csv export",
+              "passed": true
+            },
+            {
+              "name": "csv download link",
+              "passed": true
+            },
+            {
+              "name": "monthly boundary contract",
+              "passed": true
+            },
+            {
+              "name": "monthly dashboard request",
+              "passed": true
+            },
+            {
+              "name": "month input",
+              "passed": true
+            },
+            {
+              "name": "category breakdown",
+              "passed": true
+            }
+          ],
+          "duration_seconds": 9.73499999998603,
+          "stdout": ".............................                                            [100%]\n============================== warnings summary ===============================\n..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1\n  C:\\Python311\\Lib\\site-packages\\fastapi\\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n29 passed, 1 warning in 4.95s\n",
+          "stderr": ""
+        }
+      },
+      "reuse_hits": 0,
+      "rediscovery": 0,
+      "cold_or_warm": "warm",
+      "comparison_valid": true,
+      "canonical_source": "baseline",
+      "paired_source_files": 20
+    }
+  ],
+  "cumulative": {
+    "baseline_tokens": 826605,
+    "uap_tokens": 603885,
+    "break_even_task": 1,
+    "paired_measurement_claimable": true,
+    "savings_claimable": true,
+    "learning_reuse_validated": true,
+    "learning_savings_claimable": true,
+    "comparison_valid_tasks": 5
+  },
+  "intelligence": {
+    "measurement_source": "paired task receipts and project index",
+    "project_index_present": true,
+    "project_index_sources": 2,
+    "benchmark_runs": 5,
+    "warm_runs": 5,
+    "revalidation_runs": 0,
+    "reuse_hits": 1,
+    "rediscovery": 0,
+    "decision_context_items": 0,
+    "legacy_store": {
+      "schema_version": 1,
+      "level": 0,
+      "level_name": "unknown",
+      "items": 0,
+      "current": 0,
+      "counts": {
+        "knowledge": 0,
+        "decision": 0,
+        "skill": 0,
+        "agent": 0,
+        "command": 0,
+        "evaluation": 0,
+        "artifact": 0,
+        "known_issue": 0,
+        "task_history": 0,
+        "receipt": 0
+      },
+      "runs": 0,
+      "reuse_hits": 0,
+      "reusable_intelligence_hits": 0,
+      "validated_reusable_hits": 0,
+      "historical": {
+        "receipt": 0,
+        "task_history": 0
+      },
+      "typed_reuse_hits": {
+        "decision": 0,
+        "knowledge": 0,
+        "command": 0,
+        "evaluation": 0,
+        "agent": 0,
+        "skill": 0,
+        "known_issue": 0
+      },
+      "selected_only": 0,
+      "selected_reuse_hits": 0,
+      "validated_reuse": 0,
+      "knowledge_created": 0,
+      "skill_reuse_hits": 0,
+      "agent_reuse_hits": 0,
+      "rediscovery_count": 0,
+      "context_chars": 0,
+      "estimated_context_tokens": 0,
+      "cold_runs": 0,
+      "warm_runs": 0,
+      "revalidation_runs": 0
+    }
+  }
+}
