@@ -90,6 +90,8 @@ def arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="PocketFlow real-provider longitudinal benchmark")
     parser.add_argument("--execute", action="store_true", help="confirm that real provider quota may be used")
     parser.add_argument("--dry-run", action="store_true", help="validate all task plans without provider execution")
+    parser.add_argument("--audit-existing", action="store_true",
+                        help="re-score retained paired artifacts without provider execution")
     parser.add_argument("--resume", action="store_true", help="continue from a retained paired-task checkpoint")
     parser.add_argument("--provider", required=True, help="explicit real provider id (Mock is forbidden)")
     parser.add_argument("--model", help="provider model override when supported")
@@ -458,6 +460,19 @@ def render_report(payload: dict[str, Any]) -> str:
                   f"- Status: {stopped.get('status') or 'unknown'}",
                   f"- Error: {stopped.get('error') or 'none'}",
                   f"- Detail: {stopped.get('summary') or stopped.get('message') or 'unavailable'}", ""]
+    if payload.get("posthoc_quality_audit"):
+        audit = payload["posthoc_quality_audit"]
+        lines += ["## Post-hoc independent quality audit", "",
+                  f"- Audited tasks: {', '.join(str(item['task_number']) for item in audit['tasks'])}",
+                  f"- Quality equivalent: {audit['quality_equivalent']}",
+                  f"- Quality-adjusted savings claimable: "
+                  f"{payload['cumulative'].get('quality_adjusted_savings_claimable', False)}"]
+        for item in audit["tasks"]:
+            lines += [f"- Task {item['task_number']}: baseline={item['baseline']['score']}/100 "
+                      f"({'PASS' if item['baseline']['passed'] else 'FAIL'}), "
+                      f"UAP={item['uap']['score']}/100 "
+                      f"({'PASS' if item['uap']['passed'] else 'FAIL'})"]
+        lines += [f"- Limitation: {audit['limitation']}", ""]
     baseline_total = int(payload["cumulative"]["baseline_tokens"])
     uap_total = int(payload["cumulative"]["uap_tokens"])
     total_reduction = ((baseline_total - uap_total) / baseline_total * 100
@@ -501,6 +516,43 @@ def longitudinal_intelligence(root: Path, tasks: list[dict[str, Any]]) -> dict[s
             int(item.get("uap", {}).get("decision_context_items", 0)) for item in tasks),
         "legacy_store": ProjectIntelligenceStore(root).status(),
     }
+
+
+def audit_existing(args: argparse.Namespace) -> dict[str, Any]:
+    """Independently audit source retained by an already completed benchmark."""
+    if not args.output.exists() or not args.workspace.exists():
+        raise SystemExit("Existing benchmark output and workspace are required for --audit-existing.")
+    payload = json.loads(args.output.read_text(encoding="utf-8"))
+    tasks = payload.get("tasks", [])
+    if not tasks:
+        raise SystemExit("Existing benchmark has no completed tasks to audit.")
+    latest = tasks[-1]
+    number = int(latest["task_number"])
+    root = args.workspace.resolve()
+    prior = root / "checkpoints" / f"task-{number - 1}"
+    if not prior.exists():
+        raise SystemExit(f"Task {number - 1} checkpoint is required for the retained-source audit.")
+    before = source_snapshot(prior)
+    rows: dict[str, Any] = {}
+    for side in ("baseline", "uap"):
+        quality = evaluate(root / side, number)
+        paths = changed_paths(before, source_snapshot(root / side))
+        attach_independent_quality(quality, number, paths)
+        rows[side] = quality["independent"]
+    quality_equivalent = bool(rows["baseline"]["passed"] and rows["uap"]["passed"])
+    payload["posthoc_quality_audit"] = {
+        "method": "deterministic_external_quality_v1",
+        "tasks": [{"task_number": number, **rows}],
+        "quality_equivalent": quality_equivalent,
+        "limitation": ("Only the latest paired arm artifacts remain available; earlier task arms "
+                       "were intentionally replaced by canonical checkpoints."),
+    }
+    payload.setdefault("cumulative", {})["quality_adjusted_savings_claimable"] = bool(
+        payload["cumulative"].get("savings_claimable") and quality_equivalent)
+    args.output.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    Path("docs/pocketflow-longitudinal-results.md").write_text(
+        render_report(payload), encoding="utf-8")
+    return payload
 
 
 def rollback_invalid_runs(db: Database, intelligence_root: Path,
@@ -895,6 +947,10 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
 
 def main() -> int:
     args = arguments()
+    if args.audit_existing:
+        payload = audit_existing(args)
+        print(json.dumps(payload["posthoc_quality_audit"], indent=2))
+        return 0
     if args.dry_run:
         print(json.dumps(dry_run(), indent=2))
         return 0 if dry_run()["ready_for_real_benchmark"] else 1
