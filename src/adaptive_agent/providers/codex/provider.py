@@ -12,6 +12,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any, Sequence
 
+from adaptive_agent import __version__
 from adaptive_agent.core.capabilities import Support
 from adaptive_agent.core.execution_packet import ExecutionPacket, ExecutionPacketBuilder
 from adaptive_agent.core.models import Receipt, Task
@@ -290,7 +291,12 @@ class CodexProvider(AIProvider):
             progress(1, f"Spawning Codex for {task.title}")
         try:
             budget = task.metadata.get("execution_budget", {})
-            if completion_probe is None:
+            if completion_probe is not None and task.metadata.get("codex_live_usage"):
+                returncode, stdout, stderr = await self._communicate_app_server(
+                    packet.render(), packet.working_directory, budget, completion_probe,
+                    model=str(model) if model else None, reasoning=task.reasoning,
+                    read_only=packet.read_only)
+            elif completion_probe is None:
                 returncode, stdout, stderr = await self._communicate(
                     args, packet.render(), packet.working_directory, budget)
             else:
@@ -355,6 +361,9 @@ class CodexProvider(AIProvider):
             return self._failure(task, CodexErrorCode.TIMEOUT, f"Codex exceeded {self.timeout:g}s timeout.", started, model=model)
         except OSError as error:
             return self._failure(task, CodexErrorCode.NOT_FOUND, str(error), started, model=model)
+        except RuntimeError as error:
+            return self._failure(task, CodexErrorCode.EXECUTION_FAILED,
+                                 self._bounded_error(str(error)), started, model=model)
         finally:
             schema_path.unlink(missing_ok=True)
         stderr_text = stderr.decode("utf-8", errors="replace")
@@ -395,11 +404,15 @@ class CodexProvider(AIProvider):
                 "filesystem access", "shell access", "command execution was rejected")):
             error_code = CodexErrorCode.CAPABILITY_UNAVAILABLE.value
             needs_escalation = False
+        completion = ({"artifact": "completed", "provider": "completed",
+                       "reason": "steered_after_external_completion_probe"}
+                      if self._has_completion_steer(stdout_text) else {})
         return Receipt(task_id=task.id, agent=task.owner, status=status, summary=result["summary"],
                        files=result.get("files", []), findings=result.get("findings", []), token_usage=token_usage,
                        confidence=result.get("confidence", "unknown"), uncertainty_reason=result.get("uncertainty_reason", ""),
                        needs_escalation=needs_escalation, error_code=error_code, provider=self.id,
                        model=str(model) if model else None,
+                       completion=completion,
                        learning_evidence=(result.get("learning_evidence", [])
                                           if isinstance(result.get("learning_evidence", []), list) else []),
                        duration_seconds=time.monotonic() - started)
@@ -501,6 +514,169 @@ class CodexProvider(AIProvider):
             raise
         return process.returncode or 0, stdout, stderr
 
+    async def _communicate_app_server(
+            self, prompt: str, working_directory: Path, budget: dict[str, Any] | None,
+            completion_probe: CompletionProbe, *, model: str | None, reasoning: str | None,
+            read_only: bool) -> tuple[int, bytes, bytes]:
+        """Run one turn over Codex app-server and retain live usage notifications."""
+        process = await asyncio.create_subprocess_exec(
+            *self.command_prefix, "app-server", "--listen", "stdio://",
+            stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE, cwd=str(working_directory),
+            env=self.child_environment(),
+        )
+        assert process.stdin is not None and process.stdout is not None
+        stderr_task = asyncio.create_task(process.stderr.read())
+        events: list[bytes] = []
+        request_id = 0
+        thread_id: str | None = None
+        turn_id: str | None = None
+        steered = False
+        completed = False
+        monitor = CodexEventBudget(
+            max_tool_calls=(budget or {}).get("max_provider_tool_calls"),
+            max_assistant_messages=(budget or {}).get("max_provider_messages"),
+        )
+
+        async def send(method: str, params: dict[str, Any] | None = None,
+                       *, notification: bool = False) -> int | None:
+            nonlocal request_id
+            payload: dict[str, Any] = {"method": method}
+            if params is not None:
+                payload["params"] = params
+            if not notification:
+                request_id += 1
+                payload["id"] = request_id
+            process.stdin.write((json.dumps(payload, separators=(",", ":")) + "\n").encode())
+            await process.stdin.drain()
+            return None if notification else request_id
+
+        async def response(expected: int) -> dict[str, Any]:
+            while True:
+                line = await process.stdout.readline()
+                if not line:
+                    raise RuntimeError("Codex app-server closed before responding")
+                events.append(line)
+                value = json.loads(line)
+                if value.get("id") == expected:
+                    if value.get("error"):
+                        raise RuntimeError(f"Codex app-server error: {value['error']}")
+                    return value.get("result", {})
+
+        async def artifact_is_complete() -> bool:
+            passes = max(1, int((budget or {}).get("completion_probe_passes", 2)))
+            grace = min(10.0, max(0.0, float(
+                (budget or {}).get("completion_probe_grace_seconds", 1.0))))
+            for attempt in range(passes):
+                try:
+                    if not await asyncio.to_thread(completion_probe):
+                        return False
+                except Exception:
+                    return False
+                if attempt + 1 < passes and grace:
+                    await asyncio.sleep(grace)
+            return True
+
+        async def run() -> tuple[int, bytes, bytes]:
+            nonlocal thread_id, turn_id, steered, completed
+            initialize = await send("initialize", {
+                "clientInfo": {"name": "universal-agent-platform", "title": "UAP",
+                               "version": __version__},
+                "capabilities": {"experimentalApi": True, "requestAttestation": False,
+                                 "optOutNotificationMethods": [
+                                     "command/exec/outputDelta", "item/agentMessage/delta",
+                                     "item/plan/delta", "item/fileChange/outputDelta",
+                                     "item/reasoning/summaryTextDelta", "item/reasoning/textDelta"]},
+            })
+            await response(int(initialize))
+            await send("initialized", notification=True)
+            started = await send("thread/start", {
+                "cwd": str(working_directory), "runtimeWorkspaceRoots": [str(working_directory)],
+                "model": model, "approvalPolicy": "never",
+                "sandbox": "read-only" if read_only else "workspace-write",
+                "ephemeral": True, "threadSource": "universal-agent-platform",
+            })
+            thread_result = await response(int(started))
+            thread_id = str(thread_result["thread"]["id"])
+            turn_request = await send("turn/start", {
+                "threadId": thread_id,
+                "input": [{"type": "text", "text": prompt, "text_elements": []}],
+                "model": model, "effort": reasoning, "outputSchema": RESULT_SCHEMA,
+                "approvalPolicy": "never",
+                "sandboxPolicy": ({"type": "readOnly", "networkAccess": False} if read_only else
+                                  {"type": "workspaceWrite", "writableRoots": [str(working_directory)],
+                                   "networkAccess": False}),
+            })
+            turn_result = await response(int(turn_request))
+            turn_id = str(turn_result["turn"]["id"])
+            while True:
+                line = await process.stdout.readline()
+                if not line:
+                    break
+                events.append(line)
+                event = json.loads(line)
+                method = event.get("method")
+                params = event.get("params")
+                item = params.get("item") if isinstance(params, dict) else None
+                if method == "item/completed" and isinstance(item, dict):
+                    synthetic = {"type": "item.completed", "item": {
+                        "type": {"commandExecution": "command_execution",
+                                 "mcpToolCall": "mcp_tool_call",
+                                 "webSearch": "web_search",
+                                 "agentMessage": "agent_message"}.get(item.get("type"), item.get("type"))}}
+                    reason = monitor.observe((json.dumps(synthetic) + "\n").encode())
+                    if reason:
+                        raise CodexBudgetExceeded(reason, monitor.tool_calls,
+                                                  monitor.assistant_messages)
+                    if (not steered and item.get("type") in
+                            {"commandExecution", "mcpToolCall", "webSearch", "fileChange"}
+                            and await artifact_is_complete()):
+                        steer_id = await send("turn/steer", {
+                            "threadId": thread_id, "expectedTurnId": turn_id,
+                            "input": [{"type": "text", "text": (
+                                "External acceptance has passed. Stop all further inspection and "
+                                "tool use now; return the required final JSON receipt immediately."),
+                                "text_elements": []}],
+                        })
+                        events.append((json.dumps({"type": "uap.completion_steered",
+                                                  "request_id": steer_id}) + "\n").encode())
+                        steered = True
+                if method == "turn/completed" and isinstance(params, dict):
+                    completed_turn = params.get("turn", {})
+                    if str(completed_turn.get("id")) == turn_id:
+                        completed = completed_turn.get("status") == "completed"
+                        break
+            if not completed:
+                raise RuntimeError("Codex app-server turn did not complete")
+            process.stdin.close()
+            try:
+                await asyncio.wait_for(process.wait(), timeout=5)
+            except TimeoutError:
+                process.terminate()
+                await process.wait()
+            return process.returncode or 0, b"".join(events), await stderr_task
+
+        try:
+            return await asyncio.wait_for(run(), timeout=self.timeout)
+        except TimeoutError:
+            if thread_id and turn_id and process.returncode is None:
+                try:
+                    await send("turn/interrupt", {"threadId": thread_id, "turnId": turn_id})
+                except (OSError, RuntimeError):
+                    pass
+            process.terminate()
+            await process.wait()
+            if not stderr_task.done():
+                stderr_task.cancel()
+            raise CodexTimeout(b"".join(events), b"")
+        except Exception:
+            if process.returncode is None:
+                process.terminate()
+                await process.wait()
+            if not stderr_task.done():
+                stderr_task.cancel()
+            raise
+
     @staticmethod
     def _is_completed_tool_event(line: bytes) -> bool:
         try:
@@ -539,6 +715,11 @@ class CodexProvider(AIProvider):
                 continue
             event = json.loads(line)
             item = event.get("item")
+            params = event.get("params")
+            if event.get("method") == "item/completed" and isinstance(params, dict):
+                app_item = params.get("item")
+                if isinstance(app_item, dict) and app_item.get("type") == "agentMessage":
+                    final_text = app_item.get("text") or final_text
             if isinstance(item, dict) and item.get("type") == "agent_message":
                 final_text = item.get("text") or item.get("content")
             if event.get("type") in {"message", "agent_message"}:
@@ -588,6 +769,14 @@ class CodexProvider(AIProvider):
                               if isinstance(value, (int, float))})
             if event.get("type") == "thread.started" and event.get("thread_id"):
                 execution_id = str(event["thread_id"])
+            if event.get("method") == "thread/started" and isinstance(event.get("params"), dict):
+                thread = event["params"].get("thread")
+                if isinstance(thread, dict) and thread.get("id"):
+                    execution_id = str(thread["id"])
+            if event.get("id") and isinstance(event.get("result"), dict):
+                thread = event["result"].get("thread")
+                if isinstance(thread, dict) and thread.get("id"):
+                    execution_id = str(thread["id"])
         return usage, execution_id
 
     @staticmethod
@@ -602,11 +791,24 @@ class CodexProvider(AIProvider):
             except (ValueError, json.JSONDecodeError):
                 continue
             item = event.get("item")
+            if event.get("method") == "item/completed" and isinstance(event.get("params"), dict):
+                item = event["params"].get("item")
+                if isinstance(item, dict):
+                    kind = item.get("type")
+                    tools += kind in {"commandExecution", "mcpToolCall", "webSearch"}
+                    messages += kind == "agentMessage"
+                continue
             if event.get("type") != "item.completed" or not isinstance(item, dict):
                 continue
             tools += item.get("type") in tool_kinds
             messages += item.get("type") == "agent_message"
         return {"provider_tool_calls": tools, "provider_messages": messages}
+
+    @staticmethod
+    def _has_completion_steer(output: str) -> bool:
+        return any('"type": "uap.completion_steered"' in line or
+                   '"type":"uap.completion_steered"' in line
+                   for line in output.splitlines())
 
     @staticmethod
     def _usage_breakdown(usage: dict[str, int]) -> dict[str, int]:

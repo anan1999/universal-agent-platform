@@ -250,19 +250,23 @@ async def _run_arm(args: argparse.Namespace, spec: dict[str, Any], fixture: Prep
     task.metadata["model"] = args.model
     task.reasoning = args.reasoning
     early_completion = bool(getattr(args, "early_completion", False))
-    if early_completion:
+    exact_required = getattr(args, "metric", "exact-tokens") == "exact-tokens"
+    live_usage = exact_required and args.provider == "codex"
+    if early_completion or live_usage:
         task.metadata.setdefault("execution_budget", {}).update({
             "completion_probe_passes": 2,
             "completion_probe_grace_seconds": 1.0,
         })
+    if live_usage:
+        task.metadata["codex_live_usage"] = True
     packet = ExecutionPacketBuilder().build(task, root, "Pocket Expense", "benchmark")
     print(f"[{key}/{arm}] provider call started (timeout={args.timeout:g}s)", flush=True)
     started = time.monotonic()
-    probe = (lambda: acceptance(root, spec["id"])["passed"]) if early_completion else None
+    probe = ((lambda: acceptance(root, spec["id"])["passed"])
+             if early_completion or live_usage else None)
     receipt = await provider.execute(task, packet=packet, completion_probe=probe)
     metrics = receipt_metrics(receipt, time.monotonic() - started)
     quality = acceptance(root, spec["id"])
-    exact_required = getattr(args, "metric", "exact-tokens") == "exact-tokens"
     exact_available = metrics["token_source"] == "measured"
     result = {
         **metrics,

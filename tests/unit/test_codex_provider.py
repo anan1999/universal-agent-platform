@@ -361,3 +361,122 @@ def test_streaming_completion_probe_requires_two_passes_before_stopping(monkeypa
             {"completion_probe_passes": 2, "completion_probe_grace_seconds": 0}, probe))
     assert calls == 2
     assert process.terminated is True
+
+
+def test_app_server_steers_after_acceptance_and_waits_for_exact_usage(monkeypatch, tmp_path):
+    result = {"status": "completed", "summary": "done"}
+    server_events = [
+        {"id": 1, "result": {"userAgent": "test"}},
+        {"id": 2, "result": {"thread": {"id": "thread-live"}}},
+        {"id": 3, "result": {"turn": {"id": "turn-live", "status": "inProgress"}}},
+        {"method": "item/completed", "params": {"threadId": "thread-live",
+         "turnId": "turn-live", "item": {"type": "commandExecution", "id": "cmd-1"}}},
+        {"id": 4, "result": {}},
+        {"method": "thread/tokenUsage/updated", "params": {
+            "threadId": "thread-live", "turnId": "turn-live", "tokenUsage": {"total": {
+                "inputTokens": 100, "cachedInputTokens": 60, "cacheWriteInputTokens": 0,
+                "outputTokens": 20, "reasoningOutputTokens": 5, "totalTokens": 120,
+            }}}},
+        {"method": "item/completed", "params": {"threadId": "thread-live",
+         "turnId": "turn-live", "item": {"type": "agentMessage", "id": "msg-1",
+         "text": json.dumps(result), "phase": "final_answer"}}},
+        {"method": "turn/completed", "params": {"threadId": "thread-live",
+         "turn": {"id": "turn-live", "status": "completed", "items": []}}},
+    ]
+
+    class Input:
+        def __init__(self):
+            self.values = []
+        def write(self, value):
+            self.values.append(value)
+        async def drain(self):
+            return None
+        def close(self):
+            return None
+
+    class Reader:
+        def __init__(self, lines=()):
+            self.lines = list(lines)
+        async def readline(self):
+            return self.lines.pop(0) if self.lines else b""
+        async def read(self):
+            return b"".join(self.lines)
+
+    class Process:
+        def __init__(self):
+            self.stdin = Input()
+            self.stdout = Reader((json.dumps(event) + "\n").encode() for event in server_events)
+            self.stderr = Reader()
+            self.returncode = None
+        def terminate(self):
+            self.returncode = -15
+        async def wait(self):
+            if self.returncode is None:
+                self.returncode = 0
+            return self.returncode
+
+    process = Process()
+    async def create(*args, **kwargs):
+        return process
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", create)
+    provider = CodexProvider(command_prefix=["fake"], capabilities=CodexCapabilities(
+        available=True, supports_noninteractive=True, supports_jsonl=True), timeout=5)
+    code, stdout, _ = asyncio.run(provider._communicate_app_server(
+        "prompt", tmp_path, {"completion_probe_passes": 2,
+                             "completion_probe_grace_seconds": 0},
+        lambda: True, model="model", reasoning="low", read_only=False))
+    requests = [json.loads(value) for value in process.stdin.values]
+    assert code == 0
+    assert [item["method"] for item in requests] == [
+        "initialize", "initialized", "thread/start", "turn/start", "turn/steer"]
+    assert requests[-1]["params"]["expectedTurnId"] == "turn-live"
+    parsed, usage, execution_id = provider._parse_jsonl(stdout.decode())
+    assert parsed == result
+    assert usage["total_tokens"] == 120
+    assert usage["reasoning_output_tokens"] == 5
+    assert execution_id == "thread-live"
+    assert provider._execution_counts(stdout.decode()) == {
+        "provider_tool_calls": 1, "provider_messages": 1}
+    assert provider._has_completion_steer(stdout.decode()) is True
+
+
+def test_execute_uses_live_usage_as_complete_measured_receipt(tmp_path):
+    result = {"status": "completed", "summary": "accepted", "files": [],
+              "findings": [], "confidence": "high", "uncertainty_reason": "",
+              "needs_escalation": False, "learning_evidence": []}
+    output = "\n".join([
+        json.dumps({"id": 2, "result": {"thread": {"id": "thread-live"}}}),
+        json.dumps({"method": "thread/tokenUsage/updated", "params": {
+            "threadId": "thread-live", "turnId": "turn-live", "tokenUsage": {"total": {
+                "inputTokens": 500, "cachedInputTokens": 300, "cacheWriteInputTokens": 0,
+                "outputTokens": 50, "reasoningOutputTokens": 12, "totalTokens": 550}}}}),
+        json.dumps({"method": "item/completed", "params": {"item": {
+            "type": "agentMessage", "text": json.dumps(result)}}}),
+        json.dumps({"type": "uap.completion_steered", "request_id": 4}),
+        json.dumps({"method": "turn/completed", "params": {
+            "threadId": "thread-live", "turn": {"id": "turn-live", "status": "completed"}}}),
+    ])
+
+    class LiveProvider(CodexProvider):
+        async def _communicate_app_server(self, prompt, working_directory, budget,
+                                          completion_probe, **kwargs):
+            assert completion_probe()
+            return 0, output.encode(), b""
+
+    capabilities = CodexCapabilities(
+        available=True, supports_noninteractive=True, supports_structured_output=True,
+        supports_working_directory=True, supports_jsonl=True)
+    provider = LiveProvider(command_prefix=["fake"], capabilities=capabilities)
+    task = Task("T", "R", "Modify a file", "developer", metadata={
+        "working_directory": str(tmp_path), "codex_live_usage": True})
+    receipt = asyncio.run(provider.execute(task, completion_probe=lambda: True))
+    assert receipt.status == "completed"
+    assert receipt.token_usage["source"] == "measured"
+    assert receipt.token_usage["input"] == 500
+    assert receipt.token_usage["cached"] == 300
+    assert receipt.token_usage["output"] == 50
+    assert receipt.token_usage["reasoning_output"] == 12
+    assert receipt.token_usage["total"] == 550
+    assert receipt.completion == {
+        "artifact": "completed", "provider": "completed",
+        "reason": "steered_after_external_completion_probe"}

@@ -33,6 +33,14 @@ usage because a final in-flight response may not have emitted usage. Therefore
 `--early-completion` is rejected in exact-token mode. It is available only with
 an explicit `--metric latency` selection.
 
+For Codex exact-token runs, UAP instead uses the app-server event stream. After
+the external acceptance probe passes twice, UAP sends `turn/steer` asking the
+active turn to stop further tool use and return its final structured receipt.
+The run remains active until both `thread/tokenUsage/updated` and a successful
+`turn/completed` are observed. The cumulative usage includes the steering
+response itself. A usage notification without successful turn completion is
+retained only as `partial_measured` and cannot support a savings claim.
+
 Codex subscription quota percentage is a separate service limit. UAP records
 provider token usage, but does not claim a token-to-subscription-quota conversion
 because no stable conversion is exposed to the benchmark.
