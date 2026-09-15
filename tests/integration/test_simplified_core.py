@@ -126,6 +126,20 @@ def test_endpoint_follow_up_routes_to_coding_and_testing_capabilities():
     assert {"coding", "testing"} <= set(analysis.capabilities)
 
 
+def test_dashboard_follow_up_routes_to_implementation_instead_of_documentation(tmp_path):
+    _fixture(tmp_path)
+    initialize_project(tmp_path, _templates(tmp_path))
+    goal = ("Add a dashboard month input that calls /reports/monthly/{month} and renders "
+            "the returned total and by_category breakdown, with deterministic tests.")
+    composition = Orchestrator(Database(tmp_path / "route.db"), MockProvider(delay=0),
+                               active_profiles=["software-engineering"]).compose(
+        "RUN-DASHBOARD", goal, str(tmp_path), "expense")
+
+    assert {"coding", "testing"} <= set(composition.analysis.capabilities)
+    assert composition.analysis.inferred is False
+    assert [member.role_id for member in composition.team.members] == ["developer"]
+
+
 def test_benchmark_follow_up_selects_developer_not_generic_analyst(tmp_path):
     _fixture(tmp_path)
     initialize_project(tmp_path, _templates(tmp_path))

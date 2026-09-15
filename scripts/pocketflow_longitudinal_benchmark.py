@@ -217,7 +217,7 @@ def evaluate(path: Path, task_number: int) -> dict[str, Any]:
                                       for item in python_sources)))
     source_roots = [root for root in (path / "frontend" / "src", path / "src") if root.is_dir()]
     frontend_sources = [item for source_root in source_roots
-                        for pattern in ("*.jsx", "*.tsx") for item in source_root.glob(pattern)
+                        for pattern in ("*.js", "*.jsx", "*.ts", "*.tsx") for item in source_root.rglob(pattern)
                         if ".test." not in item.name and ".spec." not in item.name]
     if task_number >= 2:
         checks.append(("react dashboard", bool(frontend_sources)))
@@ -257,7 +257,8 @@ with tempfile.TemporaryDirectory() as directory:
         checks.append(("monthly boundary contract", monthly_probe.returncode == 0))
     if task_number >= 5:
         checks.append(("monthly dashboard request", "/reports/monthly/" in source))
-        checks.append(("month input", 'type="month"' in source or "type='month'" in source))
+        checks.append(("month input", any(fragment in source for fragment in (
+            'type="month"', "type='month'", 'type: "month"', "type: 'month'"))))
         checks.append(("category breakdown", "by_category" in source))
     return {"passed": all(value for _, value in checks),
             "checks": [{"name": name, "passed": value} for name, value in checks],
@@ -566,6 +567,16 @@ def valid_pair(task: dict[str, Any]) -> bool:
         and task["uap"].get("usage_complete") is True)
 
 
+def valid_arm(result: dict[str, Any], quality: dict[str, Any]) -> bool:
+    """Whether one expensive provider arm can be safely reused on resume."""
+    return bool(
+        result.get("status") == "completed"
+        and result.get("source_changed") is True
+        and quality.get("passed") is True
+        and result.get("token_source") == "measured"
+        and result.get("usage_complete") is True)
+
+
 async def execute(args: argparse.Namespace) -> dict[str, Any]:
     required_calls = args.rounds * 2
     if args.max_provider_calls != required_calls or args.max_provider_calls > len(TASKS) * 2:
@@ -618,6 +629,23 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
                     previous["baseline"]["status"] == previous["uap"]["status"] == "completed"
                     and previous["quality"]["baseline"]["passed"] and previous["quality"]["uap"]["passed"]
                     and previous["baseline"]["token_source"] == "measured")
+
+    # The acceptance implementation may have been corrected after the latest
+    # paired attempt. Re-evaluate only that task against its retained source;
+    # earlier checkpoints are no longer present in the active arm directories.
+    if tasks and not tasks[-1].get("comparison_valid"):
+        latest = tasks[-1]
+        number = int(latest["task_number"])
+        prior = checkpoints / f"task-{number - 1}"
+        if number == len(tasks) and prior.exists():
+            latest["baseline"]["source_changed"] = source_snapshot(baseline) != source_snapshot(prior)
+            latest["uap"]["source_changed"] = source_snapshot(uap) != source_snapshot(prior)
+            latest["quality"] = {
+                "baseline": evaluate(baseline, number),
+                "uap": evaluate(uap, number),
+            }
+            latest["comparison_valid"] = valid_pair(latest)
+
     first_invalid = next((index for index, item in enumerate(tasks)
                           if not item.get("comparison_valid")), None)
     if first_invalid is not None:
@@ -627,12 +655,26 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
                 f"Cannot safely roll back task {first_invalid + 1}: filesystem checkpoint "
                 f"{checkpoint} is unavailable. Start a fresh benchmark workspace."
             )
+        invalid = tasks[first_invalid]
+        saved_baseline = workspace / ".resume-baseline"
+        pending: dict[str, Any] = {}
+        if (first_invalid == len(tasks) - 1
+                and valid_arm(invalid["baseline"], invalid["quality"]["baseline"])):
+            if saved_baseline.exists():
+                remove_tree(saved_baseline)
+            reset_source(baseline, saved_baseline)
+            pending = {"task_number": int(invalid["task_number"]),
+                       "goal": invalid["goal"], "baseline": invalid["baseline"]}
         rollback_invalid_runs(db, uap, tasks[first_invalid:])
         tasks = tasks[:first_invalid]
         reset_source(checkpoint, canonical)
         reset_source(canonical, baseline)
         reset_source(canonical, uap, preserve_agent=True)
-        args.output.write_text(json.dumps({"tasks": tasks}, indent=2), encoding="utf-8")
+        if pending:
+            reset_source(saved_baseline, baseline)
+            remove_tree(saved_baseline)
+        resume_payload = {"tasks": tasks, **({"pending": pending} if pending else {})}
+        args.output.write_text(json.dumps(resume_payload, indent=2), encoding="utf-8")
     cumulative_baseline = sum(int(item["baseline_tokens"]) for item in tasks)
     cumulative_uap = sum(int(item["uap_tokens"]) for item in tasks)
     break_even = None

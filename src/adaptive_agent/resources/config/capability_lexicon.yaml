@@ -7,11 +7,11 @@
 
 capabilities:
   repository_search: [locate, find where, where is, search the, explore the, trace, look up]
-  coding: [implement, code, endpoint, write a function, add a method, build the, create the endpoint, port]
+  coding: [implement, code, endpoint, dashboard, render the, write a function, add a method, build the, create the endpoint, port]
   refactor: [refactor, restructure, clean up, extract, rename, simplify the code]
   bug_fix: [bug, broken, crash, regression, fails with, error when, not working, defect]
   debugging: [debug, root cause, stack trace, reproduce, why does it fail, investigate the failure]
-  testing: [test, validate, unit test, integration test, coverage, assert, verify the behaviour, verify the behavior]
+  testing: [test, tests, validate, unit test, integration test, coverage, assert, verify the behaviour, verify the behavior]
   build: [build, compile, package, bundle, assemble]
   code_review: [review the code, code review, pull request, merge request, diff review]
   documentation: [document, documentation, readme, changelog, guide, tutorial, api reference, write up]
