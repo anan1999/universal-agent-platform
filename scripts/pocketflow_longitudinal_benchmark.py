@@ -514,6 +514,29 @@ def paired_models_match(task: dict[str, Any]) -> bool:
     return baseline_model in models
 
 
+def source_snapshot(path: Path) -> dict[str, str]:
+    """Hash product source while excluding benchmark/runtime state."""
+    ignored = {".agent", ".git", ".pytest_cache", "__pycache__", "node_modules"}
+    paths = [item.relative_to(path).as_posix() for item in path.rglob("*")
+             if item.is_file() and not ignored.intersection(item.relative_to(path).parts)
+             and item.suffix not in {".db", ".sqlite", ".sqlite3", ".pyc"}]
+    return ProjectIntelligenceStore(path).hash_paths(paths)
+
+
+def valid_pair(task: dict[str, Any]) -> bool:
+    return bool(
+        task["baseline"]["status"] == task["uap"]["status"] == "completed"
+        and task["baseline"].get("source_changed") is True
+        and task["uap"].get("source_changed") is True
+        and paired_models_match(task)
+        and task["quality"]["baseline"]["passed"]
+        and task["quality"]["uap"]["passed"]
+        and task["baseline"]["token_source"] == "measured"
+        and task["uap"]["token_source"] == "measured"
+        and task["baseline"].get("usage_complete") is True
+        and task["uap"].get("usage_complete") is True)
+
+
 async def execute(args: argparse.Namespace) -> dict[str, Any]:
     required_calls = args.rounds * 2
     if args.max_provider_calls != required_calls or args.max_provider_calls > len(TASKS) * 2:
@@ -550,11 +573,11 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
     tasks: list[dict[str, Any]] = list(resume_payload.get("tasks", []))
     for previous in tasks:
         repair_react_filename_false_negative(previous)
-        if (not previous.get("baseline", {}).get("files_modified")
-                or not previous.get("uap", {}).get("files_modified")):
-            previous["comparison_valid"] = False
-        if not paired_models_match(previous):
-            previous["comparison_valid"] = False
+        prior = checkpoints / f"task-{int(previous['task_number']) - 1}"
+        if prior.exists():
+            previous["baseline"]["source_changed"] = source_snapshot(baseline) != source_snapshot(prior)
+            previous["uap"]["source_changed"] = source_snapshot(uap) != source_snapshot(prior)
+        previous["comparison_valid"] = valid_pair(previous)
     for previous in tasks:
         run_id = previous.get("uap", {}).get("run_id")
         if run_id and previous.get("uap", {}).get("token_source") == "unavailable":
@@ -600,8 +623,7 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
             reset_source(canonical, baseline)
             if recovered_run_id is None:
                 reset_source(canonical, uap, preserve_agent=True)
-        before_baseline = ProjectIntelligenceStore(canonical).hash_paths(
-            path.relative_to(canonical).as_posix() for path in canonical.rglob("*") if path.is_file())
+        before_baseline = source_snapshot(canonical)
         pending = resume_payload.get("pending", {})
         baseline_result = (pending.get("baseline") if pending.get("task_number") == number
                            and pending.get("baseline", {}).get("status") == "completed" else None)
@@ -633,20 +655,15 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
             "task_number": number, "goal": goal, "baseline": baseline_result, "uap": uap_result,
         }}, indent=2), encoding="utf-8")
         baseline_quality, uap_quality = evaluate(baseline, number), evaluate(uap, number)
+        baseline_result["source_changed"] = source_snapshot(baseline) != before_baseline
+        uap_result["source_changed"] = source_snapshot(uap) != before_baseline
         baseline_tokens = baseline_result["input_tokens"] + baseline_result["output_tokens"]
         uap_tokens = uap_result["input_tokens"] + uap_result["output_tokens"]
         cumulative_baseline += baseline_tokens
         cumulative_uap += uap_tokens
-        comparison_valid = (baseline_result["status"] == "completed" and
-                            uap_result["status"] == "completed" and
-                            bool(baseline_result.get("files_modified")) and
-                            bool(uap_result.get("files_modified")) and
-                            paired_models_match({"baseline": baseline_result, "uap": uap_result}) and
-                            baseline_quality["passed"] and uap_quality["passed"] and
-                            baseline_result["token_source"] == "measured" and
-                            uap_result["token_source"] == "measured" and
-                            baseline_result.get("usage_complete") is True and
-                            uap_result.get("usage_complete") is True)
+        comparison_valid = valid_pair({"baseline": baseline_result, "uap": uap_result,
+                                       "quality": {"baseline": baseline_quality,
+                                                   "uap": uap_quality}})
         if comparison_valid and break_even is None and cumulative_uap <= cumulative_baseline:
             break_even = number
         # Fixed, pre-declared checkpoint rule; token outcome never selects it.
