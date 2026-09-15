@@ -3,8 +3,8 @@
   "schema_version": 1,
   "environment": {
     "uap": "2.3.1",
-    "commit": "06753642f54ec5a9f29bd65f84eb838d99fbe72c",
-    "execution_commit": "06753642f54ec5a9f29bd65f84eb838d99fbe72c",
+    "commit": "3c573a0d3f5a3d36d81e98fca68d4aa96363d06c",
+    "execution_commit": "3c573a0d3f5a3d36d81e98fca68d4aa96363d06c",
     "provider": "codex",
     "model": "gpt-6-astra",
     "reasoning": "low",
@@ -66,68 +66,66 @@
           "returncode": 0
         },
         "post_source_hash": "d5780ad1af517cb18b379c1293532211bc3fb087effd86915734030d872a553e",
-        "resumed": false,
+        "resumed": true,
         "project_context_chars": 0,
         "relevant_paths": [],
         "pre_task_ai_calls": 0,
         "orchestration_wall_ms": 15445.517
       },
       "uap": {
-        "provider_status": "failed",
+        "provider_status": "completed",
         "provider": "codex",
         "model": "gpt-6-astra",
-        "input_tokens": 79820,
-        "cached_input_tokens": 70528,
-        "non_cached_input_tokens": 9292,
-        "output_tokens": 1545,
-        "reasoning_output_tokens": 55,
+        "input_tokens": 80912,
+        "cached_input_tokens": 57856,
+        "non_cached_input_tokens": 23056,
+        "output_tokens": 1748,
+        "reasoning_output_tokens": 58,
         "cache_write_input_tokens": 0,
-        "total_tokens": 81365,
-        "token_source": "partial_measured",
-        "usage_complete": false,
-        "duration_seconds": 240.109,
+        "total_tokens": 82660,
+        "token_source": "measured",
+        "usage_complete": true,
+        "duration_seconds": 103.25,
         "ai_invocations": 1,
-        "provider_tool_calls": 4,
+        "provider_tool_calls": 3,
         "provider_messages": 2,
         "completion": {
           "artifact": "completed",
-          "provider": "timeout",
-          "reason": "timeout_after_external_completion_probe",
-          "steer_state": "accepted"
+          "provider": "controlled_stop",
+          "reason": "interrupted_after_accepted_completion_steer"
         },
-        "provider_protocol_status": "timeout",
+        "provider_protocol_status": "controlled_stop",
         "files_read": "UNAVAILABLE",
         "files_changed": [
-          "README.md",
           "app/main.py",
           "pyproject.toml",
           "tests/test_reports.py"
         ],
-        "error": "CODEX_TIMEOUT",
-        "status": "failed",
+        "error": null,
+        "status": "completed",
         "quality": {
           "passed": true,
           "contract": "context-cache-monthly-api-v1",
           "error": null,
           "returncode": 0
         },
-        "post_source_hash": "7852c61752563e09f2d5f75510f78cbb3ac4d8be14e492e3a701ac125335d577",
+        "post_source_hash": "b3a864776d9971461e4efb652c4ff126818b6e2f04f015dee851676c356f3538",
         "resumed": false,
         "project_context_chars": 608,
         "relevant_paths": [
           "app/"
         ],
         "pre_task_ai_calls": 0,
-        "orchestration_wall_ms": 10587.815
+        "orchestration_wall_ms": 9212.961
       },
       "equal_quality": true,
       "decision_evidence": {
-        "measured_complete_tokens": false,
+        "measured_complete_tokens": true,
         "fewer_tokens": false,
         "equal_tokens": false,
         "materially_faster_10_percent": false
       },
-      "conclusion": "INCONCLUSIVE",
+      "conclusion": "NO",
       "claim": "no benefit claim is supported by this pair"
     }
   ],
@@ -136,23 +134,23 @@
     "rounds": 1,
     "pairs": 1,
     "provider_calls_max": 2,
-    "provider_calls_actual": 2,
-    "conclusive_pairs": 0,
+    "provider_calls_actual": 1,
+    "conclusive_pairs": 1,
     "yes": 0,
-    "no": 0,
-    "inconclusive": 1,
+    "no": 1,
+    "inconclusive": 0,
     "observed": {
       "accepted_pairs": 1,
       "uap_faster_pairs": 0,
       "baseline_duration_seconds": 85.516,
-      "uap_duration_seconds": 240.109,
-      "uap_duration_reduction_percent": -180.78,
+      "uap_duration_seconds": 103.25,
+      "uap_duration_reduction_percent": -20.74,
       "baseline_tool_calls": 3,
-      "uap_tool_calls": 4,
+      "uap_tool_calls": 3,
       "artifact_probe_stops": 0,
-      "provider_timeouts": 1,
-      "complete_measured_pairs": 0,
-      "token_comparison_available": false
+      "provider_timeouts": 0,
+      "complete_measured_pairs": 1,
+      "token_comparison_available": true
     }
   },
   "task_id": "medium",
@@ -202,67 +200,65 @@
       "returncode": 0
     },
     "post_source_hash": "d5780ad1af517cb18b379c1293532211bc3fb087effd86915734030d872a553e",
-    "resumed": false,
+    "resumed": true,
     "project_context_chars": 0,
     "relevant_paths": [],
     "pre_task_ai_calls": 0,
     "orchestration_wall_ms": 15445.517
   },
   "uap": {
-    "provider_status": "failed",
+    "provider_status": "completed",
     "provider": "codex",
     "model": "gpt-6-astra",
-    "input_tokens": 79820,
-    "cached_input_tokens": 70528,
-    "non_cached_input_tokens": 9292,
-    "output_tokens": 1545,
-    "reasoning_output_tokens": 55,
+    "input_tokens": 80912,
+    "cached_input_tokens": 57856,
+    "non_cached_input_tokens": 23056,
+    "output_tokens": 1748,
+    "reasoning_output_tokens": 58,
     "cache_write_input_tokens": 0,
-    "total_tokens": 81365,
-    "token_source": "partial_measured",
-    "usage_complete": false,
-    "duration_seconds": 240.109,
+    "total_tokens": 82660,
+    "token_source": "measured",
+    "usage_complete": true,
+    "duration_seconds": 103.25,
     "ai_invocations": 1,
-    "provider_tool_calls": 4,
+    "provider_tool_calls": 3,
     "provider_messages": 2,
     "completion": {
       "artifact": "completed",
-      "provider": "timeout",
-      "reason": "timeout_after_external_completion_probe",
-      "steer_state": "accepted"
+      "provider": "controlled_stop",
+      "reason": "interrupted_after_accepted_completion_steer"
     },
-    "provider_protocol_status": "timeout",
+    "provider_protocol_status": "controlled_stop",
     "files_read": "UNAVAILABLE",
     "files_changed": [
-      "README.md",
       "app/main.py",
       "pyproject.toml",
       "tests/test_reports.py"
     ],
-    "error": "CODEX_TIMEOUT",
-    "status": "failed",
+    "error": null,
+    "status": "completed",
     "quality": {
       "passed": true,
       "contract": "context-cache-monthly-api-v1",
       "error": null,
       "returncode": 0
     },
-    "post_source_hash": "7852c61752563e09f2d5f75510f78cbb3ac4d8be14e492e3a701ac125335d577",
+    "post_source_hash": "b3a864776d9971461e4efb652c4ff126818b6e2f04f015dee851676c356f3538",
     "resumed": false,
     "project_context_chars": 608,
     "relevant_paths": [
       "app/"
     ],
     "pre_task_ai_calls": 0,
-    "orchestration_wall_ms": 10587.815
+    "orchestration_wall_ms": 9212.961
   },
   "equal_quality": true,
   "decision_evidence": {
-    "measured_complete_tokens": false,
+    "measured_complete_tokens": true,
     "fewer_tokens": false,
     "equal_tokens": false,
     "materially_faster_10_percent": false
   },
-  "conclusion": "INCONCLUSIVE",
+  "conclusion": "NO",
   "claim": "no benefit claim is supported by this pair"
 }

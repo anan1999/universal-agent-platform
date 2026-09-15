@@ -4,32 +4,35 @@ Suite: `reuse-first-scale-v1`
 
 | Scale | Task | Round | Order | Baseline acceptance | UAP acceptance | Baseline tokens | UAP tokens | Result |
 |---:|---|---:|---|---:|---:|---:|---:|---|
-| 2 | medium | 1 | disabled → enabled | PASS | PASS | 79660 | UNAVAILABLE | INCONCLUSIVE |
+| 2 | medium | 1 | disabled → enabled | PASS | PASS | 79660 | 82660 | NO |
 
 ## medium detail
 
 - Baseline: provider `completed`, acceptance `PASS`, token source `measured`, duration 85.516s, non-cached input 21485, cached input 56576, output 1599, tools 3, messages 2, protocol `completed`, error `External acceptance passed, but local pytest errors were not investigated before the required stop.`.
-- UAP: provider `failed`, acceptance `PASS`, token source `partial_measured`, duration 240.109s, non-cached input 9292, cached input 70528, output 1545, tools 4, messages 2, protocol `timeout`, error `CODEX_TIMEOUT`.
-- Conclusion: `INCONCLUSIVE` — no benefit claim is supported by this pair.
+- UAP: provider `completed`, acceptance `PASS`, token source `measured`, duration 103.25s, non-cached input 23056, cached input 57856, output 1748, tools 3, messages 2, protocol `controlled_stop`, error `none`.
+- Conclusion: `NO` — no benefit claim is supported by this pair.
 
 ## Pooled observations
 
 - Accepted pairs: 1.
 - UAP faster pairs: 0.
-- Provider duration: baseline 85.516s; UAP 240.109s; reduction -180.78%.
-- Tool calls: baseline 3; UAP 4.
-- Artifact-probe stops: 0; provider timeouts: 1.
-- Exact token comparison available: False.
+- Provider duration: baseline 85.516s; UAP 103.25s; reduction -20.74%.
+- Tool calls: baseline 3; UAP 3.
+- Artifact-probe stops: 0; provider timeouts: 0.
+- Exact token comparison available: True.
 
 A token comparison is conclusive only when both arms pass acceptance and both providers report complete measured usage. Partial timeout telemetry is retained but never counted as proof of savings.
 
 Exact formulas: total = input + output; non-cached input = input - cached input. Reasoning output is a subset of output and is not added again.
 
-## Measurement finding
+## Controlled-shutdown validation
 
-- The first attempt exposed an app-server JSON line larger than asyncio's 64 KiB default. The provider now uses a tested 8 MiB bounded stream limit (`0675364`). That failed infrastructure attempt is not included as a sample.
-- The clean rerun preserved a complete baseline checkpoint: 78061 input, 56576 cached input, 1599 output, and 79660 total tokens.
-- UAP passed the same external acceptance and emitted measured cumulative usage, but `turn/steer` acceptance did not lead to a terminal completion within 240 seconds.
-- Its 81365-token notification is retained as `partial_measured`; it is deliberately excluded from the A/B token conclusion because `usage_complete=false`.
+The first clean medium run passed artifact acceptance but waited until the 240.109-second outer timeout after `turn/steer` was accepted. Its partial usage was correctly excluded. After adding a 20-second steer grace period, a controlled interrupt, and a 15-second terminal grace period, the UAP arm completed in 103.25 seconds with:
 
-Small-scale normal closure therefore does not yet generalize to medium tasks. Do not run the large case until the post-acceptance terminal lifecycle is bounded and observable without discarding the final usage notification.
+- `artifact=completed`
+- `provider=controlled_stop`
+- `usage_complete=true`
+- `token_source=measured`
+- exact total usage of 82660 tokens
+
+The fix removed 136.859 seconds from the observed failure path and converted the previously inconclusive arm into valid exact evidence. It does not establish token savings: baseline used 79660 tokens, so UAP used 3000 more tokens (3.77%) in this pair.
