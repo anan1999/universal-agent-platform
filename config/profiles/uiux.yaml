@@ -6,7 +6,7 @@ profile:
     Does not assume a test runner or a code diff.
   capabilities:
     [user_flow, information_architecture, wireframing, usability, accessibility,
-     design_system, interaction_design, content_design]
+     design_system, interaction_design, content_design, asset_creation]
   roles:
     - id: ux_researcher
       name: UX Researcher
@@ -22,7 +22,7 @@ profile:
     - id: ui_designer
       name: UI Designer
       responsibility: Specify the layout, states, and components.
-      capabilities: [wireframing, design_system, interaction_design]
+      capabilities: [wireframing, design_system, interaction_design, asset_creation]
       stage: 50
     - id: accessibility_reviewer
       name: Accessibility Reviewer
@@ -35,7 +35,7 @@ profile:
   skills: [design_system, wcag, user_flow]
   tools: []
   evaluation: [heuristic_review, accessibility_review, requirement_coverage]
-  artifact_types: [design_spec, image, markdown, report, plan]
+  artifact_types: [design_asset, design_spec, image, markdown, report, plan]
   approval_gates: [publishing]
   detection:
     files: [figma.json, design-tokens.json, storybook.config.js, .storybook]

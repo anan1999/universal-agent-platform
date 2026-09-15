@@ -82,6 +82,22 @@ def test_accessibility_work_selects_a_reviewing_role(project):
     assert any("accessibility" in task["agent"] for task in _agents(plan))
 
 
+@pytest.mark.parametrize(("goal", "profiles", "expected_role"), [
+    ("Create the responsive medication-planner prototype described by the local requirements.",
+     ["uiux"], "ui_designer"),
+    ("Create the standalone vector event poster described by the local brief.",
+     ["design"], "visual_designer"),
+    ("Create the valid Wavefront 3D model described by the local brief.",
+     ["design"], "visual_designer"),
+])
+def test_concrete_design_asset_selects_a_producing_role(project, goal, profiles, expected_role):
+    plan = _dry_run(goal, "mock", profiles=profiles)
+    agents = _agents(plan)
+    assert agents[0]["agent"] == expected_role
+    assert agents[0]["artifact_type"] == "design_asset"
+    assert plan["analysis"]["read_only"] is False
+
+
 # -- Scenario D: product -----------------------------------------------------
 
 def test_product_goal_produces_a_document_not_code(project):
