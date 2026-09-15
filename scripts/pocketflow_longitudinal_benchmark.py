@@ -104,6 +104,8 @@ def arguments() -> argparse.Namespace:
     parser.add_argument("--workspace", type=Path, default=Path("build/pocketflow-longitudinal"))
     parser.add_argument("--output", type=Path,
                         default=Path("benchmark-results/pocketflow-longitudinal.json"))
+    parser.add_argument("--report", type=Path,
+                        default=Path("docs/pocketflow-longitudinal-results.md"))
     return parser.parse_args()
 
 
@@ -226,8 +228,9 @@ def evaluate(path: Path, task_number: int) -> dict[str, Any]:
         if pytest_temp.exists():
             remove_tree(pytest_temp)
     checks: list[tuple[str, bool]] = [("pytest", result.returncode == 0)]
-    python_sources = [item for folder in (path / "app", path / "tests") if folder.exists()
-                      for item in folder.rglob("*.py")]
+    ignored_python_parts = {".agent", ".git", ".pytest_cache", "__pycache__", "node_modules"}
+    python_sources = [item for item in path.rglob("*.py")
+                      if not ignored_python_parts.intersection(item.relative_to(path).parts)]
     if task_number >= 1:
         checks.append(("backend", any("FastAPI(" in item.read_text(encoding="utf-8", errors="replace")
                                       for item in python_sources)))
@@ -550,8 +553,8 @@ def audit_existing(args: argparse.Namespace) -> dict[str, Any]:
     payload.setdefault("cumulative", {})["quality_adjusted_savings_claimable"] = bool(
         payload["cumulative"].get("savings_claimable") and quality_equivalent)
     args.output.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    Path("docs/pocketflow-longitudinal-results.md").write_text(
-        render_report(payload), encoding="utf-8")
+    args.report.parent.mkdir(parents=True, exist_ok=True)
+    args.report.write_text(render_report(payload), encoding="utf-8")
     return payload
 
 
@@ -605,6 +608,7 @@ def write_interruption(args: argparse.Namespace, tasks: list[dict[str, Any]],
             "findings": result.get("findings", []),
             "uncertainty_reason": result.get("uncertainty_reason"),
             "message": "Provider execution stopped early; resolve the provider or task blocker before resuming.",
+            "partial_result": result,
         }
     cumulative_baseline = sum(int(item.get("baseline_tokens", 0)) for item in tasks)
     cumulative_uap = sum(int(item.get("uap_tokens", 0)) for item in tasks)
@@ -631,7 +635,8 @@ def write_interruption(args: argparse.Namespace, tasks: list[dict[str, Any]],
         "intelligence": longitudinal_intelligence(uap_root, tasks),
     }
     args.output.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    Path("docs/pocketflow-longitudinal-results.md").write_text(render_report(payload), encoding="utf-8")
+    args.report.parent.mkdir(parents=True, exist_ok=True)
+    args.report.write_text(render_report(payload), encoding="utf-8")
 
 
 def repair_react_filename_false_negative(task: dict[str, Any]) -> None:
@@ -940,8 +945,8 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
                               "comparison_valid_tasks": sum(item["comparison_valid"] for item in tasks)},
                "intelligence": longitudinal_intelligence(uap, tasks)}
     args.output.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    report = Path("docs/pocketflow-longitudinal-results.md")
-    report.write_text(render_report(payload), encoding="utf-8")
+    args.report.parent.mkdir(parents=True, exist_ok=True)
+    args.report.write_text(render_report(payload), encoding="utf-8")
     return payload
 
 
