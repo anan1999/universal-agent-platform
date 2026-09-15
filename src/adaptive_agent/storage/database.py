@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Iterator
 
 
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 8
 
 #: Additive columns introduced after a schema was first created. Every entry is
 #: `(table, column, definition)` and is applied only when the column is missing.
@@ -22,6 +22,9 @@ ADDITIVE_COLUMNS: tuple[tuple[str, str, str], ...] = (
     ("runs", "composition_json", "TEXT NOT NULL DEFAULT '{}'"),
     ("token_usage", "provider", "TEXT NOT NULL DEFAULT ''"),
     ("token_usage", "invocation_count", "INTEGER NOT NULL DEFAULT 1"),
+    ("token_usage", "provider_tool_calls", "INTEGER NOT NULL DEFAULT 0"),
+    ("token_usage", "provider_messages", "INTEGER NOT NULL DEFAULT 0"),
+    ("token_usage", "attribution_json", "TEXT NOT NULL DEFAULT '{}'"),
     ("agent_performance", "provider", "TEXT NOT NULL DEFAULT ''"),
     ("agent_performance", "capability_signature", "TEXT NOT NULL DEFAULT ''"),
     ("agent_performance", "work_profile", "TEXT NOT NULL DEFAULT ''"),

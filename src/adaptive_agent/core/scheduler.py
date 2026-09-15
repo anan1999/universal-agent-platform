@@ -488,10 +488,13 @@ class Scheduler:
         invocations = int(usage.get("invocation_count", 1 if task.kind is TaskKind.AGENT else 0))
         self.database.execute(
             "INSERT INTO token_usage(run_id,task_id,agent,input_tokens,output_tokens,estimated,cached_tokens,"
-            "token_source,provider,invocation_count) VALUES(?,?,?,?,?,?,?,?,?,?)",
+            "token_source,provider,invocation_count,provider_tool_calls,provider_messages,attribution_json) "
+            "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (task.run_id, task.id, task.owner, int(usage.get("input", 0)), int(usage.get("output", 0)),
              int(source == "estimated"), int(usage.get("cached", 0)), source,
-             str(task.metadata.get("provider", self.provider_name)), invocations),
+             str(task.metadata.get("provider", self.provider_name)), invocations,
+             int(usage.get("provider_tool_calls", 0)), int(usage.get("provider_messages", 0)),
+             self.database.json(usage.get("attribution", {}))),
         )
         self.performance.record(task, receipt)
         self.events.emit(Event("receipt_created", task.run_id, task.owner, task.id,

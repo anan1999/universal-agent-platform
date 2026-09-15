@@ -45,12 +45,14 @@ def test_scheduler_aggregates_measured_cost_for_adaptive_learning(tmp_path):
                 duration_seconds=2.5,
                 token_usage={"input": 100, "output": 20, "cached": 60,
                              "source": "measured", "provider_tool_calls": 2,
-                             "provider_messages": 1, "invocation_count": 1},
+                             "provider_messages": 1, "invocation_count": 1,
+                             "attribution": {"method": "test", "windows": [
+                                 {"kind": "after_command_execution", "total_tokens": 120}]}},
             )
 
     tasks = [Task("A", "R", "first", "worker"),
              Task("B", "R", "second", "worker", dependencies=["A"])]
-    _, scheduler, result = _budget_graph(
+    db, scheduler, result = _budget_graph(
         tmp_path, tasks, MeasuredProvider(delay=0), ExecutionBudget())
     assert result is True
     assert scheduler.adaptive_metrics() == {
@@ -60,6 +62,11 @@ def test_scheduler_aggregates_measured_cost_for_adaptive_learning(tmp_path):
         "uncached_input_tokens": 80, "output_tokens": 40,
         "provider_attempts": 2,
     }
+    usage_rows = db.query(
+        "SELECT provider_tool_calls,provider_messages,attribution_json FROM token_usage")
+    assert [(row["provider_tool_calls"], row["provider_messages"])
+            for row in usage_rows] == [(2, 1), (2, 1)]
+    assert all('"after_command_execution"' in row["attribution_json"] for row in usage_rows)
 
 
 def test_scheduler_refuses_estimated_cost_as_learning_evidence(tmp_path):

@@ -45,7 +45,8 @@ TASKS = [
 ]
 
 QUALITY_CONTRACTS = {
-    1: {"checks": ["backend"], "prefixes": ["app/", "tests/", "pyproject.toml", "README.md"],
+    1: {"checks": ["backend"],
+        "prefixes": ["app/", "backend/", "pocketflow/", "src/", "tests/", "pyproject.toml", "README.md"],
         "tests": True},
     2: {"checks": ["react dashboard"], "prefixes": ["frontend/", "README.md", ".gitignore"],
         "tests": False},
@@ -343,6 +344,8 @@ def summarize_uap_run(db: Database, run_id: str, provider_id: str,
     run = db.query("SELECT status,composition_json FROM runs WHERE id=?", (run_id,))[0]
     usage = db.query("SELECT SUM(input_tokens) input,SUM(output_tokens) output,"
                      "SUM(cached_tokens) cached,SUM(invocation_count) invocations,"
+                     "SUM(provider_tool_calls) provider_tool_calls,"
+                     "SUM(provider_messages) provider_messages,"
                      "SUM(CASE WHEN invocation_count>0 AND token_source!='measured' THEN 1 ELSE 0 END) incomplete,"
                      "CASE WHEN SUM(CASE WHEN token_source='measured' THEN 1 ELSE 0 END)>0 "
                      "THEN 'measured' WHEN SUM(CASE WHEN token_source='estimated' THEN 1 ELSE 0 END)>0 "
@@ -357,19 +360,16 @@ def summarize_uap_run(db: Database, run_id: str, provider_id: str,
     files = []
     retries = 0
     errors: list[str] = []
-    provider_tool_calls = 0
-    provider_messages = 0
     attributions: list[dict[str, Any]] = []
+    for row in db.query("SELECT attribution_json FROM token_usage WHERE run_id=?", (run_id,)):
+        attribution = json.loads(row.get("attribution_json") or "{}")
+        if attribution:
+            attributions.append(attribution)
     for row in db.query("SELECT data_json FROM receipts WHERE task_id IN "
                         "(SELECT id FROM tasks WHERE run_id=?)", (run_id,)):
         receipt = json.loads(row["data_json"])
         files.extend(receipt.get("files", []))
         retries += int(receipt.get("retry_count", 0))
-        receipt_usage = receipt.get("token_usage", {})
-        provider_tool_calls += int(receipt_usage.get("provider_tool_calls", 0))
-        provider_messages += int(receipt_usage.get("provider_messages", 0))
-        if receipt_usage.get("attribution"):
-            attributions.append(receipt_usage["attribution"])
         if receipt.get("error_code"):
             errors.append(str(receipt["error_code"]))
     lifecycle_data = (json.loads(lifecycle["data_json"]) if lifecycle
@@ -382,11 +382,11 @@ def summarize_uap_run(db: Database, run_id: str, provider_id: str,
             "usage_complete": bool(int(usage["invocations"] or 0) > 0
                                    and int(usage["incomplete"] or 0) == 0),
             "ai_invocations": int(usage["invocations"] or 0), "retries": retries,
-            "provider_tool_calls": provider_tool_calls,
-            "provider_messages": provider_messages,
+            "provider_tool_calls": int(usage["provider_tool_calls"] or 0),
+            "provider_messages": int(usage["provider_messages"] or 0),
             "token_attribution": (attributions[0] if len(attributions) == 1 else
-                                  {"method": "multiple_provider_invocations",
-                                   "invocations": attributions}),
+                                  ({"method": "multiple_provider_invocations",
+                                    "invocations": attributions} if attributions else {})),
             "duration_seconds": duration_seconds,
             "handoffs": max(0, sum(item.get("kind") == "agent" for item in task_payloads) - 1),
             "deterministic_tool_calls": sum(item.get("kind") == "tool" for item in task_payloads),
