@@ -344,8 +344,8 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
                 }
                 row["comparison_valid"] = valid_pair(row)
             invalid = [row for row in track["rounds"] if not row["comparison_valid"]]
-            if len(invalid) == 1:
-                row = invalid[0]
+            if invalid and invalid[-1] is track["rounds"][-1]:
+                row = invalid[-1]
                 number = int(row["round"])
                 if number == len(track["rounds"]):
                     spec = specs[domain][number - 1]
@@ -376,8 +376,9 @@ async def execute(args: argparse.Namespace) -> dict[str, Any]:
                     row["comparison_valid"] = valid_pair(row)
                     invalid = [item for item in track["rounds"]
                                if not item["comparison_valid"]]
-            if len(invalid) == 1 and repair_calls < args.max_repair_calls:
-                row = invalid[0]
+            if (invalid and invalid[-1] is track["rounds"][-1]
+                    and repair_calls < args.max_repair_calls):
+                row = invalid[-1]
                 side = repairable_side(row)
                 number = int(row["round"])
                 if side is not None and number == len(track["rounds"]):
