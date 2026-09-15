@@ -323,7 +323,7 @@ class CodexProvider(AIProvider):
             usage, execution_id = self._parse_telemetry(stdout_text)
             if not usage:
                 return self._failure(task, CodexErrorCode.TIMEOUT, message, started, model=model)
-            token_usage: dict[str, int | bool | str] = {
+            token_usage: dict[str, Any] = {
                 "input": int(usage.get("input_tokens", 0)),
                 "output": int(usage.get("output_tokens", 0)),
                 "cached": int(usage.get("cached_input_tokens", 0)),
@@ -333,6 +333,7 @@ class CodexProvider(AIProvider):
                 "invocation_count": 1,
                 **self._execution_counts(stdout_text),
                 **self._usage_breakdown(usage),
+                "attribution": self._token_attribution(stdout_text),
             }
             if execution_id:
                 token_usage["execution_id"] = execution_id
@@ -351,13 +352,14 @@ class CodexProvider(AIProvider):
             stdout_text = stopped.stdout.decode("utf-8", errors="replace")
             usage, execution_id = self._parse_telemetry(stdout_text)
             source = "measured" if usage else "unavailable"
-            token_usage: dict[str, int | bool | str] = {
+            token_usage: dict[str, Any] = {
                 "input": int(usage.get("input_tokens", 0)),
                 "output": int(usage.get("output_tokens", 0)),
                 "cached": int(usage.get("cached_input_tokens", 0)),
                 "source": source, "estimated": False, "complete": bool(usage),
                 "invocation_count": 1, **self._execution_counts(stdout_text),
                 **self._usage_breakdown(usage),
+                "attribution": self._token_attribution(stdout_text),
             }
             if execution_id:
                 token_usage["execution_id"] = execution_id
@@ -375,13 +377,14 @@ class CodexProvider(AIProvider):
             stdout_text = completed.stdout.decode("utf-8", errors="replace")
             usage, execution_id = self._parse_telemetry(stdout_text)
             source = "partial_measured" if usage else "unavailable"
-            token_usage: dict[str, int | bool | str] = {
+            token_usage: dict[str, Any] = {
                 "input": int(usage.get("input_tokens", 0)),
                 "output": int(usage.get("output_tokens", 0)),
                 "cached": int(usage.get("cached_input_tokens", 0)),
                 "source": source, "estimated": False, "complete": False,
                 "invocation_count": 1, **self._execution_counts(stdout_text),
                 **self._usage_breakdown(usage),
+                "attribution": self._token_attribution(stdout_text),
             }
             if execution_id:
                 token_usage["execution_id"] = execution_id
@@ -422,13 +425,14 @@ class CodexProvider(AIProvider):
         if progress:
             progress(100, f"Codex completed {task.title}")
         source = "measured" if usage else "estimated"
-        token_usage: dict[str, int | bool | str] = {
+        token_usage: dict[str, Any] = {
             "input": int(usage.get("input_tokens", 0)), "output": int(usage.get("output_tokens", 0)),
             "cached": int(usage.get("cached_input_tokens", 0)), "source": source, "estimated": source != "measured",
             "complete": source == "measured",
             "invocation_count": 1,
             **self._execution_counts(stdout_text),
             **self._usage_breakdown(usage),
+            "attribution": self._token_attribution(stdout_text),
         }
         if execution_id:
             token_usage["execution_id"] = execution_id
@@ -852,26 +856,9 @@ class CodexProvider(AIProvider):
                 event = json.loads(line)
             except (ValueError, json.JSONDecodeError):
                 continue
-            candidate = event.get("usage")
-            payload = event.get("payload")
-            if (isinstance(payload, dict) and payload.get("type") == "token_count"
-                    and isinstance(payload.get("info"), dict)):
-                candidate = payload["info"].get("total_token_usage") or candidate
-            params = event.get("params")
-            if isinstance(params, dict) and isinstance(params.get("tokenUsage"), dict):
-                candidate = params["tokenUsage"].get("total") or candidate
-            if isinstance(candidate, dict):
-                aliases = {
-                    "inputTokens": "input_tokens",
-                    "cachedInputTokens": "cached_input_tokens",
-                    "cacheWriteInputTokens": "cache_write_input_tokens",
-                    "outputTokens": "output_tokens",
-                    "reasoningOutputTokens": "reasoning_output_tokens",
-                    "totalTokens": "total_tokens",
-                }
-                usage.update({aliases.get(key, key): int(value)
-                              for key, value in candidate.items()
-                              if isinstance(value, (int, float))})
+            candidate = CodexProvider._usage_candidate(event)
+            if candidate:
+                usage.update(candidate)
             if event.get("type") == "thread.started" and event.get("thread_id"):
                 execution_id = str(event["thread_id"])
             if event.get("method") == "thread/started" and isinstance(event.get("params"), dict):
@@ -883,6 +870,94 @@ class CodexProvider(AIProvider):
                 if isinstance(thread, dict) and thread.get("id"):
                     execution_id = str(thread["id"])
         return usage, execution_id
+
+    @staticmethod
+    def _usage_candidate(event: dict[str, Any]) -> dict[str, int]:
+        """Normalize one provider-native cumulative usage notification."""
+        candidate = event.get("usage")
+        payload = event.get("payload")
+        if (isinstance(payload, dict) and payload.get("type") == "token_count"
+                and isinstance(payload.get("info"), dict)):
+            candidate = payload["info"].get("total_token_usage") or candidate
+        params = event.get("params")
+        if isinstance(params, dict) and isinstance(params.get("tokenUsage"), dict):
+            candidate = params["tokenUsage"].get("total") or candidate
+        if not isinstance(candidate, dict):
+            return {}
+        aliases = {
+            "inputTokens": "input_tokens",
+            "cachedInputTokens": "cached_input_tokens",
+            "cacheWriteInputTokens": "cache_write_input_tokens",
+            "outputTokens": "output_tokens",
+            "reasoningOutputTokens": "reasoning_output_tokens",
+            "totalTokens": "total_tokens",
+        }
+        return {aliases.get(key, key): int(value) for key, value in candidate.items()
+                if isinstance(value, (int, float))}
+
+    @staticmethod
+    def _token_attribution(output: str) -> dict[str, Any]:
+        """Attribute exact cumulative usage deltas to provider event windows.
+
+        A shell or file tool does not itself consume model tokens. The useful
+        causal boundary is the next model step that reads its result, so each
+        delta is labelled with the most recently completed tool. The totals are
+        provider-measured; the causal label is deliberately reported as a
+        temporal inference rather than ground truth.
+        """
+        previous = {"input_tokens": 0, "cached_input_tokens": 0, "output_tokens": 0}
+        trigger = {"sequence": 0, "kind": "initial_model_context", "item_id": None}
+        windows: list[dict[str, Any]] = []
+        resets = 0
+        kinds = {
+            "command_execution": "command_execution", "commandExecution": "command_execution",
+            "mcp_tool_call": "mcp_tool_call", "mcpToolCall": "mcp_tool_call",
+            "web_search": "web_search", "webSearch": "web_search",
+            "file_change": "file_change", "fileChange": "file_change",
+        }
+        for line in output.splitlines():
+            try:
+                event = json.loads(line)
+            except (ValueError, json.JSONDecodeError):
+                continue
+            candidate = CodexProvider._usage_candidate(event)
+            if candidate:
+                current = {key: int(candidate.get(key, previous[key])) for key in previous}
+                if any(current[key] < previous[key] for key in previous):
+                    previous = {key: 0 for key in previous}
+                    resets += 1
+                delta_input = current["input_tokens"] - previous["input_tokens"]
+                delta_cached = current["cached_input_tokens"] - previous["cached_input_tokens"]
+                delta_output = current["output_tokens"] - previous["output_tokens"]
+                if delta_input or delta_output:
+                    windows.append({
+                        **trigger,
+                        "input_tokens": delta_input,
+                        "cached_input_tokens": delta_cached,
+                        "uncached_input_tokens": max(0, delta_input - delta_cached),
+                        "output_tokens": delta_output,
+                        "total_tokens": delta_input + delta_output,
+                    })
+                previous = current
+
+            item = event.get("item")
+            if event.get("method") == "item/completed" and isinstance(event.get("params"), dict):
+                item = event["params"].get("item")
+            if not isinstance(item, dict):
+                continue
+            kind = kinds.get(str(item.get("type")))
+            if kind:
+                trigger = {"sequence": int(trigger["sequence"]) + 1,
+                           "kind": f"after_{kind}",
+                           "item_id": str(item.get("id")) if item.get("id") else None}
+
+        return {
+            "method": "provider_cumulative_usage_delta_by_event_window",
+            "token_totals_exact": bool(windows),
+            "causal_labels_exact": False,
+            "reset_count": resets,
+            "windows": windows,
+        }
 
     @staticmethod
     def _execution_counts(output: str) -> dict[str, int]:

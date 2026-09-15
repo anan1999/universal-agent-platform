@@ -205,12 +205,15 @@ def test_timeout_preserves_partial_measured_usage(tmp_path):
     receipt = asyncio.run(provider.execute(task))
     assert receipt.status == "failed"
     assert receipt.error_code == CodexErrorCode.TIMEOUT.value
+    attribution = receipt.token_usage.pop("attribution")
     assert receipt.token_usage == {
         "input": 321, "output": 45, "cached": 120,
         "source": "partial_measured", "estimated": False, "complete": False,
         "invocation_count": 1, "provider_tool_calls": 1, "provider_messages": 0,
         "execution_id": "thread-timeout-1",
     }
+    assert attribution["windows"][0]["kind"] == "after_command_execution"
+    assert attribution["windows"][0]["total_tokens"] == 366
 
 
 def test_telemetry_parses_exact_persisted_token_count_without_estimation():
@@ -241,6 +244,34 @@ def test_telemetry_normalizes_app_server_token_usage_notification():
     assert usage["cached_input_tokens"] == 40
     assert usage["reasoning_output_tokens"] == 3
     assert usage["total_tokens"] == 110
+
+
+def test_token_attribution_uses_exact_deltas_after_each_tool_window():
+    events = [
+        {"method": "thread/tokenUsage/updated", "params": {"tokenUsage": {"total": {
+            "inputTokens": 100, "cachedInputTokens": 60, "outputTokens": 10}}}},
+        {"method": "item/completed", "params": {"item": {
+            "type": "commandExecution", "id": "cmd-1"}}},
+        {"method": "thread/tokenUsage/updated", "params": {"tokenUsage": {"total": {
+            "inputTokens": 160, "cachedInputTokens": 100, "outputTokens": 20}}}},
+        {"method": "item/completed", "params": {"item": {
+            "type": "fileChange", "id": "edit-1"}}},
+        {"method": "thread/tokenUsage/updated", "params": {"tokenUsage": {"total": {
+            "inputTokens": 200, "cachedInputTokens": 120, "outputTokens": 25}}}},
+    ]
+    attribution = CodexProvider._token_attribution(
+        "\n".join(json.dumps(event) for event in events))
+
+    assert attribution["token_totals_exact"] is True
+    assert attribution["causal_labels_exact"] is False
+    assert [window["kind"] for window in attribution["windows"]] == [
+        "initial_model_context", "after_command_execution", "after_file_change"]
+    assert attribution["windows"][1] == {
+        "sequence": 1, "kind": "after_command_execution", "item_id": "cmd-1",
+        "input_tokens": 60, "cached_input_tokens": 40,
+        "uncached_input_tokens": 20, "output_tokens": 10, "total_tokens": 70,
+    }
+    assert sum(window["total_tokens"] for window in attribution["windows"]) == 225
 
 
 def test_artifact_probe_completion_is_distinct_from_provider_receipt(tmp_path):
@@ -519,6 +550,7 @@ def test_execute_uses_live_usage_as_complete_measured_receipt(tmp_path):
     assert receipt.token_usage["complete"] is True
     assert receipt.token_usage["input"] == 500
     assert receipt.token_usage["cached"] == 300
+    assert receipt.token_usage["attribution"]["windows"][0]["total_tokens"] == 550
     assert receipt.token_usage["output"] == 50
     assert receipt.token_usage["reasoning_output"] == 12
     assert receipt.token_usage["total"] == 550
