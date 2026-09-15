@@ -715,7 +715,8 @@
     "savings_claimable": true,
     "learning_reuse_validated": true,
     "learning_savings_claimable": true,
-    "comparison_valid_tasks": 5
+    "comparison_valid_tasks": 5,
+    "quality_adjusted_savings_claimable": false
   },
   "intelligence": {
     "measurement_source": "paired task receipts and project index",
@@ -775,5 +776,107 @@
       "warm_runs": 0,
       "revalidation_runs": 0
     }
+  },
+  "posthoc_quality_audit": {
+    "method": "deterministic_external_quality_v1",
+    "tasks": [
+      {
+        "task_number": 5,
+        "baseline": {
+          "method": "deterministic_external_quality_v1",
+          "provider_self_report_used": false,
+          "score": 100.0,
+          "passed": true,
+          "dimensions": {
+            "functional_contract": {
+              "weight": 50,
+              "score": 50.0,
+              "passed": true,
+              "evidence": "3/3 required checks passed"
+            },
+            "regression_safety": {
+              "weight": 20,
+              "score": 20,
+              "passed": true,
+              "evidence": "project test command passed"
+            },
+            "test_evidence": {
+              "weight": 15,
+              "score": 15,
+              "passed": true,
+              "evidence": "1 changed test file(s)"
+            },
+            "change_focus": {
+              "weight": 10,
+              "score": 10.0,
+              "passed": true,
+              "evidence": "6/6 changed paths in expected scope"
+            },
+            "implementation_evidence": {
+              "weight": 5,
+              "score": 5,
+              "passed": true,
+              "evidence": "6 source path(s) changed"
+            }
+          },
+          "changed_paths": [
+            "frontend/src/api.js",
+            "frontend/src/main.jsx",
+            "frontend/src/monthly.js",
+            "frontend/src/style.css",
+            "frontend/tests/monthly.test.js",
+            "frontend/vite.config.js"
+          ],
+          "unexpected_paths": []
+        },
+        "uap": {
+          "method": "deterministic_external_quality_v1",
+          "provider_self_report_used": false,
+          "score": 85.0,
+          "passed": false,
+          "dimensions": {
+            "functional_contract": {
+              "weight": 50,
+              "score": 50.0,
+              "passed": true,
+              "evidence": "3/3 required checks passed"
+            },
+            "regression_safety": {
+              "weight": 20,
+              "score": 20,
+              "passed": true,
+              "evidence": "project test command passed"
+            },
+            "test_evidence": {
+              "weight": 15,
+              "score": 0,
+              "passed": false,
+              "evidence": "0 changed test file(s)"
+            },
+            "change_focus": {
+              "weight": 10,
+              "score": 10.0,
+              "passed": true,
+              "evidence": "4/4 changed paths in expected scope"
+            },
+            "implementation_evidence": {
+              "weight": 5,
+              "score": 5,
+              "passed": true,
+              "evidence": "4 source path(s) changed"
+            }
+          },
+          "changed_paths": [
+            "frontend/src/api.js",
+            "frontend/src/main.jsx",
+            "frontend/src/monthly-report.js",
+            "frontend/vite.config.js"
+          ],
+          "unexpected_paths": []
+        }
+      }
+    ],
+    "quality_equivalent": false,
+    "limitation": "Only the latest paired arm artifacts remain available; earlier task arms were intentionally replaced by canonical checkpoints."
   }
 }

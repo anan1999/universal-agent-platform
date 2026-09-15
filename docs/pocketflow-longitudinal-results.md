@@ -21,6 +21,8 @@ Five implementation tasks were executed sequentially in the same fresh project. 
 - UAP: completed, 107579 tokens (measured)
 - Token reduction: 13.88%
 - Quality: baseline=True, UAP=True
+- Independent quality score: baseline=not collected; UAP=not collected
+- Provider tool windows: baseline=not collected; UAP=not collected
 - State: WARM
 - Paired comparison valid: True
 - Canonical source: baseline
@@ -34,6 +36,8 @@ Five implementation tasks were executed sequentially in the same fresh project. 
 - UAP: completed, 115217 tokens (measured)
 - Token reduction: 57.66%
 - Quality: baseline=True, UAP=True
+- Independent quality score: baseline=not collected; UAP=not collected
+- Provider tool windows: baseline=not collected; UAP=not collected
 - State: WARM
 - Paired comparison valid: True
 - Canonical source: baseline
@@ -47,6 +51,8 @@ Five implementation tasks were executed sequentially in the same fresh project. 
 - UAP: completed, 130456 tokens (measured)
 - Token reduction: 4.97%
 - Quality: baseline=True, UAP=True
+- Independent quality score: baseline=not collected; UAP=not collected
+- Provider tool windows: baseline=not collected; UAP=not collected
 - State: WARM
 - Paired comparison valid: True
 - Canonical source: baseline
@@ -60,6 +66,8 @@ Five implementation tasks were executed sequentially in the same fresh project. 
 - UAP: completed, 133843 tokens (measured)
 - Token reduction: 14.79%
 - Quality: baseline=True, UAP=True
+- Independent quality score: baseline=not collected; UAP=not collected
+- Provider tool windows: baseline=not collected; UAP=not collected
 - State: WARM
 - Paired comparison valid: True
 - Canonical source: baseline
@@ -73,10 +81,20 @@ Five implementation tasks were executed sequentially in the same fresh project. 
 - UAP: completed, 116790 tokens (measured)
 - Token reduction: 13.65%
 - Quality: baseline=True, UAP=True
+- Independent quality score: baseline=not collected; UAP=not collected
+- Provider tool windows: baseline=not collected; UAP=not collected
 - State: WARM
 - Paired comparison valid: True
 - Canonical source: baseline
 - Reuse hits: 0; rediscovery: 0
+
+## Post-hoc independent quality audit
+
+- Audited tasks: 5
+- Quality equivalent: False
+- Quality-adjusted savings claimable: False
+- Task 5: baseline=100.0/100 (PASS), UAP=85.0/100 (FAIL)
+- Limitation: Only the latest paired arm artifacts remain available; earlier task arms were intentionally replaced by canonical checkpoints.
 
 ## Cumulative
 
