@@ -84,6 +84,8 @@ def aggregate(selections: list[tuple[str, dict[str, Any]]]) -> dict[str, Any]:
 
 
 def render(payload: dict[str, Any]) -> str:
+    spike = next((row for track in payload["tracks"] if track["domain"] == "three-d-design"
+                  for row in track["rounds"] if row["round"] == 2), None)
     lines = ["# 三軌連續設計 Benchmark 彙整", "",
              "本報告固定選用 r3 的 UI/UX 軌，以及修正跨 profile 路由後 r4 的平面與 3D 軌。"
              "每輪 Baseline/UAP 從相同通過 checkpoint 開始；只有雙方品質、source hash 與精確 Token "
@@ -128,6 +130,22 @@ def render(payload: dict[str, Any]) -> str:
               "3. 修正前 follow-up 會漂移到 Documentation Planner；修正後平面與 3D follow-up 已回到 Visual Designer。",
               "4. 3D 第 2 輪雖品質通過，UAP 出現 235705 Token 尖峰；這是總體成本惡化的主因。",
               "5. UAP 第 3 輪在平面與 3D 都低於 Baseline，表示重用可能在後段生效，但目前不穩定且不足以抵銷尖峰。", "",
+              "## 3D 第 2 輪尖峰歸因", ""]
+    if spike:
+        baseline_spike = spike["baseline"]
+        uap_spike = spike["uap"]
+        lines += [
+            f"- Baseline：{baseline_spike['attribution_summary']['windows']} 個 windows、"
+            f"{baseline_spike['provider_tool_calls']} tool calls；"
+            f"command {baseline_spike['attribution_summary']['tokens_by_kind'].get('after_command_execution', 0)} Token，"
+            f"file change {baseline_spike['attribution_summary']['tokens_by_kind'].get('after_file_change', 0)} Token。",
+            f"- UAP：{uap_spike['attribution_summary']['windows']} 個 windows、"
+            f"{uap_spike['provider_tool_calls']} tool calls；"
+            f"command {uap_spike['attribution_summary']['tokens_by_kind'].get('after_command_execution', 0)} Token，"
+            f"file change {uap_spike['attribution_summary']['tokens_by_kind'].get('after_file_change', 0)} Token。",
+            f"- UAP reuse hits：{uap_spike.get('reuse_hits', 0)}；rediscovery："
+            f"{uap_spike.get('rediscovery', 0)}。尖峰主要來自額外命令/驗證往返，並非已驗證知識重用。", ""]
+    lines += [
               "## 結論", "",
               "目前不能宣稱 UAP 在設計任務上『越用越少』。較精確的結論是：路由正確性已改善，"
               "後段輪次偶爾省 Token，但固定成本與 3D 工具往返尖峰仍使有效配對總成本高於 Baseline。"
