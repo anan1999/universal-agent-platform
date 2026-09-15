@@ -45,7 +45,9 @@ def arguments() -> argparse.Namespace:
     parser.add_argument("--resume", action="store_true",
                         help="reuse matching, acceptance-passing arm checkpoints")
     parser.add_argument("--early-completion", action="store_true",
-                        help="stop an agentic provider after two independent acceptance passes")
+                        help="latency experiment only: stop after two acceptance passes; incompatible with exact-token mode")
+    parser.add_argument("--metric", choices=("exact-tokens", "latency"), default="exact-tokens",
+                        help="primary measurement; exact-tokens rejects runs without provider-reported usage")
     parser.add_argument("--rounds", type=int, default=1,
                         help="paired repetitions; arm order alternates each round")
     parser.add_argument("--max-provider-calls", type=int, default=2,
@@ -79,6 +81,11 @@ def round_plan(args: argparse.Namespace) -> list[tuple[dict[str, Any], int, str,
 
 
 def enforce_call_ceiling(args: argparse.Namespace) -> int:
+    if (getattr(args, "metric", "exact-tokens") == "exact-tokens"
+            and bool(getattr(args, "early_completion", False))):
+        raise SystemExit(
+            "--early-completion interrupts Codex before final usage and cannot be used with "
+            "--metric exact-tokens. Use normal completion or explicitly select --metric latency.")
     planned = len(round_plan(args)) * 2
     ceiling = int(getattr(args, "max_provider_calls", 2))
     if planned > ceiling:
@@ -118,11 +125,16 @@ def receipt_metrics(receipt, duration: float) -> dict[str, Any]:
     input_tokens = int(usage.get("input", 0) or 0)
     cached = int(usage.get("cached", 0) or 0)
     output = int(usage.get("output", 0) or 0)
+    reported_total = usage.get("total")
+    total = (int(reported_total) if isinstance(reported_total, (int, float))
+             else input_tokens + output)
     return {
         "provider_status": receipt.status, "provider": receipt.provider, "model": receipt.model,
         "input_tokens": input_tokens, "cached_input_tokens": cached,
         "non_cached_input_tokens": max(0, input_tokens - cached), "output_tokens": output,
-        "total_tokens": input_tokens + output, "token_source": usage.get("source", "unavailable"),
+        "reasoning_output_tokens": int(usage.get("reasoning_output", 0) or 0),
+        "cache_write_input_tokens": int(usage.get("cache_write_input", 0) or 0),
+        "total_tokens": total, "token_source": usage.get("source", "unavailable"),
         "usage_complete": usage.get("source") == "measured",
         "duration_seconds": round(duration, 3),
         "ai_invocations": int(usage.get("invocation_count", 1) or 1),
@@ -202,6 +214,7 @@ def _signature(args: argparse.Namespace, spec: dict[str, Any], source: str, arm:
         "reuse_context_enabled": arm == "enabled", "provider": args.provider,
         "model": args.model, "reasoning": args.reasoning, "timeout": args.timeout,
         "early_completion": bool(getattr(args, "early_completion", False)),
+        "metric": getattr(args, "metric", "exact-tokens"),
     }
     if run_key and run_key != spec["id"]:
         payload["round_key"] = run_key
@@ -249,9 +262,14 @@ async def _run_arm(args: argparse.Namespace, spec: dict[str, Any], fixture: Prep
     receipt = await provider.execute(task, packet=packet, completion_probe=probe)
     metrics = receipt_metrics(receipt, time.monotonic() - started)
     quality = acceptance(root, spec["id"])
+    exact_required = getattr(args, "metric", "exact-tokens") == "exact-tokens"
+    exact_available = metrics["token_source"] == "measured"
     result = {
         **metrics,
-        "status": "completed" if receipt.status == "completed" and quality["passed"] else "failed",
+        "status": ("completed" if receipt.status == "completed" and quality["passed"]
+                   and (exact_available or not exact_required) else
+                   "invalid_exact_usage" if receipt.status == "completed" and quality["passed"]
+                   else "failed"),
         "quality": quality, "post_source_hash": tree_hash(root), "resumed": False,
         "files_changed": changed_files(fixture.prepared, root),
         "project_context_chars": int(composition.project_intelligence.get("context_chars", 0)),
@@ -494,7 +512,9 @@ def render(payload: dict[str, Any]) -> str:
         ])
     lines.extend(["", "A token comparison is conclusive only when both arms pass acceptance and both "
                   "providers report complete measured usage. Partial timeout telemetry is retained but never "
-                  "counted as proof of savings.", ""])
+                  "counted as proof of savings.",
+                  "", "Exact formulas: total = input + output; non-cached input = input - cached input. "
+                  "Reasoning output is a subset of output and is not added again.", ""])
     return "\n".join(lines)
 
 

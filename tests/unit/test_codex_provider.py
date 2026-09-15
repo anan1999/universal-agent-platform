@@ -180,6 +180,36 @@ def test_timeout_preserves_partial_measured_usage(tmp_path):
     }
 
 
+def test_telemetry_parses_exact_persisted_token_count_without_estimation():
+    output = json.dumps({
+        "type": "event_msg",
+        "payload": {"type": "token_count", "info": {"total_token_usage": {
+            "input_tokens": 1200, "cached_input_tokens": 900,
+            "cache_write_input_tokens": 7, "output_tokens": 80,
+            "reasoning_output_tokens": 25, "total_tokens": 1280,
+        }}},
+    })
+    usage, _ = CodexProvider._parse_telemetry(output)
+    assert usage == {
+        "input_tokens": 1200, "cached_input_tokens": 900,
+        "cache_write_input_tokens": 7, "output_tokens": 80,
+        "reasoning_output_tokens": 25, "total_tokens": 1280,
+    }
+
+
+def test_telemetry_normalizes_app_server_token_usage_notification():
+    output = json.dumps({"method": "thread/tokenUsage/updated", "params": {
+        "threadId": "thread-1", "turnId": "turn-1", "tokenUsage": {"total": {
+            "inputTokens": 100, "cachedInputTokens": 40, "cacheWriteInputTokens": 0,
+            "outputTokens": 10, "reasoningOutputTokens": 3, "totalTokens": 110,
+        }}}})
+    usage, _ = CodexProvider._parse_telemetry(output)
+    assert usage["input_tokens"] == 100
+    assert usage["cached_input_tokens"] == 40
+    assert usage["reasoning_output_tokens"] == 3
+    assert usage["total_tokens"] == 110
+
+
 def test_artifact_probe_completion_is_distinct_from_provider_receipt(tmp_path):
     output = "\n".join([
         json.dumps({"type": "thread.started", "thread_id": "thread-probe-1"}),

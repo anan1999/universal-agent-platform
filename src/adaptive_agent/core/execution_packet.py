@@ -58,6 +58,7 @@ class ExecutionPacket:
             "Use only this packet and the workspace content the task actually needs.",
             "Navigation suggestions do not restrict exploration inside the authorized scope.",
             "Do not inspect unrelated directories or include full logs in the response.",
+            "As soon as the requested artifact and the smallest relevant validation are complete, stop work and return the structured response; do not perform optional cleanup, repeated verification, or unrelated improvements.",
             "Before returning, record only a stable project fact, explicit decision, reusable procedure, or canonical command that is likely to help a later session.",
             "Use an empty learning_evidence array when no stable reusable information was learned.",
             "Never invent learning evidence or include temporary debugging notes, generic advice, hidden reasoning, or transcripts.",

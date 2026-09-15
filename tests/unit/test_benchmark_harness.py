@@ -108,6 +108,13 @@ def test_round_plan_alternates_arm_order_and_call_ceiling_precedes_provider(monk
         asyncio.run(benchmark.execute(args))
 
 
+def test_exact_token_mode_rejects_interrupting_early_completion():
+    args = SimpleNamespace(task="small", rounds=1, max_provider_calls=2,
+                           metric="exact-tokens", early_completion=True)
+    with pytest.raises(SystemExit, match="cannot be used with --metric exact-tokens"):
+        benchmark.enforce_call_ceiling(args)
+
+
 def test_receipt_metrics_separates_artifact_and_provider_completion():
     receipt = SimpleNamespace(
         status="completed", provider="codex", model="model", files=[], error_code=None,
@@ -119,6 +126,20 @@ def test_receipt_metrics_separates_artifact_and_provider_completion():
     assert metrics["completion"] == {"artifact": "completed", "provider": "stopped"}
     assert metrics["provider_protocol_status"] == "stopped"
     assert metrics["usage_complete"] is False
+
+
+def test_receipt_metrics_uses_provider_total_and_preserves_usage_breakdown():
+    receipt = SimpleNamespace(
+        status="completed", provider="codex", model="model", files=[], error_code=None,
+        uncertainty_reason="", completion={}, token_usage={
+            "input": 100, "cached": 60, "cache_write_input": 4, "output": 20,
+            "reasoning_output": 7, "total": 120, "source": "measured",
+        })
+    metrics = benchmark.receipt_metrics(receipt, 1)
+    assert metrics["total_tokens"] == 120
+    assert metrics["non_cached_input_tokens"] == 40
+    assert metrics["reasoning_output_tokens"] == 7
+    assert metrics["cache_write_input_tokens"] == 4
 
 
 def test_pair_aggregation_separates_time_observation_from_token_proof():

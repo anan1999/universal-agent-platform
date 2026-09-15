@@ -317,6 +317,7 @@ class CodexProvider(AIProvider):
                 "complete": False,
                 "invocation_count": 1,
                 **self._execution_counts(stdout_text),
+                **self._usage_breakdown(usage),
             }
             if execution_id:
                 token_usage["execution_id"] = execution_id
@@ -334,6 +335,7 @@ class CodexProvider(AIProvider):
                 "cached": int(usage.get("cached_input_tokens", 0)),
                 "source": source, "estimated": False, "complete": False,
                 "invocation_count": 1, **self._execution_counts(stdout_text),
+                **self._usage_breakdown(usage),
             }
             if execution_id:
                 token_usage["execution_id"] = execution_id
@@ -373,6 +375,7 @@ class CodexProvider(AIProvider):
             "cached": int(usage.get("cached_input_tokens", 0)), "source": source, "estimated": source != "measured",
             "invocation_count": 1,
             **self._execution_counts(stdout_text),
+            **self._usage_breakdown(usage),
         }
         if execution_id:
             token_usage["execution_id"] = execution_id
@@ -549,7 +552,13 @@ class CodexProvider(AIProvider):
 
     @staticmethod
     def _parse_telemetry(output: str) -> tuple[dict[str, int], str | None]:
-        """Extract usage and execution id even when the final JSONL line is incomplete."""
+        """Extract the latest provider-reported usage and execution id.
+
+        Codex exec emits snake_case usage on ``turn.completed``. Persisted
+        rollouts/app-server notifications use a cumulative token-count event.
+        Both are provider measurements; this method never tokenizes text or
+        derives a count from characters.
+        """
         usage: dict[str, int] = {}
         execution_id: str | None = None
         for line in output.splitlines():
@@ -558,8 +567,24 @@ class CodexProvider(AIProvider):
             except (ValueError, json.JSONDecodeError):
                 continue
             candidate = event.get("usage")
+            payload = event.get("payload")
+            if (isinstance(payload, dict) and payload.get("type") == "token_count"
+                    and isinstance(payload.get("info"), dict)):
+                candidate = payload["info"].get("total_token_usage") or candidate
+            params = event.get("params")
+            if isinstance(params, dict) and isinstance(params.get("tokenUsage"), dict):
+                candidate = params["tokenUsage"].get("total") or candidate
             if isinstance(candidate, dict):
-                usage.update({key: int(value) for key, value in candidate.items()
+                aliases = {
+                    "inputTokens": "input_tokens",
+                    "cachedInputTokens": "cached_input_tokens",
+                    "cacheWriteInputTokens": "cache_write_input_tokens",
+                    "outputTokens": "output_tokens",
+                    "reasoningOutputTokens": "reasoning_output_tokens",
+                    "totalTokens": "total_tokens",
+                }
+                usage.update({aliases.get(key, key): int(value)
+                              for key, value in candidate.items()
                               if isinstance(value, (int, float))})
             if event.get("type") == "thread.started" and event.get("thread_id"):
                 execution_id = str(event["thread_id"])
@@ -582,6 +607,17 @@ class CodexProvider(AIProvider):
             tools += item.get("type") in tool_kinds
             messages += item.get("type") == "agent_message"
         return {"provider_tool_calls": tools, "provider_messages": messages}
+
+    @staticmethod
+    def _usage_breakdown(usage: dict[str, int]) -> dict[str, int]:
+        """Preserve optional provider fields without changing legacy receipts."""
+        mapping = {
+            "total_tokens": "total",
+            "reasoning_output_tokens": "reasoning_output",
+            "cache_write_input_tokens": "cache_write_input",
+        }
+        return {target: int(usage[source]) for source, target in mapping.items()
+                if source in usage}
 
     @staticmethod
     def _bounded_error(message: str, limit: int = 1200) -> str:
