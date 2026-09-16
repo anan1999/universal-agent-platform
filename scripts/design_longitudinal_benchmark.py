@@ -126,14 +126,16 @@ def _normalized_receipt(receipt: Any, provider: Any, model: str | None,
 
 
 async def baseline_run(provider: Any, root: Path, domain: str, round_number: int,
-                       goal: str, model: str | None, reasoning: str) -> dict[str, Any]:
+                       goal: str, model: str | None, reasoning: str,
+                       *, limit_tools: bool = True) -> dict[str, Any]:
     task = Task(new_id("BASE"), "BASELINE", goal, ROLE[domain],
                 ["design", "filesystem", "write_access", "repository_access"],
                 reasoning=reasoning,
                 metadata={"working_directory": str(root), "model": model,
                           "goal": goal, "read_only": False,
-                          "execution_budget": {"max_provider_tool_calls": 8,
-                                               "max_provider_messages": 12}})
+                          "execution_budget": ({"max_provider_tool_calls": 8,
+                                                "max_provider_messages": 12}
+                                               if limit_tools else {})})
     packet = ExecutionPacketBuilder().build(task, root, f"design-{domain}", "design")
     measured = CompletionProbedProvider(
         provider, lambda: evaluate(root, domain, round_number)["passed"], model)
