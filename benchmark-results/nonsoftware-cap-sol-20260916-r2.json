@@ -1,0 +1,27 @@
+{
+  "experiment": "legacy_nonsoftware_cap8_vs_cap6_plain_cost_to_quality_v1",
+  "implementation_commit": "ced3d1f",
+  "model": "gpt-5.6-sol",
+  "reasoning": "low",
+  "prompt_mode": "plain",
+  "pairs_per_domain": 1,
+  "domains": {
+    "research-synthesis": {"cap8_tokens": 201581, "cap6_tokens": 221656, "delta": 20075, "percent": 9.96, "cap8_attempts": 2, "cap6_attempts": 2, "both_passed": true},
+    "product-strategy": {"cap8_tokens": 90692, "cap6_tokens": 91018, "delta": 326, "percent": 0.36, "cap8_attempts": 1, "cap6_attempts": 1, "both_passed": true},
+    "interior-lighting": {"cap8_tokens": 90734, "cap6_tokens": 91637, "delta": 903, "percent": 1.0, "cap8_attempts": 1, "cap6_attempts": 1, "both_passed": true}
+  },
+  "overall": {"cap8_tokens": 383007, "cap6_tokens": 404311,
+              "delta": 21304, "percent": 5.56,
+              "quality_passed": 6, "executions": 6,
+              "measurement_complete": 6},
+  "invalidated_run": {
+    "workspace": ".benchmark-nonsoftware-cap-sol-20260916-r1",
+    "reason": "Research evaluator rejected semantically equivalent recommendation B; both retained artifacts pass corrected acceptance.",
+    "policy_conclusion_allowed": false
+  },
+  "limitations": [
+    "One pair per domain; no domain-specific variance or counterbalanced order.",
+    "Deterministic contract compliance does not assess full semantic or aesthetic quality.",
+    "No hard cap bound execution; observed savings or overruns are prompt/path effects."
+  ]
+}
