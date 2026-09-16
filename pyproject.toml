@@ -27,7 +27,7 @@ Repository = "https://github.com/anan1999/universal-agent-platform"
 Issues = "https://github.com/anan1999/universal-agent-platform/issues"
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "httpx>=0.27", "build>=1"]
+dev = ["pytest>=8", "httpx>=0.27", "build>=1", "Pillow>=10"]
 
 [project.scripts]
 agentctl = "adaptive_agent.cli:main"
