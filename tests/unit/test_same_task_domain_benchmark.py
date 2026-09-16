@@ -1,7 +1,11 @@
 from pathlib import Path
+import json
+
+import pytest
 
 from scripts.same_task_domain_benchmark import CONFIG, prompt_for, summarize
 from scripts.same_task_domain_quality import EVALUATORS, GOALS, _xyz
+from scripts.rescore_same_task_animation import rescore
 
 
 def test_two_domains_have_ten_related_prompts_and_separate_artifacts():
@@ -42,3 +46,13 @@ def test_partial_dialogue_never_claims_final_quality():
 def test_3d_position_accepts_equivalent_scene_node_representation():
     assert _xyz((1, 2, 3)) == (1.0, 2.0, 3.0)
     assert _xyz({"position": [1, 2, 3], "radius": 0.5}) == (1.0, 2.0, 3.0)
+
+
+def test_rescore_rejects_wrong_domain_without_rewriting_source(tmp_path):
+    report = tmp_path / "report.json"
+    original = json.dumps({"domain": "programming", "arms": {}})
+    report.write_text(original, encoding="utf-8")
+    with pytest.raises(ValueError):
+        rescore(tmp_path)
+    assert report.read_text(encoding="utf-8") == original
+    assert not (tmp_path / "rescore.json").exists()
