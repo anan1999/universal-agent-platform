@@ -62,8 +62,9 @@ async def run(args: argparse.Namespace) -> dict:
                         "UAP arm uses initialized project + packet, not full Orchestrator",
                         "arm order is not counterbalanced in one pair",
                         "provider tokens are not subscription quota units"],
-        "safety_ceiling": {"tokens_per_arm": args.max_tokens_per_arm,
-                           "seconds_per_arm": args.max_seconds_per_arm}}
+        "safety_ceiling": {"start_threshold_tokens_per_arm": args.max_tokens_per_arm,
+                           "seconds_per_arm": args.max_seconds_per_arm,
+                           "note": "Token threshold is checked before each turn; the final turn may exceed it."}}
     for arm in args.order:
         root = workspace / arm
         seed(root, "ui-ux")
