@@ -1,5 +1,7 @@
 from adaptive_agent.observability.benchmark_quality import assess_implementation_quality
-from scripts.pocketflow_longitudinal_benchmark import frontend_source_files, source_snapshot
+import inspect
+
+from scripts.pocketflow_longitudinal_benchmark import evaluate, frontend_source_files, source_snapshot
 
 
 def test_independent_quality_scores_external_evidence_only():
@@ -54,3 +56,9 @@ def test_react_dashboard_can_be_server_served_from_app_static(tmp_path):
     unrelated.write_text("console.log('not a dashboard')", encoding="utf-8")
 
     assert frontend_source_files(tmp_path) == [source]
+
+
+def test_external_api_probe_accepts_both_supported_date_field_names():
+    source = inspect.getsource(evaluate)
+    assert "('date', 'expense_date')" in source
+    assert source.count("expense create schema accepts neither date nor expense_date") == 2

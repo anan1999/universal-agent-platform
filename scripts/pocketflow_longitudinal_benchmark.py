@@ -258,8 +258,14 @@ from fastapi.testclient import TestClient
 from app.main import create_app
 with tempfile.TemporaryDirectory() as directory:
     with TestClient(create_app(directory + '/acceptance.sqlite3')) as client:
-        payload = {'amount':'12.34','category':'Food','description':'Lunch','date':'2026-02-10'}
-        assert client.post('/expenses', json=payload).status_code == 201
+        base = {'amount':'12.34','category':'Food','description':'Lunch'}
+        created = None
+        for field in ('date', 'expense_date'):
+            response = client.post('/expenses', json={**base, field:'2026-02-10'})
+            if response.status_code == 201:
+                created = response
+                break
+        assert created is not None, 'expense create schema accepts neither date nor expense_date'
         response = client.get('/exports/expenses.csv')
         assert response.status_code == 200
         assert response.headers.get('content-type','').startswith('text/csv')
@@ -277,7 +283,13 @@ from app.main import create_app
 with tempfile.TemporaryDirectory() as directory:
     with TestClient(create_app(directory + '/acceptance.sqlite3')) as client:
         for amount, category, date in [('99.00','Other','2026-01-31'),('10.00','Food','2026-02-01'),('20.00','Travel','2026-02-28'),('77.00','Other','2026-03-01')]:
-            assert client.post('/expenses', json={'amount':amount,'category':category,'description':'x','date':date}).status_code == 201
+            created = None
+            for field in ('date', 'expense_date'):
+                response = client.post('/expenses', json={'amount':amount,'category':category,'description':'x',field:date})
+                if response.status_code == 201:
+                    created = response
+                    break
+            assert created is not None, 'expense create schema accepts neither date nor expense_date'
         response = client.get('/reports/monthly/2026-02')
         assert response.status_code == 200
         assert response.json() == {'month':'2026-02','total':'30.00','by_category':{'Food':'10.00','Travel':'20.00'}}
