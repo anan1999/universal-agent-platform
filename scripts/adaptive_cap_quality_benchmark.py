@@ -49,13 +49,17 @@ def summarize(rows: list[dict]) -> dict:
     reduced = totals["reduced_6"]["observed_tokens"]
     totals["reduced_token_delta"] = reduced - normal
     totals["reduced_percent_delta"] = ((reduced - normal) / normal * 100 if normal else None)
+    eligible = [row for row in rows if all(
+        value["outcome"] == "contract_passed" and value["measurement_complete"]
+        for value in row["arms"].values())]
     totals["pair_wins"] = {
         "normal_8": sum(row["arms"]["normal_8"]["observed_tokens"]
-                        < row["arms"]["reduced_6"]["observed_tokens"] for row in rows),
+                        < row["arms"]["reduced_6"]["observed_tokens"] for row in eligible),
         "reduced_6": sum(row["arms"]["reduced_6"]["observed_tokens"]
-                         < row["arms"]["normal_8"]["observed_tokens"] for row in rows),
+                         < row["arms"]["normal_8"]["observed_tokens"] for row in eligible),
         "ties": sum(row["arms"]["reduced_6"]["observed_tokens"]
-                    == row["arms"]["normal_8"]["observed_tokens"] for row in rows),
+                    == row["arms"]["normal_8"]["observed_tokens"] for row in eligible),
+        "excluded": len(rows) - len(eligible),
     }
     totals["all_contracts_passed"] = all(
         value["outcome"] == "contract_passed" for row in rows for value in row["arms"].values())
@@ -106,14 +110,21 @@ async def execute(args: argparse.Namespace) -> dict:
                 current.metadata["execution_budget"] = {
                     "max_provider_tool_calls": cap,
                     "max_provider_messages": MESSAGE_CAP,
-                    "codex_live_usage": True,
+                    "completion_probe_passes": 2,
+                    "completion_probe_grace_seconds": 1.0,
+                    "completion_steer_grace_seconds": 20.0,
+                    "completion_interrupt_grace_seconds": 15.0,
                 }
+                # This flag belongs to task metadata, not inside execution_budget.
+                # It selects the app-server path that emits a final exact usage update.
+                current.metadata["codex_live_usage"] = True
                 packet = CapPacket(root, prompt, context, cap)
                 started = time.monotonic()
                 receipt = await provider.execute(
                     current, packet=packet,
                     completion_probe=lambda: acceptance(root)["passed"])
                 usage = receipt.token_usage
+                telemetry = getattr(provider, "telemetry", {})
                 return {
                     "status": receipt.status,
                     "model": receipt.model or MODEL,
@@ -123,9 +134,9 @@ async def execute(args: argparse.Namespace) -> dict:
                     "token_source": usage.get("source", "unavailable"),
                     "usage_complete": bool(usage.get("complete", False)),
                     "provider_tool_calls": int(usage.get("provider_tool_calls",
-                                                          provider.telemetry.get("tool_calls", 0))),
+                                                          telemetry.get("tool_calls", 0))),
                     "provider_messages": int(usage.get("provider_messages",
-                                                        provider.telemetry.get("assistant_messages", 0))),
+                                                        telemetry.get("assistant_messages", 0))),
                     "duration_seconds": time.monotonic() - started,
                     "error": receipt.error_code,
                 }

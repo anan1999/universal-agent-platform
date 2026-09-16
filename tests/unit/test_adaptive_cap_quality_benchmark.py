@@ -27,5 +27,22 @@ def test_summary_counts_total_cost_quality_and_pair_direction():
     assert result["reduced_6"]["observed_tokens"] == 200
     assert result["reduced_6"]["attempts"] == 3
     assert result["reduced_percent_delta"] == 0
-    assert result["pair_wins"] == {"normal_8": 1, "reduced_6": 1, "ties": 0}
+    assert result["pair_wins"] == {
+        "normal_8": 1, "reduced_6": 1, "ties": 0, "excluded": 0}
     assert result["all_contracts_passed"]
+
+
+def test_summary_excludes_incomplete_measurements_from_wins():
+    incomplete = arm(0)
+    incomplete.update(outcome="measurement_incomplete", measurement_complete=False)
+    result = benchmark.summarize([
+        {"arms": {"normal_8": arm(100), "reduced_6": incomplete}},
+    ])
+    assert result["pair_wins"] == {
+        "normal_8": 0, "reduced_6": 0, "ties": 0, "excluded": 1}
+
+
+def test_live_usage_flag_is_task_metadata_not_budget_metadata():
+    source = inspect.getsource(benchmark.execute)
+    assert 'current.metadata["codex_live_usage"] = True' in source
+    assert '"codex_live_usage": True' not in source
