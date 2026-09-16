@@ -45,6 +45,13 @@ def _svg_checks(path: Path, *, view_box: str, copy: tuple[str, ...]) -> list[str
     return errors
 
 
+def has_sponsor_layer(svg: str) -> bool:
+    """Accept semantic sponsor layer names without prescribing punctuation."""
+    return bool(re.search(
+        r"<g\b[^>]*(?:id|class)\s*=\s*[\"'][^\"']*sponsor[^\"']*[\"']",
+        svg, re.I))
+
+
 def _obj_summary(root: Path) -> dict[str, Any]:
     lines = (root / "kiosk.obj").read_text(encoding="utf-8").splitlines()
     vertices: list[tuple[float, float, float]] = []
@@ -97,7 +104,7 @@ def evaluate(root: Path, domain: str, round_number: int) -> dict[str, Any]:
         poster = (root / "poster.svg").read_text(encoding="utf-8", errors="replace") if (root / "poster.svg").exists() else ""
         if round_number >= 2:
             checks.append("sponsor_extension")
-            if "sponsor-strip" not in poster:
+            if not has_sponsor_layer(poster):
                 errors.append("sponsor_layer")
             if "SUPPORTED BY HARBOR LAB" not in poster:
                 errors.append("sponsor_copy")

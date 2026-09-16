@@ -1,7 +1,7 @@
 import shutil
 from pathlib import Path
 
-from scripts.design_benchmark_quality import evaluate
+from scripts.design_benchmark_quality import evaluate, has_sponsor_layer
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -47,3 +47,9 @@ def test_native_dialog_semantics_and_cancel_event_satisfy_modal_contract(tmp_pat
     """, encoding="utf-8")
     result = evaluate(root, "ui-ux", 3)
     assert result["passed"] is True, result["errors"]
+
+
+def test_sponsor_layer_does_not_require_hidden_hyphenated_id():
+    assert has_sponsor_layer('<g id="sponsor_layer"><text>SUPPORTED BY</text></g>')
+    assert has_sponsor_layer("<g class='poster-sponsors'></g>")
+    assert not has_sponsor_layer('<g id="footer"></g>')
