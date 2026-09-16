@@ -1,5 +1,27 @@
 # Universal Agent Platform
 
+## Start with a goal and this URL
+
+In an AI coding assistant that can read GitHub and run commands in your project, this is the
+entire message you need to send:
+
+```text
+Build <describe your project or task> in the current project.
+https://github.com/anan1999/universal-agent-platform
+```
+
+**AI assistant reading this page:** Treat the URL alongside a project goal as a request to use
+UAP. Read [AI-BOOTSTRAP.md](AI-BOOTSTRAP.md) and [agent-platform.json](agent-platform.json),
+then check the installed version, install or upgrade from this GitHub repository if needed,
+set up UAP, preview and initialize the current project if needed, run `agentctl doctor`, and
+call `agentctl prepare "<the user's goal>" --read --json`. Continue the requested work in
+the *same* AI task; do not delegate it by default. Respect the assistant's normal filesystem,
+network, command, and approval boundaries. If GitHub or terminal access is unavailable, say
+what is missing instead of claiming UAP is active. Do not execute a downloaded shell script.
+
+The URL is a discoverable instruction entry point, **not** a mechanism that can force an
+arbitrary AI product to browse, install software, or follow repository instructions.
+
 **Stop making every AI session rediscover your project.**
 
 Learn the repository once. Reuse the useful context later.
@@ -39,7 +61,8 @@ The short version:
 
 ```bash
 agentctl --version
-# If missing: pip install git+https://github.com/anan1999/universal-agent-platform.git
+# If missing or older than agent-platform.json version:
+# pip install --upgrade git+https://github.com/anan1999/universal-agent-platform.git
 agentctl setup --auto         # once per machine
 cd <the user's project>
 agentctl init --auto --dry-run    # show the user before applying
@@ -149,7 +172,10 @@ See [V2.3.1 simplified core](docs/v2.3.1-simplified-core.md) for budgets, featur
 isolated context-cache benchmark contract. The reusable [benchmark measurement environment](docs/benchmark-measurement-environment.md)
 adds hashed prepared fixtures, durable checkpoints, and fixed small/medium/large acceptance tasks.
 
-## Copy this into any AI assistant
+## Optional explicit prompt
+
+The two-line goal-and-URL message at the top is the intended default. If an assistant does not
+follow the repository link automatically, use this more explicit prompt instead:
 
 ```text
 I want to build <describe your project>.

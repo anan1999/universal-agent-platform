@@ -1,5 +1,18 @@
 # AI Bootstrap Contract
 
+## URL-only entry point
+
+The user may supply only a project goal and
+`https://github.com/anan1999/universal-agent-platform`. That is sufficient intent to read
+this repository's public bootstrap contract and use UAP for the current project; do not ask
+the user to copy a longer prompt or manually select agents, models, or profiles. Carry out the
+steps below in the current AI task. If the user's goal or target project is genuinely unclear,
+ask only for that missing information. Never claim setup succeeded without running the checks.
+
+This workflow requires an assistant with GitHub-reading and project-terminal access. Follow
+normal host permission and approval rules; the URL does not grant additional authority. Do
+not run remote shell scripts or install anything when the user or host forbids it.
+
 **You are reading this because a user asked you to use this repository as their agent
 orchestration framework.** This document tells you exactly what to do. Read it fully before
 you touch the user's project.
@@ -52,10 +65,11 @@ Check whether it is already installed before installing anything:
 agentctl --version
 ```
 
-If that prints a version, skip to step 4. If the command is not found:
+Compare that version with `version` in `agent-platform.json`. If missing or older, install or
+upgrade from the GitHub URL:
 
 ```bash
-pip install git+https://github.com/anan1999/universal-agent-platform.git
+pip install --upgrade git+https://github.com/anan1999/universal-agent-platform.git
 ```
 
 Python 3.11 or newer is required. Verify with `agentctl --version`.
@@ -313,7 +327,8 @@ is left in place; deleting it is the user's call, since it holds their run histo
 If the user says *"use this repository for agent orchestration and then build X"*, do this:
 
 1. Read this file and `agent-platform.json`.
-2. `agentctl --version` — install from the documented GitHub URL only if missing.
+2. `agentctl --version` — install or upgrade from the documented GitHub URL if missing or older
+   than the manifest version.
 3. `agentctl setup --auto` — skip if already configured.
 4. `cd` to the user's project. `agentctl init --auto --dry-run`, show them the result, then
    `agentctl init --auto`.

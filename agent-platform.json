@@ -6,6 +6,13 @@
   "product_positioning": "compact-project-context-platform",
   "summary": "UAP gives a fresh AI session a small verified project map and relevant paths so it can avoid repeated repository discovery.",
   "cli": "agentctl",
+  "url_only_entry": {
+    "user_message": "<project goal>\nhttps://github.com/anan1999/universal-agent-platform",
+    "assistant_first_read": ["README.md", "AI-BOOTSTRAP.md", "agent-platform.json"],
+    "requires": ["GitHub read access", "project terminal access"],
+    "continue_in_current_task": true,
+    "respect_host_permissions": true
+  },
 
   "documentation": {
     "ai_bootstrap": "AI-BOOTSTRAP.md",

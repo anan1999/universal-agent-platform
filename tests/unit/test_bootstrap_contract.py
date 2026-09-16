@@ -116,3 +116,26 @@ def test_readme_routes_ai_assistants_to_the_contract():
     # The promise the whole product rests on.
     assert "Stop making every AI session rediscover your project." in text
     assert text.index("FOR AI ASSISTANTS") < text.index("FOR HUMANS")
+
+
+def test_url_only_entry_is_visible_and_matches_the_manifest(manifest):
+    readme = README_PATH.read_text(encoding="utf-8")
+    bootstrap = BOOTSTRAP_PATH.read_text(encoding="utf-8")
+    entry = manifest["url_only_entry"]
+    url = "https://github.com/anan1999/universal-agent-platform"
+    assert "Start with a goal and this URL" in readme[:1800]
+    assert url in readme[:1800] and url in entry["user_message"]
+    assert "URL-only entry point" in bootstrap[:1800]
+    assert entry["assistant_first_read"] == ["README.md", "AI-BOOTSTRAP.md", "agent-platform.json"]
+    assert entry["continue_in_current_task"] is True
+    assert entry["respect_host_permissions"] is True
+    assert "agentctl prepare" in readme[:1800]
+    assert "GitHub" in entry["requires"][0]
+
+
+def test_url_only_entry_handles_outdated_installs():
+    readme = README_PATH.read_text(encoding="utf-8")
+    bootstrap = BOOTSTRAP_PATH.read_text(encoding="utf-8")
+    command = "pip install --upgrade git+https://github.com/anan1999/universal-agent-platform.git"
+    assert command in readme and command in bootstrap
+    assert "older" in readme[:3500] and "older" in bootstrap[:3500]
