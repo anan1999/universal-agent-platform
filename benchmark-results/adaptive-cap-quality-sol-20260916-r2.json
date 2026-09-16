@@ -1,0 +1,45 @@
+{
+  "experiment": "paired_cap_8_vs_6_cost_to_quality_v1",
+  "implementation_commit": "2a2f427",
+  "model": "gpt-5.6-sol",
+  "reasoning": "low",
+  "pairs": 6,
+  "acceptance_sha256": "55714f5ba8ed4d949714be0c673a41676466ad09be04376e6a2c9f750cca15fb",
+  "pair_results": [
+    {"pair": 1, "order": ["normal_8", "reduced_6"], "normal_8_tokens": 78657, "reduced_6_tokens": 78866, "delta": 209, "normal_8_tools": 2, "reduced_6_tools": 2},
+    {"pair": 2, "order": ["reduced_6", "normal_8"], "normal_8_tokens": 102398, "reduced_6_tokens": 79539, "delta": -22859, "normal_8_tools": 3, "reduced_6_tools": 2},
+    {"pair": 3, "order": ["normal_8", "reduced_6"], "normal_8_tokens": 81281, "reduced_6_tokens": 38019, "delta": -43262, "normal_8_tools": 2, "reduced_6_tools": 1},
+    {"pair": 4, "order": ["reduced_6", "normal_8"], "normal_8_tokens": 78810, "reduced_6_tokens": 98890, "delta": 20080, "normal_8_tools": 2, "reduced_6_tools": 2},
+    {"pair": 5, "order": ["normal_8", "reduced_6"], "normal_8_tokens": 79753, "reduced_6_tokens": 58593, "delta": -21160, "normal_8_tools": 2, "reduced_6_tools": 2},
+    {"pair": 6, "order": ["reduced_6", "normal_8"], "normal_8_tokens": 80287, "reduced_6_tokens": 79201, "delta": -1086, "normal_8_tools": 2, "reduced_6_tools": 2}
+  ],
+  "totals": {
+    "normal_8_tokens": 501186,
+    "reduced_6_tokens": 433108,
+    "token_delta": -68078,
+    "token_delta_percent": -13.583380222113147,
+    "normal_8_cached_input": 383232,
+    "reduced_6_cached_input": 334592,
+    "normal_8_output_tokens": 13469,
+    "reduced_6_output_tokens": 12534,
+    "normal_8_provider_tool_calls": 13,
+    "reduced_6_provider_tool_calls": 11,
+    "normal_8_provider_messages": 24,
+    "reduced_6_provider_messages": 21,
+    "reduced_wins": 4,
+    "normal_wins": 2,
+    "excluded_pairs": 0,
+    "median_paired_token_delta": -11123,
+    "all_contracts_passed": true,
+    "all_measurements_complete": true,
+    "attempts_per_arm": 6
+  },
+  "conclusion": "promising_not_causal_hard_cap_proof",
+  "limitations": [
+    "One repeated full-stack task and one model are covered.",
+    "No run used more than three provider tool calls, so neither hard cap bound execution.",
+    "The treatment is the rendered cap value inside a shared bounded-execution prompt, not a cap exhaustion event.",
+    "The frozen acceptance checks functional integration, not browser-rendered visual quality.",
+    "All arms passed on the first attempt, so repair-cost behavior remains untested."
+  ]
+}
