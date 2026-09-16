@@ -58,7 +58,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--resume", action="store_true",
                         help="revalidate retained evidence and continue an interrupted run")
     parser.add_argument("--provider", default="codex")
-    parser.add_argument("--model", default="gpt-5.6-luna")
+    parser.add_argument("--model", default="gpt-5.6-sol")
     parser.add_argument("--reasoning", default="low", choices=("low", "medium", "high"))
     parser.add_argument("--rounds", type=int, choices=(1, 2, 3), default=3)
     parser.add_argument("--domains", nargs="*", choices=DOMAINS, default=list(DOMAINS))

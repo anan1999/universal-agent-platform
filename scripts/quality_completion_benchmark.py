@@ -18,7 +18,7 @@ try:
 except ModuleNotFoundError:
     import design_longitudinal_benchmark as design
 
-MODEL = "gpt-5.6-luna"
+MODEL = "gpt-5.6-sol"
 
 
 class Ledger:

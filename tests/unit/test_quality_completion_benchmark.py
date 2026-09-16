@@ -3,6 +3,10 @@ import asyncio
 from scripts.quality_completion_benchmark import Ledger, MODEL, converge, cost
 
 
+def test_quality_completion_benchmark_is_pinned_to_sol():
+    assert MODEL == "gpt-5.6-sol"
+
+
 def receipt(tokens=10):
     return {"status": "completed", "model": MODEL, "input_tokens": tokens,
             "output_tokens": 0, "token_source": "measured", "usage_complete": True}

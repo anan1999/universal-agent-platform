@@ -5,7 +5,7 @@
 既有報告保留作除錯證據，不應宣稱其結果代表使用者達到相同品質所需的成本。
 
 新入口：`python scripts/quality_completion_benchmark.py --execute --workspace <new-directory>`。
-執行固定使用 `gpt-5.6-luna`，Baseline 與 UAP 都取消 benchmark 特設的工具次數上限。
+執行固定使用 `gpt-5.6-sol`，Baseline 與 UAP 都取消 benchmark 特設的工具次數上限。
 三個題目是需求變更，不是修復對話次數限制；每個需求持續修改直到合約通過。
 
 - 兩臂各自保留作品；修復從自己的失敗版本繼續，不能借用對方成果。
