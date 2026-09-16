@@ -1,0 +1,48 @@
+{
+  "experiment": "tool_cap_x_batching_prompt_factorial_v1",
+  "implementation_commit": "cb5b370",
+  "model": "gpt-5.6-sol",
+  "reasoning": "low",
+  "blocks": 1,
+  "cells": {
+    "cap8_plain": {"tokens": 287228, "cached_input": 254080, "output_tokens": 6624, "tool_calls": 6, "messages": 4, "attempts": 1, "contract_passed": true, "measurement_complete": true},
+    "cap6_plain": {"tokens": 129298, "cached_input": 99328, "output_tokens": 5486, "tool_calls": 2, "messages": 3, "attempts": 1, "contract_passed": true, "measurement_complete": true},
+    "cap8_batch": {"tokens": 201253, "cached_input": 175232, "output_tokens": 6327, "tool_calls": 5, "messages": 4, "attempts": 1, "contract_passed": true, "measurement_complete": true},
+    "cap6_batch": {"tokens": 209574, "cached_input": 167680, "output_tokens": 7400, "tool_calls": 4, "messages": 4, "attempts": 1, "contract_passed": true, "measurement_complete": true}
+  },
+  "main_effects": {
+    "cap8_tokens": 488481,
+    "cap6_tokens": 338872,
+    "cap6_minus_cap8_tokens": -149609,
+    "cap6_percent": -30.62739390068396,
+    "plain_tokens": 416526,
+    "batch_tokens": 410827,
+    "batch_minus_plain_tokens": -5699,
+    "batch_percent": -1.368221911717396,
+    "cap_effect_with_plain_prompt": -157930,
+    "cap_effect_with_batch_prompt": 8321,
+    "batch_effect_at_cap8": -85975,
+    "batch_effect_at_cap6": 80276,
+    "interaction_difference_of_differences": 166251
+  },
+  "quality": {
+    "contracts_passed": 4,
+    "cells": 4,
+    "all_measurements_complete": true,
+    "repair_attempts": 0,
+    "visual_usability_quality": "not_evaluated"
+  },
+  "conclusion": "strong_interaction_pilot_not_yet_generalizable",
+  "limitations": [
+    "Only one complete block was run, so cell variance and order effects are not estimable.",
+    "No arm exceeded its hard cap; the observed cap effect is budget anchoring, not forced interruption.",
+    "One full-stack task and one model are covered.",
+    "Functional contracts passed, but browser-rendered visual quality was not evaluated."
+  ],
+  "invalidated_run": {
+    "workspace": ".benchmark-factorial-sol-20260916-r1",
+    "reason": "The API evaluator only discovered main.py and falsely rejected a valid pocketflow/app.py factory.",
+    "additional_tokens_after_first_false_negative": 409079,
+    "policy_conclusion_allowed": false
+  }
+}
