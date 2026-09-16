@@ -1,0 +1,23 @@
+{
+  "experiment": "legacy_design_cap8_vs_cap6_plain_cost_to_quality_v1",
+  "implementation_commit": "b28c59a",
+  "model": "gpt-5.6-sol",
+  "reasoning": "low",
+  "prompt_mode": "plain",
+  "pairs_per_domain": 1,
+  "domains": {
+    "ui-ux": {"cap8_tokens": 105238, "cap6_tokens": 103813, "delta": -1425, "percent": -1.35, "cap8_tools": 3, "cap6_tools": 3, "both_passed": true},
+    "graphic-design": {"cap8_tokens": 93031, "cap6_tokens": 94210, "delta": 1179, "percent": 1.27, "cap8_tools": 3, "cap6_tools": 3, "both_passed": true},
+    "three-d-design": {"cap8_tokens": 112814, "cap6_tokens": 93144, "delta": -19670, "percent": -17.44, "cap8_tools": 4, "cap6_tools": 3, "both_passed": true}
+  },
+  "overall": {"cap8_tokens": 311083, "cap6_tokens": 291167,
+              "delta": -19916, "percent": -6.4,
+              "contract_passed": 6, "executions": 6,
+              "measurement_complete": 6, "repair_attempts": 0},
+  "limitations": [
+    "One pair per domain; no variance estimate or within-domain order counterbalance.",
+    "Deterministic contract checks are not subjective visual or usability evaluation.",
+    "No hard cap bound execution; tool counts were three or four.",
+    "Domains have different deliverables; pooled percent is descriptive, not a universal policy effect."
+  ]
+}
