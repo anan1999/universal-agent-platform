@@ -64,6 +64,10 @@ def summarize(blocks: list[dict]) -> dict:
     cap6 = pooled("cap6_plain", "cap6_batch")
     plain = pooled("cap8_plain", "cap6_plain")
     batch = pooled("cap8_batch", "cap6_batch")
+    cap_plain = cells["cap6_plain"]["observed_tokens"] - cells["cap8_plain"]["observed_tokens"]
+    cap_batch = cells["cap6_batch"]["observed_tokens"] - cells["cap8_batch"]["observed_tokens"]
+    batch_cap8 = cells["cap8_batch"]["observed_tokens"] - cells["cap8_plain"]["observed_tokens"]
+    batch_cap6 = cells["cap6_batch"]["observed_tokens"] - cells["cap6_plain"]["observed_tokens"]
     return {
         "cells": cells,
         "main_effects": {
@@ -71,6 +75,11 @@ def summarize(blocks: list[dict]) -> dict:
             "cap6_percent": ((cap6 - cap8) / cap8 * 100 if cap8 else None),
             "batch_minus_plain_tokens": batch - plain,
             "batch_percent": ((batch - plain) / plain * 100 if plain else None),
+            "cap_effect_with_plain_prompt": cap_plain,
+            "cap_effect_with_batch_prompt": cap_batch,
+            "batch_effect_at_cap8": batch_cap8,
+            "batch_effect_at_cap6": batch_cap6,
+            "interaction_difference_of_differences": cap_batch - cap_plain,
         },
         "all_contracts_passed": all(
             value.get("outcome") == "contract_passed"

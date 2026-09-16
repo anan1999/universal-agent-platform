@@ -29,6 +29,11 @@ def test_summary_reports_orthogonal_main_effects():
     summary = benchmark.summarize([block])
     assert summary["main_effects"]["cap6_minus_cap8_tokens"] == -20
     assert summary["main_effects"]["batch_minus_plain_tokens"] == -40
+    assert summary["main_effects"]["cap_effect_with_plain_prompt"] == -10
+    assert summary["main_effects"]["cap_effect_with_batch_prompt"] == -10
+    assert summary["main_effects"]["batch_effect_at_cap8"] == -20
+    assert summary["main_effects"]["batch_effect_at_cap6"] == -20
+    assert summary["main_effects"]["interaction_difference_of_differences"] == 0
     assert summary["all_contracts_passed"]
     assert summary["all_measurements_complete"]
 
