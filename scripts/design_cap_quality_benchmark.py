@@ -17,7 +17,10 @@ except ModuleNotFoundError:
 
 from adaptive_agent.providers.registry import providers
 
-DOMAINS = ("ui-ux", "graphic-design", "three-d-design")
+DOMAINS = (
+    "ui-ux", "graphic-design", "three-d-design",
+    "research-synthesis", "product-strategy", "interior-lighting",
+)
 CAPS = {"cap8_plain": 8, "cap6_plain": 6}
 
 

@@ -1,8 +1,8 @@
 from scripts import design_cap_quality_benchmark as bench
 
 
-def test_design_pilot_reuses_three_legacy_domains_and_sol():
-    assert bench.DOMAINS == ("ui-ux", "graphic-design", "three-d-design")
+def test_pilot_reuses_six_legacy_domains_and_sol():
+    assert set(bench.DOMAINS) == set(bench.legacy.DOMAINS)
     assert bench.MODEL == "gpt-5.6-sol"
     assert bench.CAPS == {"cap8_plain": 8, "cap6_plain": 6}
 
