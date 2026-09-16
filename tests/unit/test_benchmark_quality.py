@@ -80,3 +80,19 @@ def test_api_probe_discovers_non_app_package_factory(tmp_path):
 
     result = run_api_probe(tmp_path, "assert client.get('/health').json() == {'database': True}")
     assert result.returncode == 0, result.stderr
+
+
+def test_api_probe_discovers_package_app_module_factory(tmp_path):
+    package = tmp_path / "expense_app"
+    package.mkdir()
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (package / "app.py").write_text(
+        "from fastapi import FastAPI\n"
+        "def create_app(database_path):\n"
+        "    app = FastAPI()\n"
+        "    @app.get('/health')\n"
+        "    def health(): return {'module': 'app.py'}\n"
+        "    return app\n", encoding="utf-8")
+
+    result = run_api_probe(tmp_path, "assert client.get('/health').json() == {'module': 'app.py'}")
+    assert result.returncode == 0, result.stderr

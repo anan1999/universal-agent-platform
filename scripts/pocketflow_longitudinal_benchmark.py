@@ -242,7 +242,12 @@ def load_application(database_path):
     source = Path('src')
     if source.is_dir():
         sys.path.insert(0, str(source.resolve()))
-    for main in sorted(Path('.').rglob('main.py')):
+    entry_names = ('main.py', 'app.py', 'api.py', 'server.py', 'application.py')
+    candidates = sorted(
+        (item for item in Path('.').rglob('*.py') if item.name in entry_names),
+        key=lambda item: (entry_names.index(item.name), str(item)),
+    )
+    for main in candidates:
         if any(part.startswith('.') or part in {'tests', '__pycache__'} for part in main.parts):
             continue
         parts = list(main.with_suffix('').parts)
@@ -286,6 +291,13 @@ def evaluate(path: Path, task_number: int) -> dict[str, Any]:
         if pytest_temp.exists():
             remove_tree(pytest_temp)
     checks: list[tuple[str, bool]] = [("pytest", result.returncode == 0)]
+    details: dict[str, str] = {}
+
+    def record_probe(name: str, probe: subprocess.CompletedProcess[str]) -> None:
+        checks.append((name, probe.returncode == 0))
+        if probe.returncode != 0:
+            diagnostic = (probe.stderr + "\n" + probe.stdout).strip()
+            details[name] = diagnostic[-1200:] or f"probe exited {probe.returncode}"
     ignored_python_parts = {".agent", ".git", ".pytest_cache", "__pycache__", "node_modules"}
     python_sources = [item for item in path.rglob("*.py")
                       if not ignored_python_parts.intersection(item.relative_to(path).parts)]
@@ -314,7 +326,7 @@ def evaluate(path: Path, task_number: int) -> dict[str, Any]:
         assert rows[0] == 'id,amount,category,description,date'
         assert '12.34,Food,Lunch,2026-02-10' in rows[1]
 """)
-        checks.append(("csv export", export_probe.returncode == 0))
+        record_probe("csv export", export_probe)
         checks.append(("csv download link", "/exports/expenses.csv" in source))
     if task_number >= 4:
         monthly_probe = run_api_probe(path, """
@@ -330,14 +342,16 @@ def evaluate(path: Path, task_number: int) -> dict[str, Any]:
         assert response.status_code == 200
         assert response.json() == {'month':'2026-02','total':'30.00','by_category':{'Food':'10.00','Travel':'20.00'}}
 """)
-        checks.append(("monthly boundary contract", monthly_probe.returncode == 0))
+        record_probe("monthly boundary contract", monthly_probe)
     if task_number >= 5:
         checks.append(("monthly dashboard request", "/reports/monthly/" in source))
         checks.append(("month input", any(fragment in source for fragment in (
             'type="month"', "type='month'", 'type: "month"', "type: 'month'"))))
         checks.append(("category breakdown", "by_category" in source))
     return {"passed": all(value for _, value in checks),
-            "checks": [{"name": name, "passed": value} for name, value in checks],
+            "checks": [{"name": name, "passed": value,
+                        **({"detail": details[name]} if name in details else {})}
+                       for name, value in checks],
             "duration_seconds": time.monotonic() - started,
             "stdout": result.stdout[-1200:], "stderr": result.stderr[-800:]}
 

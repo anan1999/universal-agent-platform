@@ -69,8 +69,10 @@ def defects(quality: dict) -> list[str]:
     explicit = [str(item) for item in quality.get("errors", []) if str(item)]
     if quality.get("error"):
         explicit.append(str(quality["error"]))
-    failed_checks = [str(item.get("name", "unnamed check"))
-                     for item in quality.get("checks", []) if not item.get("passed")]
+    failed_checks = [
+        str(item.get("name", "unnamed check"))
+        + (": " + str(item["detail"]) if item.get("detail") else "")
+        for item in quality.get("checks", []) if not item.get("passed")]
     return list(dict.fromkeys(explicit + failed_checks)) or ["acceptance contract failed"]
 
 

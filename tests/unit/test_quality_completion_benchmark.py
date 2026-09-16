@@ -14,6 +14,13 @@ def test_failed_named_checks_become_repair_feedback():
     ]}) == ["react dashboard"]
 
 
+def test_failed_check_diagnostic_becomes_repair_feedback():
+    assert defects({"passed": False, "checks": [
+        {"name": "api contract", "passed": False,
+         "detail": "AssertionError: expected 201, received 422"},
+    ]}) == ["api contract: AssertionError: expected 201, received 422"]
+
+
 def receipt(tokens=10):
     return {"status": "completed", "model": MODEL, "input_tokens": tokens,
             "output_tokens": 0, "token_source": "measured", "usage_complete": True}
