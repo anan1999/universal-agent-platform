@@ -1,0 +1,63 @@
+{
+  "model": "gpt-5.6-sol",
+  "method": "cost_to_contract_acceptance_v1",
+  "source_commit_after_hardening": "8fa5882",
+  "valid_runs": [
+    {
+      "run": "design-r2-valid-domains",
+      "included_domains": ["ui-ux", "three-d-design"],
+      "excluded_domains": ["graphic-design"],
+      "baseline": {"attempts": 6, "observed_tokens": 707890, "cached_input": 581120, "output_tokens": 18299},
+      "uap": {"attempts": 7, "observed_tokens": 708273, "cached_input": 584960, "output_tokens": 19391},
+      "uap_token_delta": 383,
+      "uap_percent_delta": 0.054104,
+      "domains": [
+        {"domain": "ui-ux", "baseline_tokens": 436222, "uap_tokens": 453266, "uap_percent_delta": 3.907185},
+        {"domain": "three-d-design", "baseline_tokens": 271668, "uap_tokens": 255007, "uap_percent_delta": -6.132853}
+      ]
+    },
+    {
+      "run": "programming-r6",
+      "suite": "pocketflow-expenses",
+      "tasks": 5,
+      "all_contracts_passed": true,
+      "baseline": {"attempts": 5, "observed_tokens": 716373, "cached_input": 530944, "output_tokens": 16623},
+      "uap": {"attempts": 5, "observed_tokens": 758761, "cached_input": 586880, "output_tokens": 16041},
+      "uap_token_delta": 42388,
+      "uap_percent_delta": 5.917029,
+      "break_even_after_task": 3,
+      "break_even_lost_after_task": 5,
+      "task_tokens": [
+        {"task": 1, "baseline": 108799, "uap": 103993, "uap_percent_delta": -4.417320},
+        {"task": 2, "baseline": 109902, "uap": 115141, "uap_percent_delta": 4.766974},
+        {"task": 3, "baseline": 176286, "uap": 156671, "uap_percent_delta": -11.126805},
+        {"task": 4, "baseline": 148406, "uap": 151310, "uap_percent_delta": 1.956794},
+        {"task": 5, "baseline": 172980, "uap": 231646, "uap_percent_delta": 33.914903}
+      ]
+    }
+  ],
+  "new_valid_total": {
+    "baseline_tokens": 1424263,
+    "uap_tokens": 1467034,
+    "uap_token_delta": 42771,
+    "uap_percent_delta": 3.003027
+  },
+  "excluded_evidence": [
+    {
+      "run": "design-r2-graphic-design",
+      "reason": "hidden exact sponsor-strip identifier caused false rejection of a valid sponsor_layer group"
+    },
+    {
+      "runs": "programming-r1-through-r5",
+      "reason": "measurement-harness defects or interrupted attempts; never included in product comparison"
+    }
+  ],
+  "prior_run_comparison": {
+    "design_r1_all_domains_uap_percent_delta": -18.150747,
+    "ui_ux_r1_uap_percent_delta": -39.291948,
+    "ui_ux_r2_uap_percent_delta": 3.907185,
+    "three_d_r1_uap_percent_delta": -5.533843,
+    "three_d_r2_uap_percent_delta": -6.132853
+  },
+  "claim": "Current evidence does not show general monotonic token reduction. Three-dimensional follow-up work is the only repeated positive direction; programming R6 is negative overall."
+}
