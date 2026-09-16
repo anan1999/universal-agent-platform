@@ -69,9 +69,11 @@ def test_api_probe_discovers_non_app_package_factory(tmp_path):
     package.mkdir()
     (package / "__init__.py").write_text("", encoding="utf-8")
     (package / "main.py").write_text(
+        "import sqlite3\n"
         "from fastapi import FastAPI\n"
         "def create_app(database_path):\n"
         "    app = FastAPI()\n"
+        "    app.state.connection = sqlite3.connect(database_path)\n"
         "    @app.get('/health')\n"
         "    def health(): return {'database': bool(database_path)}\n"
         "    return app\n", encoding="utf-8")

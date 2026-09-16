@@ -264,7 +264,7 @@ def load_application(database_path):
                 return candidate
     raise AssertionError('no FastAPI application or create_app factory found')
 
-with tempfile.TemporaryDirectory() as directory:
+with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as directory:
     with TestClient(load_application(directory + '/acceptance.sqlite3')) as client:
 '''
     code = bootstrap + textwrap.indent(textwrap.dedent(assertions).strip() + "\n", "        ")
