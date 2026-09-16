@@ -46,3 +46,9 @@ def test_live_usage_flag_is_task_metadata_not_budget_metadata():
     source = inspect.getsource(benchmark.execute)
     assert 'current.metadata["codex_live_usage"] = True' in source
     assert '"codex_live_usage": True' not in source
+
+
+def test_runner_can_reuse_all_legacy_context_cache_scales():
+    assert set(benchmark.TASKS) == {"small", "medium", "large"}
+    plain_source = benchmark.CapPacket.__init__.__code__.co_varnames
+    assert "batching" in plain_source

@@ -10,13 +10,13 @@ from pathlib import Path
 
 try:
     from scripts.adaptive_tool_budget_benchmark import _reset
-    from scripts.context_cache_benchmark import ACCEPTANCE, FIXTURE, GOAL, acceptance, source_hash, task
+    from scripts.context_cache_benchmark import ACCEPTANCE, FIXTURE, GOAL, TASKS, acceptance, source_hash, task
     from scripts.direct_benchmark import MeteredCodex, Packet
     from scripts.quality_completion_benchmark import Ledger, converge
     from adaptive_agent.project.direct import prepare
 except ModuleNotFoundError:
     from adaptive_tool_budget_benchmark import _reset
-    from context_cache_benchmark import ACCEPTANCE, FIXTURE, GOAL, acceptance, source_hash, task
+    from context_cache_benchmark import ACCEPTANCE, FIXTURE, GOAL, TASKS, acceptance, source_hash, task
     from direct_benchmark import MeteredCodex, Packet
     from quality_completion_benchmark import Ledger, converge
     from adaptive_agent.project.direct import prepare
@@ -27,15 +27,19 @@ MESSAGE_CAP = 12
 
 
 class CapPacket(Packet):
-    def __init__(self, root: Path, goal: str, context: dict, cap: int):
+    def __init__(self, root: Path, goal: str, context: dict, cap: int,
+                 batching: bool = True):
         super().__init__(root, goal, context)
         self.text += (
             "\nBOUNDED EXECUTION:\n"
             f"- Hard envelope: {cap} provider tool calls and {MESSAGE_CAP} assistant messages.\n"
-            "- Batch independent inspection and edits; validate once after implementation.\n"
             "- Do not repeat successful commands or add a final repository-status pass.\n"
             "- Keep the final response under 250 words.\n"
         )
+        if batching:
+            self.text += (
+                "- Batch independent inspection and edits; validate once after implementation.\n"
+            )
 
 
 def summarize(rows: list[dict]) -> dict:
@@ -76,32 +80,37 @@ async def execute(args: argparse.Namespace) -> dict:
     ledger = Ledger(workspace / "attempts.sqlite3")
     report = {
         "experiment": "paired_cap_8_vs_6_cost_to_quality_v1",
-        "goal": GOAL,
+        "tasks": [TASKS[name] for name in args.tasks],
         "model": MODEL,
         "reasoning": "low",
+        "prompt_mode": args.prompt_mode,
         "acceptance_sha256": hashlib.sha256(ACCEPTANCE.read_bytes()).hexdigest(),
         "pairs": [],
         "limits": {"tokens_per_arm_pair": args.token_ceiling,
                    "seconds_per_arm_pair": args.seconds_ceiling},
     }
-    for number in range(1, args.pairs + 1):
-        pair_root = workspace / f"pair-{number}"
+    plan = [(task_id, number) for task_id in args.tasks
+            for number in range(1, args.pairs + 1)]
+    for task_id, number in plan:
+        goal = TASKS[task_id]["goal"]
+        pair_root = workspace / task_id / f"pair-{number}"
         roots = {arm: pair_root / arm for arm in ARMS}
         for root in roots.values():
             _reset(root, workspace, preserve_learning=False)
         hashes = {arm: source_hash(root) for arm, root in roots.items()}
         if len(set(hashes.values())) != 1:
             raise RuntimeError("Application sources differ before execution")
-        contexts = {arm: prepare(root, GOAL, read_sources=True, value_gated=True)["context"]
+        contexts = {arm: prepare(root, goal, read_sources=True, value_gated=True)["context"]
                     for arm, root in roots.items()}
-        row = {"pair": number,
+        row = {"task_id": task_id, "pair": number,
                "order": (["normal_8", "reduced_6"] if number % 2
                          else ["reduced_6", "normal_8"]),
                "arms": {}}
         for arm in row["order"]:
             root, cap = roots[arm], ARMS[arm]
 
-            async def invoke(prompt: str, root=root, cap=cap, context=contexts[arm]) -> dict:
+            async def invoke(prompt: str, root=root, cap=cap, context=contexts[arm],
+                             task_id=task_id) -> dict:
                 provider = MeteredCodex(timeout=min(600, args.seconds_ceiling))
                 if not provider.probe().ready:
                     return {"status": "failed", "model": MODEL, "token_source": "unavailable",
@@ -118,11 +127,13 @@ async def execute(args: argparse.Namespace) -> dict:
                 # This flag belongs to task metadata, not inside execution_budget.
                 # It selects the app-server path that emits a final exact usage update.
                 current.metadata["codex_live_usage"] = True
-                packet = CapPacket(root, prompt, context, cap)
+                packet = CapPacket(
+                    root, prompt, context, cap,
+                    batching=args.prompt_mode == "batch")
                 started = time.monotonic()
                 receipt = await provider.execute(
                     current, packet=packet,
-                    completion_probe=lambda: acceptance(root)["passed"])
+                    completion_probe=lambda: acceptance(root, task_id)["passed"])
                 usage = receipt.token_usage
                 telemetry = getattr(provider, "telemetry", {})
                 return {
@@ -142,8 +153,8 @@ async def execute(args: argparse.Namespace) -> dict:
                 }
 
             row["arms"][arm] = await converge(
-                ledger, "adaptive-cap", number, arm, GOAL, invoke,
-                lambda root=root: acceptance(root),
+                ledger, "adaptive-cap-" + task_id, number, arm, goal, invoke,
+                lambda root=root, task_id=task_id: acceptance(root, task_id),
                 token_ceiling=args.token_ceiling,
                 seconds_ceiling=args.seconds_ceiling,
             )
@@ -164,6 +175,8 @@ def main() -> None:
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--workspace", type=Path, required=True)
     parser.add_argument("--pairs", type=int, default=6)
+    parser.add_argument("--tasks", nargs="+", choices=tuple(TASKS), default=["large"])
+    parser.add_argument("--prompt-mode", choices=("plain", "batch"), default="batch")
     parser.add_argument("--token-ceiling", type=int, default=500000)
     parser.add_argument("--seconds-ceiling", type=float, default=900)
     args = parser.parse_args()
