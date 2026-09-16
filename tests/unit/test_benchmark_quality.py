@@ -1,7 +1,7 @@
 from adaptive_agent.observability.benchmark_quality import assess_implementation_quality
 import inspect
 
-from scripts.pocketflow_longitudinal_benchmark import evaluate, frontend_source_files, source_snapshot
+from scripts.pocketflow_longitudinal_benchmark import evaluate, frontend_source_files, run_api_probe, source_snapshot
 
 
 def test_independent_quality_scores_external_evidence_only():
@@ -60,5 +60,21 @@ def test_react_dashboard_can_be_server_served_from_app_static(tmp_path):
 
 def test_external_api_probe_accepts_both_supported_date_field_names():
     source = inspect.getsource(evaluate)
-    assert "('date', 'expense_date')" in source
+    assert "('date', 'expense_date', 'spent_on')" in source
     assert source.count("expense create schema accepts neither date nor expense_date") == 2
+
+
+def test_api_probe_discovers_non_app_package_factory(tmp_path):
+    package = tmp_path / "expense_app"
+    package.mkdir()
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (package / "main.py").write_text(
+        "from fastapi import FastAPI\n"
+        "def create_app(database_path):\n"
+        "    app = FastAPI()\n"
+        "    @app.get('/health')\n"
+        "    def health(): return {'database': bool(database_path)}\n"
+        "    return app\n", encoding="utf-8")
+
+    result = run_api_probe(tmp_path, "assert client.get('/health').json() == {'database': True}")
+    assert result.returncode == 0, result.stderr

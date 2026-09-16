@@ -14,6 +14,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import textwrap
 import time
 import tempfile
 from pathlib import Path
@@ -226,6 +227,51 @@ def frontend_source_files(path: Path) -> list[Path]:
             if "react" in item.read_text(encoding="utf-8", errors="replace").lower()]
 
 
+def run_api_probe(path: Path, assertions: str) -> subprocess.CompletedProcess[str]:
+    """Run an API contract without assuming the package or date-field name."""
+    bootstrap = r'''
+import importlib
+import inspect
+import sys
+import tempfile
+from pathlib import Path
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+def load_application(database_path):
+    source = Path('src')
+    if source.is_dir():
+        sys.path.insert(0, str(source.resolve()))
+    for main in sorted(Path('.').rglob('main.py')):
+        if any(part.startswith('.') or part in {'tests', '__pycache__'} for part in main.parts):
+            continue
+        parts = list(main.with_suffix('').parts)
+        if parts and parts[0] == 'src':
+            parts = parts[1:]
+        try:
+            module = importlib.import_module('.'.join(parts))
+        except Exception:
+            continue
+        factory = getattr(module, 'create_app', None)
+        if callable(factory):
+            positional = [parameter for parameter in inspect.signature(factory).parameters.values()
+                          if parameter.kind in (parameter.POSITIONAL_ONLY,
+                                                parameter.POSITIONAL_OR_KEYWORD)]
+            return factory(database_path) if positional else factory()
+        for name in ('app', 'application'):
+            candidate = getattr(module, name, None)
+            if isinstance(candidate, FastAPI):
+                return candidate
+    raise AssertionError('no FastAPI application or create_app factory found')
+
+with tempfile.TemporaryDirectory() as directory:
+    with TestClient(load_application(directory + '/acceptance.sqlite3')) as client:
+'''
+    code = bootstrap + textwrap.indent(textwrap.dedent(assertions).strip() + "\n", "        ")
+    return subprocess.run([sys.executable, "-c", code], cwd=path,
+                          capture_output=True, text=True, timeout=30, check=False)
+
+
 def evaluate(path: Path, task_number: int) -> dict[str, Any]:
     path = path.resolve()
     started = time.monotonic()
@@ -252,15 +298,10 @@ def evaluate(path: Path, task_number: int) -> dict[str, Any]:
     source = "\n".join(item.read_text(encoding="utf-8", errors="replace").lower()
                        for item in frontend_sources)
     if task_number >= 3:
-        export_probe = subprocess.run([sys.executable, "-c", """
-import tempfile
-from fastapi.testclient import TestClient
-from app.main import create_app
-with tempfile.TemporaryDirectory() as directory:
-    with TestClient(create_app(directory + '/acceptance.sqlite3')) as client:
+        export_probe = run_api_probe(path, """
         base = {'amount':'12.34','category':'Food','description':'Lunch'}
         created = None
-        for field in ('date', 'expense_date'):
+        for field in ('date', 'expense_date', 'spent_on'):
             response = client.post('/expenses', json={**base, field:'2026-02-10'})
             if response.status_code == 201:
                 created = response
@@ -272,19 +313,14 @@ with tempfile.TemporaryDirectory() as directory:
         rows = response.text.strip().splitlines()
         assert rows[0] == 'id,amount,category,description,date'
         assert '12.34,Food,Lunch,2026-02-10' in rows[1]
-"""], cwd=path, capture_output=True, text=True, timeout=30, check=False)
+""")
         checks.append(("csv export", export_probe.returncode == 0))
         checks.append(("csv download link", "/exports/expenses.csv" in source))
     if task_number >= 4:
-        monthly_probe = subprocess.run([sys.executable, "-c", """
-import tempfile
-from fastapi.testclient import TestClient
-from app.main import create_app
-with tempfile.TemporaryDirectory() as directory:
-    with TestClient(create_app(directory + '/acceptance.sqlite3')) as client:
+        monthly_probe = run_api_probe(path, """
         for amount, category, date in [('99.00','Other','2026-01-31'),('10.00','Food','2026-02-01'),('20.00','Travel','2026-02-28'),('77.00','Other','2026-03-01')]:
             created = None
-            for field in ('date', 'expense_date'):
+            for field in ('date', 'expense_date', 'spent_on'):
                 response = client.post('/expenses', json={'amount':amount,'category':category,'description':'x',field:date})
                 if response.status_code == 201:
                     created = response
@@ -293,7 +329,7 @@ with tempfile.TemporaryDirectory() as directory:
         response = client.get('/reports/monthly/2026-02')
         assert response.status_code == 200
         assert response.json() == {'month':'2026-02','total':'30.00','by_category':{'Food':'10.00','Travel':'20.00'}}
-"""], cwd=path, capture_output=True, text=True, timeout=30, check=False)
+""")
         checks.append(("monthly boundary contract", monthly_probe.returncode == 0))
     if task_number >= 5:
         checks.append(("monthly dashboard request", "/reports/monthly/" in source))
