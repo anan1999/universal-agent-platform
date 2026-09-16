@@ -1,0 +1,61 @@
+{
+  "run": "quality-completion-sol-20260916-r1",
+  "source_commit": "b0ece03",
+  "model": "gpt-5.6-sol",
+  "method": "cost_to_contract_acceptance_v1",
+  "tasks": 9,
+  "arm_task_pairs": 18,
+  "all_measurements_complete": true,
+  "all_final_outcomes": "contract_passed",
+  "visual_usability_quality": "not_evaluated",
+  "quality_savings_claimable": false,
+  "totals": {
+    "baseline": {
+      "attempts": 10,
+      "observed_tokens": 1008008,
+      "cached_input": 739584,
+      "output_tokens": 26947
+    },
+    "uap": {
+      "attempts": 9,
+      "observed_tokens": 825047,
+      "cached_input": 606848,
+      "output_tokens": 24236
+    },
+    "uap_token_delta": -182961,
+    "uap_percent_delta": -18.150747
+  },
+  "domains": [
+    {
+      "domain": "ui-ux",
+      "baseline": {"attempts": 4, "observed_tokens": 508379, "cached_input": 382976, "output_tokens": 14331},
+      "uap": {"attempts": 3, "observed_tokens": 308647, "cached_input": 221312, "output_tokens": 11291},
+      "uap_token_delta": -199732,
+      "uap_percent_delta": -39.291948
+    },
+    {
+      "domain": "graphic-design",
+      "baseline": {"attempts": 3, "observed_tokens": 247074, "cached_input": 172544, "output_tokens": 6605},
+      "uap": {"attempts": 3, "observed_tokens": 277821, "cached_input": 193024, "output_tokens": 6520},
+      "uap_token_delta": 30747,
+      "uap_percent_delta": 12.444449
+    },
+    {
+      "domain": "three-d-design",
+      "baseline": {"attempts": 3, "observed_tokens": 252555, "cached_input": 184064, "output_tokens": 6011},
+      "uap": {"attempts": 3, "observed_tokens": 238579, "cached_input": 192512, "output_tokens": 6425},
+      "uap_token_delta": -13976,
+      "uap_percent_delta": -5.533843
+    }
+  ],
+  "quality_event": {
+    "domain": "ui-ux",
+    "task": 3,
+    "arm": "baseline",
+    "first_attempt_tokens": 169135,
+    "first_attempt_result": "failed_contract",
+    "defect": "escape",
+    "second_attempt_tokens": 124433,
+    "second_attempt_result": "contract_passed"
+  }
+}
