@@ -1,6 +1,6 @@
 import asyncio
 
-from scripts.quality_completion_benchmark import Ledger, MODEL, converge, cost, defects
+from scripts.quality_completion_benchmark import Ledger, MODEL, converge, cost, defects, no_progress
 
 
 def test_quality_completion_benchmark_is_pinned_to_sol():
@@ -19,6 +19,31 @@ def test_failed_check_diagnostic_becomes_repair_feedback():
         {"name": "api contract", "passed": False,
          "detail": "AssertionError: expected 201, received 422"},
     ]}) == ["api contract: AssertionError: expected 201, received 422"]
+
+
+def test_no_progress_gate_stops_identical_failure_without_new_evidence():
+    row = {"quality": {"passed": False, "errors": ["recommendation"]}}
+    assert no_progress([row]) is False
+    assert no_progress([row, row]) is True
+    assert no_progress([row, {"quality": {"passed": False,
+                        "errors": ["citations"]}}]) is False
+
+
+def test_opt_in_no_progress_gate_preserves_first_two_attempt_costs(tmp_path):
+    ledger = Ledger(tmp_path / "attempts.db")
+    calls = []
+
+    async def invoke(prompt):
+        calls.append(prompt)
+        return receipt(10)
+
+    result = asyncio.run(converge(
+        ledger, "research", 1, "cap6", "Choose intervention", invoke,
+        lambda: {"passed": False, "errors": ["recommendation"]},
+        token_ceiling=100, seconds_ceiling=30, no_progress_gate=True))
+    assert result["outcome"] == "no_progress_unfinished"
+    assert result["observed_tokens"] == 20
+    assert len(calls) == 2
 
 
 def receipt(tokens=10):

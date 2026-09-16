@@ -112,7 +112,8 @@ async def execute(args: argparse.Namespace) -> dict:
                 ledger, domain, number, arm, legacy.GOALS[domain], invoke,
                 lambda root=root, domain=domain: legacy.acceptance(root, domain),
                 token_ceiling=args.token_ceiling,
-                seconds_ceiling=args.seconds_ceiling)
+                seconds_ceiling=args.seconds_ceiling,
+                no_progress_gate=True)
             case["arms"][arm]["cap"] = cap
         report["cases"].append(case)
         (workspace / "report.json").write_text(

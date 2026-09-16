@@ -76,9 +76,22 @@ def defects(quality: dict) -> list[str]:
     return list(dict.fromkeys(explicit + failed_checks)) or ["acceptance contract failed"]
 
 
+def no_progress(rows: list[dict]) -> bool:
+    """Stop after two consecutive identical failed contracts without new passes."""
+    if len(rows) < 2:
+        return False
+    previous, latest = (row["quality"] for row in rows[-2:])
+    if previous.get("passed") or latest.get("passed"):
+        return False
+    return (tuple(defects(previous)) == tuple(defects(latest))
+            and sum(bool(check.get("passed")) for check in previous.get("checks", []))
+            >= sum(bool(check.get("passed")) for check in latest.get("checks", [])))
+
+
 async def converge(ledger: Ledger, domain: str, task: int, arm: str, goal: str,
                    invoke: Any, validate: Any, *, token_ceiling: int,
-                   seconds_ceiling: float, clock=time.monotonic) -> dict:
+                   seconds_ceiling: float, clock=time.monotonic,
+                   no_progress_gate: bool = False) -> dict:
     """Every retry edits its own existing artifact and receives explicit defects."""
     started = clock()
     while True:
@@ -96,6 +109,8 @@ async def converge(ledger: Ledger, domain: str, task: int, arm: str, goal: str,
         elapsed = clock() - started
         if totals["observed_tokens"] >= token_ceiling or elapsed >= seconds_ceiling:
             return {**totals, "outcome": "budget_exhausted_unfinished"}
+        if no_progress_gate and no_progress(rows):
+            return {**totals, "outcome": "no_progress_unfinished"}
         feedback = ("\nIndependent acceptance found these defects: "
                     + json.dumps(defects(rows[-1]["quality"]))
                     + ". Fix them in your existing files. Preserve all previously passing requirements."

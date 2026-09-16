@@ -28,7 +28,8 @@ def product(root: Path, value: dict) -> list[str]:
 
 def research(root: Path, value: dict) -> list[str]:
     errors = []
-    if value.get("recommendation") != "Intervention B": errors.append("recommendation")
+    recommendation = str(value.get("recommendation", "")).strip().casefold()
+    if recommendation not in {"intervention b", "b"}: errors.append("recommendation")
     citations = set(value.get("citations", []))
     if not {"S2", "S3"}.issubset(citations) or not citations.issubset({"S1", "S2", "S3", "S4"}):
         errors.append("citations")
