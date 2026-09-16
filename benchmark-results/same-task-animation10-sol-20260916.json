@@ -1,0 +1,256 @@
+{
+  "method": "same_task_domain_public_evidence_v1",
+  "domain": "animation",
+  "model": "gpt-5.6-sol",
+  "reasoning": "low",
+  "prompts": [
+    "Create animation.py for the orbital courier scene. Provide scene_at(t) with 3D planet and satellite coordinates for phase t in [0,1], render_frame(t, size=(320,240)) returning a Pillow image, and render_gif(path, frames=24, size=(320,240)) producing a moving GIF. Use real x/y/z motion and perspective, not a static poster.",
+    "The first orbit feels too flat. Tilt it and make it visibly elliptical: the courier should vary in depth and move through a wider horizontal than vertical arc, while the camera still sees the planet clearly.",
+    "Add a small moon orbiting the planet in the same 3D scene. Expose its 3D location as scene_at(t)['moon'] and show it in rendered frames without obscuring the courier.",
+    "The courier needs a sense of spin. Expose scene_at(t)['satellite_orientation'] as an angle that changes over the loop and make the rendered courier visibly rotate or change highlight direction.",
+    "Improve depth cues without changing the story: give the planet, courier, and moon distinct color/lighting treatments so foreground and background remain distinguishable.",
+    "Introduce a gentle moving camera. Provide camera_at(t) as a 3D position, vary it through the loop, and keep the main objects safely inside the frame.",
+    "Add near and far star layers with subtle parallax relative to the moving camera. Expose scene_at(t)['stars_near'] and ['stars_far'] as 3D point lists, and keep the stars secondary to the subject.",
+    "The loop must be seamless. Make scene_at(0) and scene_at(1) agree for the major objects and camera, without a position jump at the wrap.",
+    "Add a restrained title to the animation, 'Orbital Courier', without hiding the moving objects. Expose the exact title as TITLE in animation.py and keep it readable at the standard export size.",
+    "Finish both preview and presentation exports: render_gif should accept 320x240 and 640x480 sizes and at least 12 frames, preserve animation movement, and write a looping GIF. Keep the earlier 3D motion, camera, stars, and title."
+  ],
+  "quality_note": "animation quality uses immutable snapshot rescore after a documented tuple-vs-position-node checker fix",
+  "arms": {
+    "baseline": {
+      "turns": [
+        {
+          "turn": 1,
+          "status": "completed",
+          "total_tokens": 240724,
+          "uncached_tokens": 16340,
+          "cached_input_tokens": 224384,
+          "seconds": 101.45,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "5f7349553c13107e6b828aac9d5e9122a5d4ba9d77a5c07f6a6f0a8da8672e2e"
+        },
+        {
+          "turn": 2,
+          "status": "completed",
+          "total_tokens": 112988,
+          "uncached_tokens": 31196,
+          "cached_input_tokens": 81792,
+          "seconds": 34.53,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "c9070bb32ab7f0e32abe6d2fa756c85ed759d1e69e471e2d257d825a7c41a55e"
+        },
+        {
+          "turn": 3,
+          "status": "completed",
+          "total_tokens": 193723,
+          "uncached_tokens": 6843,
+          "cached_input_tokens": 186880,
+          "seconds": 50.72,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "8c21a504c105075e0c323201a0eee4738efd9e0e98c5124d6e9b30419c72c7a4"
+        },
+        {
+          "turn": 4,
+          "status": "completed",
+          "total_tokens": 138597,
+          "uncached_tokens": 3941,
+          "cached_input_tokens": 134656,
+          "seconds": 37.83,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "869500a38ebb4483a64372c557305f9e7b879a11d694cf4d7e47745265459667"
+        },
+        {
+          "turn": 5,
+          "status": "completed",
+          "total_tokens": 153710,
+          "uncached_tokens": 6894,
+          "cached_input_tokens": 146816,
+          "seconds": 43.56,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "2843e080e6c1dbadc017d6ae8fcc7c3466ffd9331348cf7cb27a9939d9b7cf91"
+        },
+        {
+          "turn": 6,
+          "status": "completed",
+          "total_tokens": 341989,
+          "uncached_tokens": 8805,
+          "cached_input_tokens": 333184,
+          "seconds": 75.81,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "202c06ead743e9baca2dc476e04f75c8cdfd8331024f132e092d5f98d463184b"
+        },
+        {
+          "turn": 7,
+          "status": "completed",
+          "total_tokens": 280838,
+          "uncached_tokens": 8198,
+          "cached_input_tokens": 272640,
+          "seconds": 80.52,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "0a1ebc568a401ef8ad25a2653b6c8e94b6ec64c3ac29d369e612567c8eac0238"
+        },
+        {
+          "turn": 8,
+          "status": "completed",
+          "total_tokens": 147643,
+          "uncached_tokens": 3259,
+          "cached_input_tokens": 144384,
+          "seconds": 35.08,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "849826f49c24753cf23046e242d312f4f2cf7aead2fc2ce51d431265ce24aba2"
+        },
+        {
+          "turn": 9,
+          "status": "completed",
+          "total_tokens": 356631,
+          "uncached_tokens": 5783,
+          "cached_input_tokens": 350848,
+          "seconds": 58.31,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "ad7a2ae0dceed25476c4275f8474ce26fda6cd46af53b2b2e6ad8e63a2105c6b"
+        },
+        {
+          "turn": 10,
+          "status": "completed",
+          "total_tokens": 379926,
+          "uncached_tokens": 7062,
+          "cached_input_tokens": 372864,
+          "seconds": 66.59,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "055f77716a5482338a54a64019b487464602f5120b909a4cd63bdb5a27058f0a"
+        }
+      ],
+      "total_tokens": 2346769,
+      "uncached_tokens": 98321,
+      "quality_passes": 10
+    },
+    "uap": {
+      "turns": [
+        {
+          "turn": 1,
+          "status": "completed",
+          "total_tokens": 123737,
+          "uncached_tokens": 12889,
+          "cached_input_tokens": 110848,
+          "seconds": 76.55,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "b51f69c555d2dc74cdac9899dddfdaa394d010a7c076e3b6978f49a5da1d4d04"
+        },
+        {
+          "turn": 2,
+          "status": "completed",
+          "total_tokens": 100460,
+          "uncached_tokens": 5740,
+          "cached_input_tokens": 94720,
+          "seconds": 32.03,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "92a93bb372e40bb5e85c433238bd175d5a1b7bdb53441e610369415560dc66f7"
+        },
+        {
+          "turn": 3,
+          "status": "completed",
+          "total_tokens": 169928,
+          "uncached_tokens": 7240,
+          "cached_input_tokens": 162688,
+          "seconds": 58.53,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "9636764628e5fab8c5f04323825c0f886d0ce689d006a662a4749d9d5d886bf8"
+        },
+        {
+          "turn": 4,
+          "status": "completed",
+          "total_tokens": 128039,
+          "uncached_tokens": 5543,
+          "cached_input_tokens": 122496,
+          "seconds": 36.3,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "cdc19679ee2e2b9ac26cb8434e1e31fcf1e39519e88fdc5a080939bcb46c4cfc"
+        },
+        {
+          "turn": 5,
+          "status": "completed",
+          "total_tokens": 143961,
+          "uncached_tokens": 6745,
+          "cached_input_tokens": 137216,
+          "seconds": 45.44,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "be5f552ab714fbe39f7613c7d6b969d45aafc267d89e50a8b57f95a8410d026b"
+        },
+        {
+          "turn": 6,
+          "status": "completed",
+          "total_tokens": 198247,
+          "uncached_tokens": 6759,
+          "cached_input_tokens": 191488,
+          "seconds": 59.08,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "60266723742aa81dd3ba6de34247119ec18699e406051bd1aadafe1d1efe06ec"
+        },
+        {
+          "turn": 7,
+          "status": "completed",
+          "total_tokens": 302630,
+          "uncached_tokens": 7590,
+          "cached_input_tokens": 295040,
+          "seconds": 71.86,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "271501c66704465f6a300cd11a94e2d512b2fff429d040dd700543181276385a"
+        },
+        {
+          "turn": 8,
+          "status": "completed",
+          "total_tokens": 182635,
+          "uncached_tokens": 3691,
+          "cached_input_tokens": 178944,
+          "seconds": 24.34,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "bde08db475c995285dc8ad6b5875e6aed6e21b200d24cff6f30d9ff5a68e04f1"
+        },
+        {
+          "turn": 9,
+          "status": "completed",
+          "total_tokens": 336836,
+          "uncached_tokens": 5828,
+          "cached_input_tokens": 331008,
+          "seconds": 55.84,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "1b647e7b344874c420a5393fc6d57640a1d540002dc2db90718015406a1851ae"
+        },
+        {
+          "turn": 10,
+          "status": "completed",
+          "total_tokens": 150733,
+          "uncached_tokens": 2893,
+          "cached_input_tokens": 147840,
+          "seconds": 21.45,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "1b647e7b344874c420a5393fc6d57640a1d540002dc2db90718015406a1851ae"
+        }
+      ],
+      "total_tokens": 1837206,
+      "uncached_tokens": 64918,
+      "quality_passes": 10
+    }
+  },
+  "comparison_valid": true
+}

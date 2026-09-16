@@ -6,6 +6,7 @@ import pytest
 from scripts.same_task_domain_benchmark import CONFIG, prompt_for, summarize
 from scripts.same_task_domain_quality import EVALUATORS, GOALS, _xyz
 from scripts.rescore_same_task_animation import rescore
+from scripts.export_same_task_report import export
 
 
 def test_two_domains_have_ten_related_prompts_and_separate_artifacts():
@@ -56,3 +57,19 @@ def test_rescore_rejects_wrong_domain_without_rewriting_source(tmp_path):
         rescore(tmp_path)
     assert report.read_text(encoding="utf-8") == original
     assert not (tmp_path / "rescore.json").exists()
+
+
+def test_public_export_omits_thread_ids_and_absolute_paths(tmp_path):
+    row = {"number": 1, "status": "completed", "usage": {
+        "total_tokens": 10, "uncached_tokens": 3, "cached_input_tokens": 7},
+        "seconds": 1.5, "quality": {"passed": True, "errors": []},
+        "artifact_sha256": "abc", "turn_id": "secret-turn-id"}
+    report = {"domain": "programming", "model": "sol", "reasoning": "low",
+              "prompts": ["goal"], "comparison_valid": True,
+              "arms": {arm: {"thread_id": "secret-thread-id", "turns": [row]}
+                       for arm in ("baseline", "uap")}}
+    (tmp_path / "report.json").write_text(json.dumps(report), encoding="utf-8")
+    result = export(tmp_path)
+    assert result["arms"]["uap"]["total_tokens"] == 10
+    assert "secret" not in json.dumps(result)
+    assert str(tmp_path) not in json.dumps(result)

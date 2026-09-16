@@ -1,0 +1,256 @@
+{
+  "method": "same_task_domain_public_evidence_v1",
+  "domain": "programming",
+  "model": "gpt-5.6-sol",
+  "reasoning": "low",
+  "prompts": [
+    "Start a small personal expense tracker in tracker.py. Provide ExpenseTracker with add(amount, category, date, note='') returning a stable integer ID, and list() returning ID-ordered dictionaries with id, amount, category, date, note. Store money as two-decimal strings using Decimal.",
+    "The form can receive bad data. Reject zero or negative amounts, malformed ISO dates, and blank categories with ValueError; a rejected add must not change the ledger. Keep add/list behavior.",
+    "I need to browse one category at a time. Add filter(category), returning matching expense dictionaries in ID order; category matching should ignore case and surrounding spaces.",
+    "For the monthly overview, add monthly('YYYY-MM') returning a two-decimal total string. Include exactly that calendar month and keep cents exact.",
+    "I want to export my current list. Add to_csv() returning CSV text with header id,amount,category,date,note. Preserve commas, quotes, and Unicode in notes.",
+    "Let me import a CSV made by this app. Add from_csv(text) to the existing tracker, returning the number imported. Assign new stable IDs; if any row is invalid, import nothing and raise ValueError.",
+    "People make corrections. Add update(id, *, amount=None, category=None, date=None, note=None), returning True for an existing record and False for a missing ID. Use the same validation and preserve its ID.",
+    "I also need to remove a mistaken entry. Add delete(id), returning True when deleted and False when missing. Existing IDs must never be reused.",
+    "Make the list survive a restart. Add save(path) writing JSON safely, and ExpenseTracker.load(path) restoring the records and next ID. Preserve cents, Unicode, and stable IDs.",
+    "For the finished overview, add summary(month) returning exactly month, count, total, by_category. Totals are two-decimal strings, by_category maps names to two-decimal totals, and it includes only the selected month. Keep all previous behavior and tests green."
+  ],
+  "quality_note": "original executable contract",
+  "arms": {
+    "baseline": {
+      "turns": [
+        {
+          "turn": 1,
+          "status": "completed",
+          "total_tokens": 178757,
+          "uncached_tokens": 11205,
+          "cached_input_tokens": 167552,
+          "seconds": 62.75,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "ce2017672d3e248389e6b6cfcb2b7e92b27006734a3e474cbf7a1798595ff033"
+        },
+        {
+          "turn": 2,
+          "status": "completed",
+          "total_tokens": 122825,
+          "uncached_tokens": 6345,
+          "cached_input_tokens": 116480,
+          "seconds": 48.24,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "d7662577bf3f073a9face4f9dcfe15dc89783a74c2bf3ca3ee47983e68ba4cdb"
+        },
+        {
+          "turn": 3,
+          "status": "completed",
+          "total_tokens": 163412,
+          "uncached_tokens": 4948,
+          "cached_input_tokens": 158464,
+          "seconds": 40.56,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "d7ffd4f7310680ee7148fa14c9bd1c4a37ed7fb68352f1128bbcfde13ed60e3f"
+        },
+        {
+          "turn": 4,
+          "status": "completed",
+          "total_tokens": 117793,
+          "uncached_tokens": 3617,
+          "cached_input_tokens": 114176,
+          "seconds": 31.16,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "48a98e2f6155341f488e19ab30dfc79b81cb98e78e27e2ef33fa26fd01859af2"
+        },
+        {
+          "turn": 5,
+          "status": "completed",
+          "total_tokens": 124533,
+          "uncached_tokens": 2933,
+          "cached_input_tokens": 121600,
+          "seconds": 28.67,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "84c9f652f7eac3cc6421f4b8aef19cd2fc0c98a9a1f0deff72c8042fe5fbfc96"
+        },
+        {
+          "turn": 6,
+          "status": "completed",
+          "total_tokens": 132751,
+          "uncached_tokens": 4239,
+          "cached_input_tokens": 128512,
+          "seconds": 37.73,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "0b4ac124f3f3908017e9705fec72bdf4e916b15724273334e011dc6ed5ecce9c"
+        },
+        {
+          "turn": 7,
+          "status": "completed",
+          "total_tokens": 142175,
+          "uncached_tokens": 4319,
+          "cached_input_tokens": 137856,
+          "seconds": 34.19,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "045e39a683ead62fc4d154c74a851f893289109cae35c521671cc910c2c8eb9e"
+        },
+        {
+          "turn": 8,
+          "status": "completed",
+          "total_tokens": 191311,
+          "uncached_tokens": 5327,
+          "cached_input_tokens": 185984,
+          "seconds": 40.3,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "2a8a74703dd79c865fec36c5ca753ce35d389686c3c193636e982e9452554bcf"
+        },
+        {
+          "turn": 9,
+          "status": "completed",
+          "total_tokens": 166080,
+          "uncached_tokens": 5696,
+          "cached_input_tokens": 160384,
+          "seconds": 48.86,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "45d73ee153c2767100e8b2320a4913a9b4218b3197196a945d8f434a3256ed14"
+        },
+        {
+          "turn": 10,
+          "status": "completed",
+          "total_tokens": 179302,
+          "uncached_tokens": 5222,
+          "cached_input_tokens": 174080,
+          "seconds": 35.33,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "be40343fc75db09e5b0965c04e17298a47df84f9609a293366e134f2c0af0f35"
+        }
+      ],
+      "total_tokens": 1518939,
+      "uncached_tokens": 53851,
+      "quality_passes": 10
+    },
+    "uap": {
+      "turns": [
+        {
+          "turn": 1,
+          "status": "completed",
+          "total_tokens": 99926,
+          "uncached_tokens": 22358,
+          "cached_input_tokens": 77568,
+          "seconds": 40.72,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "61b50d22e53a9f6c46473c4dc4c7904ff540d687a2686312968227eedef3242d"
+        },
+        {
+          "turn": 2,
+          "status": "completed",
+          "total_tokens": 94933,
+          "uncached_tokens": 5205,
+          "cached_input_tokens": 89728,
+          "seconds": 37.76,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "441d8092fd3aece810d99dbf9d88b32ffdcf6880e6b74dbb76d87c5e41c1d079"
+        },
+        {
+          "turn": 3,
+          "status": "completed",
+          "total_tokens": 155024,
+          "uncached_tokens": 4368,
+          "cached_input_tokens": 150656,
+          "seconds": 34.8,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "5f4d5ad789c4a6c8e5abbedc9dbd61d4ab055d7fa5dcea6daaad7fc2ae723a7f"
+        },
+        {
+          "turn": 4,
+          "status": "completed",
+          "total_tokens": 82443,
+          "uncached_tokens": 2443,
+          "cached_input_tokens": 80000,
+          "seconds": 23.27,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "5c61fe0ebfe0453ac399742e1d36bb1d1be1565502de2436a706e79f89bc6668"
+        },
+        {
+          "turn": 5,
+          "status": "completed",
+          "total_tokens": 115056,
+          "uncached_tokens": 3056,
+          "cached_input_tokens": 112000,
+          "seconds": 29.41,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "f6433131ea4d8c25932d1c90e8ea6e5d6b34cca9d7f7eb5030821b385fc29807"
+        },
+        {
+          "turn": 6,
+          "status": "completed",
+          "total_tokens": 123786,
+          "uncached_tokens": 4362,
+          "cached_input_tokens": 119424,
+          "seconds": 39.12,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "462d27fa6d159023a3de70e4ee0f613e5d90faef0af3f83e18cdb3fdeb370879"
+        },
+        {
+          "turn": 7,
+          "status": "completed",
+          "total_tokens": 98381,
+          "uncached_tokens": 2893,
+          "cached_input_tokens": 95488,
+          "seconds": 27.33,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "2781487101f552c35e9e18b83749755ac6b11641cb89c3dfa1dd4ecea418855a"
+        },
+        {
+          "turn": 8,
+          "status": "completed",
+          "total_tokens": 102269,
+          "uncached_tokens": 2685,
+          "cached_input_tokens": 99584,
+          "seconds": 26.22,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "da8651b9b29d62a28f2e1b2cae4a0ccb2bd2f5797dbfe8fc801a9525f5822927"
+        },
+        {
+          "turn": 9,
+          "status": "completed",
+          "total_tokens": 147072,
+          "uncached_tokens": 5504,
+          "cached_input_tokens": 141568,
+          "seconds": 43.58,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "4813a923a53705b59f3e6e84351d403a96d34c60aa60fd598d6cb30cd67bded5"
+        },
+        {
+          "turn": 10,
+          "status": "completed",
+          "total_tokens": 116600,
+          "uncached_tokens": 3064,
+          "cached_input_tokens": 113536,
+          "seconds": 27.89,
+          "quality_passed": true,
+          "quality_errors": [],
+          "artifact_sha256": "5a3d05b19e7c9c6a3c17929321e55c0aebfd642a34f4a3e94b35559615f6464d"
+        }
+      ],
+      "total_tokens": 1135490,
+      "uncached_tokens": 55938,
+      "quality_passes": 10
+    }
+  },
+  "comparison_valid": true
+}

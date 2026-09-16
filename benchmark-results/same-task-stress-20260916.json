@@ -1,0 +1,72 @@
+{
+  "method": "deterministic_final_artifact_stress_v1",
+  "domains": {
+    "programming": {
+      "baseline": {
+        "passed": true,
+        "operations": 180,
+        "remaining_records": 95,
+        "errors": []
+      },
+      "uap": {
+        "passed": true,
+        "operations": 180,
+        "remaining_records": 95,
+        "errors": []
+      }
+    },
+    "animation": {
+      "baseline": {
+        "passed": true,
+        "scene_samples": 32,
+        "frame_samples": 12,
+        "distinct_frame_hashes": 12,
+        "exports": [
+          {
+            "size": [
+              320,
+              240
+            ],
+            "frames": 16,
+            "bytes": 122293
+          },
+          {
+            "size": [
+              640,
+              480
+            ],
+            "frames": 16,
+            "bytes": 374170
+          }
+        ],
+        "errors": []
+      },
+      "uap": {
+        "passed": true,
+        "scene_samples": 32,
+        "frame_samples": 12,
+        "distinct_frame_hashes": 12,
+        "exports": [
+          {
+            "size": [
+              320,
+              240
+            ],
+            "frames": 16,
+            "bytes": 51710
+          },
+          {
+            "size": [
+              640,
+              480
+            ],
+            "frames": 16,
+            "bytes": 102315
+          }
+        ],
+        "errors": []
+      }
+    }
+  },
+  "all_passed": true
+}
