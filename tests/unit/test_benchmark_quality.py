@@ -1,5 +1,5 @@
 from adaptive_agent.observability.benchmark_quality import assess_implementation_quality
-from scripts.pocketflow_longitudinal_benchmark import source_snapshot
+from scripts.pocketflow_longitudinal_benchmark import frontend_source_files, source_snapshot
 
 
 def test_independent_quality_scores_external_evidence_only():
@@ -43,3 +43,14 @@ def test_product_snapshot_excludes_uap_instruction_marker(tmp_path):
     (tmp_path / "main.py").write_text("print('product')", encoding="utf-8")
 
     assert list(source_snapshot(tmp_path)) == ["main.py"]
+
+
+def test_react_dashboard_can_be_server_served_from_app_static(tmp_path):
+    source = tmp_path / "app" / "static" / "app.js"
+    source.parent.mkdir(parents=True)
+    source.write_text("ReactDOM.createRoot(root).render(React.createElement('main'));", encoding="utf-8")
+    unrelated = tmp_path / "scripts" / "helper.js"
+    unrelated.parent.mkdir()
+    unrelated.write_text("console.log('not a dashboard')", encoding="utf-8")
+
+    assert frontend_source_files(tmp_path) == [source]

@@ -215,6 +215,17 @@ def remove_tree(path: Path) -> None:
         shutil.rmtree(target, onerror=handle_error)
 
 
+def frontend_source_files(path: Path) -> list[Path]:
+    """Find React source regardless of whether it is bundled or server-served."""
+    ignored = {".agent", ".git", ".pytest_cache", "__pycache__", "node_modules", "tests"}
+    candidates = [item for pattern in ("*.js", "*.jsx", "*.ts", "*.tsx")
+                  for item in path.rglob(pattern)
+                  if not ignored.intersection(item.relative_to(path).parts)
+                  and ".test." not in item.name and ".spec." not in item.name]
+    return [item for item in candidates
+            if "react" in item.read_text(encoding="utf-8", errors="replace").lower()]
+
+
 def evaluate(path: Path, task_number: int) -> dict[str, Any]:
     path = path.resolve()
     started = time.monotonic()
@@ -235,10 +246,7 @@ def evaluate(path: Path, task_number: int) -> dict[str, Any]:
     if task_number >= 1:
         checks.append(("backend", any("FastAPI(" in item.read_text(encoding="utf-8", errors="replace")
                                       for item in python_sources)))
-    source_roots = [root for root in (path / "frontend" / "src", path / "src") if root.is_dir()]
-    frontend_sources = [item for source_root in source_roots
-                        for pattern in ("*.js", "*.jsx", "*.ts", "*.tsx") for item in source_root.rglob(pattern)
-                        if ".test." not in item.name and ".spec." not in item.name]
+    frontend_sources = frontend_source_files(path)
     if task_number >= 2:
         checks.append(("react dashboard", bool(frontend_sources)))
     source = "\n".join(item.read_text(encoding="utf-8", errors="replace").lower()
