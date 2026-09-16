@@ -53,3 +53,24 @@ def test_sponsor_layer_does_not_require_hidden_hyphenated_id():
     assert has_sponsor_layer('<g id="sponsor_layer"><text>SUPPORTED BY</text></g>')
     assert has_sponsor_layer("<g class='poster-sponsors'></g>")
     assert not has_sponsor_layer('<g id="footer"></g>')
+
+
+def test_native_modal_escape_does_not_require_custom_cancel_handler(tmp_path):
+    root = tmp_path / "native-escape"
+    shutil.copytree(FIXTURES / "ui-ux", root)
+    root.joinpath("prototype.html").write_text("""
+    <style>:root{--primary:#17324D;--accent:#2A9D8F;--surface:#F7F3EC}
+    :focus-visible{outline:2px solid}@media(max-width:640px){}
+    @media(prefers-reduced-motion:reduce){}</style>
+    <nav aria-label="Care plan navigation"></nav><main>
+    <button id="filter">Filter status</button><p role="alert">Conflict</p>
+    <p role="status"></p><section id="today"></section>
+    <section id="medications"></section><section id="care-team"></section>
+    <button>Add medication</button><dialog><label>Name <input></label></dialog>
+    </main><script>
+    const dialog = document.querySelector('dialog');
+    const opener = document.querySelector('button');
+    dialog.showModal(); dialog.addEventListener('close', () => opener.focus());
+    </script>
+    """, encoding="utf-8")
+    assert evaluate(root, "ui-ux", 3)["passed"]

@@ -94,7 +94,8 @@ def evaluate(root: Path, domain: str, round_number: int) -> dict[str, Any]:
                 "dialog": r"role\s*=\s*[\"']dialog|<dialog\b",
                 "modal": r"aria-modal\s*=\s*[\"']true|<dialog\b",
                 "labels": r"<label\b",
-                "escape": r"Escape|keyCode\s*===?\s*27|addEventListener\s*\(\s*[\"']cancel",
+                "escape": (r"Escape|keyCode\s*===?\s*27|addEventListener\s*\(\s*[\"']cancel"
+                           r"|<dialog\b[\s\S]*?\.showModal\s*\("),
                 "focus_return": r"\.focus\s*\(",
                 "reduced_motion": r"prefers-reduced-motion",
             }
