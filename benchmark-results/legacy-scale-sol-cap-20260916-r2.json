@@ -1,0 +1,38 @@
+{
+  "experiment": "legacy_context_cache_scales_cap8_vs_cap6_plain_v1",
+  "implementation_commit": "6fbbf62",
+  "model": "gpt-5.6-sol",
+  "reasoning": "low",
+  "prompt_mode": "plain",
+  "pairs_per_scale": 2,
+  "scales": {
+    "small": {"cap8_tokens": 172561, "cap6_tokens": 218718, "delta": 46157, "percent": 26.75, "cap6_wins": 1, "cap8_wins": 1, "cap8_tools": 5, "cap6_tools": 7},
+    "medium": {"cap8_tokens": 313445, "cap6_tokens": 279706, "delta": -33739, "percent": -10.76, "cap6_wins": 2, "cap8_wins": 0, "cap8_tools": 9, "cap6_tools": 9},
+    "large": {"cap8_tokens": 217026, "cap6_tokens": 177458, "delta": -39568, "percent": -18.23, "cap6_wins": 1, "cap8_wins": 1, "cap8_tools": 3, "cap6_tools": 3}
+  },
+  "overall": {
+    "cap8_tokens": 703032,
+    "cap6_tokens": 675882,
+    "delta": -27150,
+    "percent": -3.861844126583143,
+    "cap6_wins": 4,
+    "cap8_wins": 2,
+    "cap8_tools": 17,
+    "cap6_tools": 19,
+    "quality_passed": 12,
+    "executions": 12,
+    "measurement_complete": 12,
+    "repair_attempts": 0
+  },
+  "invalidated_run": {
+    "workspace": ".benchmark-legacy-scale-sol-20260916-r1",
+    "reason": "Legacy Packet injected the large monthly response contract into the small summary task.",
+    "policy_conclusion_allowed": false
+  },
+  "limitations": [
+    "Only two pairs per scale; the small and large pair directions disagree.",
+    "All observed tool counts are below each arm's hard cap, so this is prompt anchoring rather than enforced truncation.",
+    "One software fixture family and one model; no cross-domain generalization.",
+    "Functional acceptance is not a browser-rendered usability evaluation."
+  ]
+}
