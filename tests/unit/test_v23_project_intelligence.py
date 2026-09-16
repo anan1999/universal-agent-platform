@@ -189,5 +189,7 @@ def test_real_benchmark_requires_opt_in_and_forbids_mock():
     assert "'/exports/expenses.csv'" in script
     assert "'/reports/monthly/2026-02'" in script
     assert "chosen_name = args.canonical_source" in script
-    assert 'path / "frontend" / "src", path / "src"' in script
+    assert "def frontend_source_files(path: Path)" in script
+    assert "for item in path.rglob(pattern)" in script
+    assert 'if "react" in item.read_text' in script
     assert '("frontend/src/", "src/")' in script
