@@ -8,6 +8,11 @@
 執行固定使用 `gpt-5.6-sol`，Baseline 與 UAP 都取消 benchmark 特設的工具次數上限。
 三個題目是需求變更，不是修復對話次數限制；每個需求持續修改直到合約通過。
 
+程式設計入口：
+`python scripts/programming_quality_completion_benchmark.py --execute --workspace <new-directory>`。
+它使用五個累積的 FastAPI／React／SQLite 需求，並以 pytest 和外部 API probe 作為收斂條件；
+兩臂各自延續自己的程式碼，不使用跨臂 canonical checkpoint。
+
 - 兩臂各自保留作品；修復從自己的失敗版本繼續，不能借用對方成果。
 - 同一個獨立驗收器回傳具體缺失，交給原臂修復並重驗全部累積要求。
 - 每次呼叫開始及結束都寫入 SQLite，失敗、修復、最後一次成功的成本全部累加。
