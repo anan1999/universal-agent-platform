@@ -1,10 +1,17 @@
 import asyncio
 
-from scripts.quality_completion_benchmark import Ledger, MODEL, converge, cost
+from scripts.quality_completion_benchmark import Ledger, MODEL, converge, cost, defects
 
 
 def test_quality_completion_benchmark_is_pinned_to_sol():
     assert MODEL == "gpt-5.6-sol"
+
+
+def test_failed_named_checks_become_repair_feedback():
+    assert defects({"passed": False, "checks": [
+        {"name": "pytest", "passed": True},
+        {"name": "react dashboard", "passed": False},
+    ]}) == ["react dashboard"]
 
 
 def receipt(tokens=10):
@@ -29,6 +36,23 @@ def test_repairs_continue_beyond_three_turns_and_keep_all_costs(tmp_path):
     assert result["attempts"] == 5
     assert "keyboard navigation broken" in prompts[1]
     assert cost(ledger.rows("ui-ux", 1, "baseline"))["observed_tokens"] == 50
+
+
+def test_check_failure_is_injected_into_next_prompt(tmp_path):
+    ledger = Ledger(tmp_path / "attempts.db")
+    prompts = []
+
+    async def invoke(prompt):
+        prompts.append(prompt)
+        return receipt()
+
+    result = asyncio.run(converge(
+        ledger, "programming", 2, "uap", "Build dashboard", invoke,
+        lambda: {"passed": len(prompts) == 2, "checks": [
+            {"name": "react dashboard", "passed": len(prompts) == 2},
+        ]}, token_ceiling=100, seconds_ceiling=30))
+    assert result["outcome"] == "contract_passed"
+    assert "react dashboard" in prompts[1]
 
 
 def test_budget_exhaustion_keeps_failed_cost_and_marks_unfinished(tmp_path):

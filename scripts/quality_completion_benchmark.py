@@ -62,6 +62,14 @@ def cost(rows: list[dict]) -> dict:
             "output_tokens": sum(int(result.get("output_tokens", 0)) for result in results)}
 
 
+def defects(quality: dict) -> list[str]:
+    """Normalize evaluator-specific failures into actionable repair feedback."""
+    explicit = [str(item) for item in quality.get("errors", []) if str(item)]
+    failed_checks = [str(item.get("name", "unnamed check"))
+                     for item in quality.get("checks", []) if not item.get("passed")]
+    return list(dict.fromkeys(explicit + failed_checks)) or ["acceptance contract failed"]
+
+
 async def converge(ledger: Ledger, domain: str, task: int, arm: str, goal: str,
                    invoke: Any, validate: Any, *, token_ceiling: int,
                    seconds_ceiling: float, clock=time.monotonic) -> dict:
@@ -83,7 +91,7 @@ async def converge(ledger: Ledger, domain: str, task: int, arm: str, goal: str,
         if totals["observed_tokens"] >= token_ceiling or elapsed >= seconds_ceiling:
             return {**totals, "outcome": "budget_exhausted_unfinished"}
         feedback = ("\nIndependent acceptance found these defects: "
-                    + json.dumps(rows[-1]["quality"].get("errors", []))
+                    + json.dumps(defects(rows[-1]["quality"]))
                     + ". Fix them in your existing files. Preserve all previously passing requirements."
                     if rows else "")
         prompt = goal + feedback
