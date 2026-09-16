@@ -41,11 +41,14 @@ class CodexErrorCode(StrEnum):
 
 
 class CodexBudgetExceeded(RuntimeError):
-    def __init__(self, reason: str, tool_calls: int, assistant_messages: int):
+    def __init__(self, reason: str, tool_calls: int, assistant_messages: int,
+                 stdout: bytes = b"", stderr: bytes = b""):
         super().__init__(reason)
         self.reason = reason
         self.tool_calls = tool_calls
         self.assistant_messages = assistant_messages
+        self.stdout = stdout
+        self.stderr = stderr
 
 
 class CodexTimeout(TimeoutError):
@@ -312,11 +315,30 @@ class CodexProvider(AIProvider):
                 returncode, stdout, stderr = await self._communicate(
                     args, packet.render(), packet.working_directory, budget, completion_probe)
         except CodexBudgetExceeded as error:
-            return self._failure(
+            stdout_text = error.stdout.decode("utf-8", errors="replace")
+            usage, execution_id = self._parse_telemetry(stdout_text)
+            source = "measured" if usage else "unavailable"
+            token_usage: dict[str, Any] = {
+                "input": int(usage.get("input_tokens", 0)),
+                "output": int(usage.get("output_tokens", 0)),
+                "cached": int(usage.get("cached_input_tokens", 0)),
+                "source": source, "estimated": False, "complete": bool(usage),
+                "invocation_count": 1,
+                "provider_tool_calls": error.tool_calls,
+                "provider_messages": error.assistant_messages,
+                **self._usage_breakdown(usage),
+                "attribution": self._token_attribution(stdout_text),
+            }
+            if execution_id:
+                token_usage["execution_id"] = execution_id
+            self._accumulate(token_usage)
+            receipt = self._failure(
                 task, CodexErrorCode.BUDGET_EXHAUSTED,
                 (f"{error.reason}; observed tool_calls={error.tool_calls}, "
                  f"assistant_messages={error.assistant_messages}."),
                 started, model=model)
+            receipt.token_usage = token_usage
+            return receipt
         except CodexTimeout as error:
             message = f"Codex exceeded {self.timeout:g}s timeout."
             stdout_text = error.stdout.decode("utf-8", errors="replace")
@@ -591,6 +613,7 @@ class CodexProvider(AIProvider):
         artifact_completed = False
         controlled_stop = False
         completed = False
+        budget_reason: str | None = None
         monitor = CodexEventBudget(
             max_tool_calls=(budget or {}).get("max_provider_tool_calls"),
             max_assistant_messages=(budget or {}).get("max_provider_messages"),
@@ -638,7 +661,7 @@ class CodexProvider(AIProvider):
         async def run() -> tuple[int, bytes, bytes]:
             nonlocal thread_id, turn_id, steer_request_id, steer_accepted
             nonlocal steer_deadline, interrupt_request_id, interrupt_deadline
-            nonlocal artifact_completed, controlled_stop, completed
+            nonlocal artifact_completed, controlled_stop, completed, budget_reason
             initialize = await send("initialize", {
                 "clientInfo": {"name": "universal-agent-platform", "title": "UAP",
                                "version": __version__},
@@ -716,16 +739,27 @@ class CodexProvider(AIProvider):
                         events.append((json.dumps({"type": "uap.completion_interrupt_failed"}) + "\n").encode())
                     else:
                         events.append((json.dumps({"type": "uap.completion_interrupted"}) + "\n").encode())
-                if method == "item/completed" and isinstance(item, dict):
-                    synthetic = {"type": "item.completed", "item": {
+                if method in {"item/started", "item/completed"} and isinstance(item, dict):
+                    synthetic = {"type": method.replace("/", "."), "item": {
                         "type": {"commandExecution": "command_execution",
                                  "mcpToolCall": "mcp_tool_call",
                                  "webSearch": "web_search",
                                  "agentMessage": "agent_message"}.get(item.get("type"), item.get("type"))}}
                     reason = monitor.observe((json.dumps(synthetic) + "\n").encode())
-                    if reason:
-                        raise CodexBudgetExceeded(reason, monitor.tool_calls,
-                                                  monitor.assistant_messages)
+                    if reason and budget_reason is None:
+                        budget_reason = reason
+                        interrupt_id = await send("turn/interrupt", {
+                            "threadId": thread_id, "turnId": turn_id})
+                        interrupt_request_id = int(interrupt_id)
+                        interrupt_deadline = time.monotonic() + max(
+                            1.0, float((budget or {}).get(
+                                "completion_interrupt_grace_seconds", 15.0)))
+                        events.append((json.dumps({
+                            "type": "uap.budget_interrupt_requested",
+                            "reason": reason,
+                        }) + "\n").encode())
+                        continue
+                if method == "item/completed" and isinstance(item, dict):
                     if (steer_request_id is None and not steer_accepted and item.get("type") in
                             {"commandExecution", "mcpToolCall", "webSearch", "fileChange"}
                             and await artifact_is_complete()):
@@ -748,10 +782,21 @@ class CodexProvider(AIProvider):
                         terminal_status = completed_turn.get("status")
                         completed = terminal_status == "completed"
                         controlled_stop = bool(
-                            artifact_completed and terminal_status == "interrupted")
+                            (artifact_completed or budget_reason) and terminal_status == "interrupted")
                         if completed or controlled_stop or not (
                                 steer_request_id is not None or steer_accepted):
                             break
+            if budget_reason:
+                events.append((json.dumps({"type": "uap.budget_controlled_stop"}) + "\n").encode())
+                process.stdin.close()
+                try:
+                    await asyncio.wait_for(process.wait(), timeout=5)
+                except TimeoutError:
+                    process.terminate()
+                    await process.wait()
+                raise CodexBudgetExceeded(
+                    budget_reason, monitor.tool_calls, monitor.assistant_messages,
+                    b"".join(events), await stderr_task)
             if controlled_stop:
                 events.append((json.dumps({"type": "uap.completion_controlled_stop"}) + "\n").encode())
                 raise CodexControlledStop(b"".join(events), b"")

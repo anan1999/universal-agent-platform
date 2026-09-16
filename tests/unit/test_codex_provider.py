@@ -8,7 +8,8 @@ from adaptive_agent.core.execution_packet import ExecutionPacketBuilder
 from adaptive_agent.core.models import Receipt, Task
 from adaptive_agent.providers.codex import RESULT_SCHEMA, CodexCapabilities, CodexErrorCode, CodexProvider
 from adaptive_agent.providers.codex.provider import (
-    CodexArtifactCompleted, CodexControlledStop, CodexEventBudget, CodexTimeout,
+    CodexArtifactCompleted, CodexBudgetExceeded, CodexControlledStop, CodexEventBudget,
+    CodexTimeout,
 )
 
 
@@ -312,6 +313,36 @@ def test_live_event_budget_stops_before_accepting_an_extra_tool():
     reason = monitor.observe(started("web_search"))
     assert reason == "provider tool-call budget exhausted at 2"
     assert monitor.tool_calls == 2
+
+
+def test_budget_failure_preserves_complete_measured_usage(tmp_path):
+    output = "\n".join([
+        json.dumps({"method": "thread/tokenUsage/updated", "params": {
+            "threadId": "thread-budget", "turnId": "turn-budget", "tokenUsage": {"total": {
+                "inputTokens": 700, "cachedInputTokens": 400, "cacheWriteInputTokens": 0,
+                "outputTokens": 70, "reasoningOutputTokens": 10, "totalTokens": 770}}}}),
+        json.dumps({"type": "uap.budget_controlled_stop"}),
+    ])
+
+    class BudgetProvider(CodexProvider):
+        async def _communicate_app_server(self, *args, **kwargs):
+            raise CodexBudgetExceeded(
+                "provider tool-call budget exhausted at 6", 6, 3, output.encode())
+
+    capabilities = CodexCapabilities(
+        available=True, supports_noninteractive=True, supports_structured_output=True,
+        supports_working_directory=True, supports_jsonl=True)
+    provider = BudgetProvider(command_prefix=["fake"], capabilities=capabilities)
+    task = Task("T", "R", "Modify a file", "developer", metadata={
+        "working_directory": str(tmp_path), "codex_live_usage": True})
+    receipt = asyncio.run(provider.execute(task, completion_probe=lambda: False))
+    assert receipt.status == "failed"
+    assert receipt.error_code == CodexErrorCode.BUDGET_EXHAUSTED.value
+    assert receipt.token_usage["source"] == "measured"
+    assert receipt.token_usage["complete"] is True
+    assert receipt.token_usage["input"] == 700
+    assert receipt.token_usage["output"] == 70
+    assert receipt.token_usage["provider_tool_calls"] == 6
 
 
 def test_live_message_budget_is_counted_without_reading_message_text():
