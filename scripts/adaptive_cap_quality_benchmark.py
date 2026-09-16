@@ -29,8 +29,16 @@ MESSAGE_CAP = 12
 class CapPacket(Packet):
     def __init__(self, root: Path, goal: str, context: dict, cap: int,
                  batching: bool = True):
-        super().__init__(root, goal, context)
-        self.text += (
+        # The legacy Packet hard-codes the large monthly-report contract. A
+        # scale benchmark must carry only the selected task's contract.
+        self.working_directory = root
+        self.text = (
+            "Complete this implementation in the current workspace.\n"
+            + goal + "\n"
+            "Return JSON matching the supplied schema, with a short factual summary. "
+            "Report changed files only when actually changed. Do not start other AI agents. "
+            "Do not access sibling workspaces. Preserve existing expense behavior.\n"
+            + json.dumps(context, ensure_ascii=False) + "\n"
             "\nBOUNDED EXECUTION:\n"
             f"- Hard envelope: {cap} provider tool calls and {MESSAGE_CAP} assistant messages.\n"
             "- Do not repeat successful commands or add a final repository-status pass.\n"

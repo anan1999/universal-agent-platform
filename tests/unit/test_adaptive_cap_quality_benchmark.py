@@ -52,3 +52,11 @@ def test_runner_can_reuse_all_legacy_context_cache_scales():
     assert set(benchmark.TASKS) == {"small", "medium", "large"}
     plain_source = benchmark.CapPacket.__init__.__code__.co_varnames
     assert "batching" in plain_source
+
+
+def test_scale_packet_does_not_inject_large_monthly_contract(tmp_path):
+    packet = benchmark.CapPacket(
+        tmp_path, benchmark.TASKS["small"]["goal"], {}, 8, batching=False)
+    assert "/reports/summary" in packet.render()
+    assert '"month":"YYYY-MM"' not in packet.render()
+    assert "/reports/monthly" not in packet.render()
