@@ -59,12 +59,16 @@ def cost(rows: list[dict]) -> dict:
     return {"attempts": len(rows), "measurement_complete": exact,
             "observed_tokens": sum(design._tokens(result) for result in results),
             "cached_input": sum(int(result.get("cached_input", 0)) for result in results),
-            "output_tokens": sum(int(result.get("output_tokens", 0)) for result in results)}
+            "output_tokens": sum(int(result.get("output_tokens", 0)) for result in results),
+            "provider_tool_calls": sum(int(result.get("provider_tool_calls", 0)) for result in results),
+            "provider_messages": sum(int(result.get("provider_messages", 0)) for result in results)}
 
 
 def defects(quality: dict) -> list[str]:
     """Normalize evaluator-specific failures into actionable repair feedback."""
     explicit = [str(item) for item in quality.get("errors", []) if str(item)]
+    if quality.get("error"):
+        explicit.append(str(quality["error"]))
     failed_checks = [str(item.get("name", "unnamed check"))
                      for item in quality.get("checks", []) if not item.get("passed")]
     return list(dict.fromkeys(explicit + failed_checks)) or ["acceptance contract failed"]
