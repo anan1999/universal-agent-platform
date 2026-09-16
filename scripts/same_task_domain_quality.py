@@ -183,14 +183,16 @@ def evaluate_programming(root: Path, turn: int) -> dict[str, Any]:
 
 
 def _xyz(value: Any) -> tuple[float, float, float]:
+    if isinstance(value, dict):
+        value = value["position"]
     assert len(value) == 3
     result = tuple(float(component) for component in value)
     assert all(math.isfinite(component) for component in result)
     return result  # type: ignore[return-value]
 
 
-def evaluate_animation(root: Path, turn: int) -> dict[str, Any]:
-    path = root / "animation.py"
+def evaluate_animation(root: Path, turn: int, source: Path | None = None) -> dict[str, Any]:
+    path = source or root / "animation.py"
     if not path.is_file():
         return _report(turn, {"animation_module": False}, "animation")
     try:
@@ -237,8 +239,11 @@ def evaluate_animation(root: Path, turn: int) -> dict[str, Any]:
         _probe(checks, "moon_3d_motion", moon)
     if turn >= 4:
         def spin() -> None:
-            a = float(module.scene_at(0)["satellite_orientation"])
-            b = float(module.scene_at(.25)["satellite_orientation"])
+            start, later = module.scene_at(0), module.scene_at(.25)
+            a = float(start.get("satellite_orientation", start["satellite"].get("orientation")
+                          if isinstance(start["satellite"], dict) else None))
+            b = float(later.get("satellite_orientation", later["satellite"].get("orientation")
+                          if isinstance(later["satellite"], dict) else None))
             assert math.isfinite(a) and math.isfinite(b) and a != b
         _probe(checks, "courier_orientation_changes", spin)
     if turn >= 5:

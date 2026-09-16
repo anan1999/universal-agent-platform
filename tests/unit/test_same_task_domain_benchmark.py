@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from scripts.same_task_domain_benchmark import CONFIG, prompt_for, summarize
-from scripts.same_task_domain_quality import EVALUATORS, GOALS
+from scripts.same_task_domain_quality import EVALUATORS, GOALS, _xyz
 
 
 def test_two_domains_have_ten_related_prompts_and_separate_artifacts():
@@ -37,3 +37,8 @@ def test_partial_dialogue_never_claims_final_quality():
     result = summarize(rows, 10)
     assert result["turns"] == 1 and not result["final_contract_passed"]
     assert result["total_tokens"] == 12
+
+
+def test_3d_position_accepts_equivalent_scene_node_representation():
+    assert _xyz((1, 2, 3)) == (1.0, 2.0, 3.0)
+    assert _xyz({"position": [1, 2, 3], "radius": 0.5}) == (1.0, 2.0, 3.0)
